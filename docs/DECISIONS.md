@@ -154,3 +154,6 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 ### 2026-10-03 — Tickets: lite ticket format, one file per milestone, written just in time  (no spec change)
 - Why: a `- [ ] M2.3` checklist inside the spec was rejected as unreadable; a full ticket file in the style of the author's earlier project Clearway (Preamble, Table of Contents) duplicates design reasons that already live in `SPEC.md`. The lite format keeps Goal & exit criterion (with Real/Absent), How to use these tickets, and the tickets themselves (Produces, Consumes, Detail, Acceptance, Out of scope, Depends on). Tickets for milestone n are written only after milestone n−1 is done, because the project's uncertainty is concentrated in M2 (tool calling, three resident models, structured output) and detailed M3–M8 tickets written now would mostly be rewritten. One ticket is one commit and does one thing.
 - Rejected: all eight ticket files up front; tickets inside `SPEC.md`.
+
+### 2026-10-03 — SPEC v1 settled  (commit cef7f39)
+- Why: the spec review (v0.2 → v1) is finished and M1 starts from this version. Every later `SPEC.md` change gets its own entry citing its commit hash.
