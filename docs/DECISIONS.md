@@ -157,3 +157,8 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 
 ### 2026-10-03 — SPEC v1 settled  (commit cef7f39)
 - Why: the spec review (v0.2 → v1) is finished and M1 starts from this version. Every later `SPEC.md` change gets its own entry citing its commit hash.
+
+### 2026-10-07 — Directory structure settled  (commit 4b7f362)
+- Changed: Implementation (Repo), changed.
+- Why: T1 (6becd4f) committed the layout, so "not worked out yet" was no longer true (T1 audit finding F2). The committed directories are the record; SPEC.md points to them instead of listing them.
+- Rejected: listing the directories in SPEC.md, because SPEC wins over code and every folder move would become a spec change.
