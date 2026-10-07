@@ -16,7 +16,7 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 ## Tickets
 
 ### T1 — Repo layout and dev toolchain
-- **Status:** todo
+- **Status:** done 6becd4f
 - **Produces:** a uv project on Python 3.13 or later (`pyproject.toml`, `uv.lock`), the committed directory structure, the chosen test runner, linter, type checker, and Simplified-to-Traditional converter, and a `## Commands` section appended to `CLAUDE.md` with the lint, type-check, and test commands.
 - **Consumes:** —
 - **Detail:**
@@ -135,4 +135,10 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 
 ## Open questions for the author
 
+- [R22]: s2tw cannot tell 面 from 麵 outside its phrase table; 面线, 大肠面线, 猪肠面线, 鸭肉面线 all convert to 面線 and miss the Traditional 麵線 names. Raised in T1 F1; decide before M2 tickets (M2.5).
+
 ## Audit findings
+
+- T1 F1: converter smoke test used s2t (面→麪), breaking [R22] for 麵 names; fixed fb7ed56 (s2tw).
+- T1 F2: SPEC.md Implementation (Repo) still called the layout undecided; fixed 4b7f362 (author).
+- T1 F3: commit scope "repo" was not a module or doc; fixed by amending before push to 6becd4f (author approved 2026-10-07).
