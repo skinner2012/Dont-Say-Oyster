@@ -162,3 +162,6 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 - Changed: Implementation (Repo), changed.
 - Why: T1 (6becd4f) committed the layout, so "not worked out yet" was no longer true (T1 audit finding F2). The committed directories are the record; SPEC.md points to them instead of listing them.
 - Rejected: listing the directories in SPEC.md, because SPEC wins over code and every folder move would become a spec change.
+
+### 2026-10-07 — First code commit; two-week limit starts  (no spec change)
+- Why: CLAUDE.md, Start here, step 4. The Non-goals two-week limit counts from the first code commit, 6becd4f (T1), dated 2026-10-07.
