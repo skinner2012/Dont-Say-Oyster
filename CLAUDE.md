@@ -77,3 +77,11 @@ Progress lives in the repo: each ticket carries a `Status` line (`todo`, `done <
 - A ticket's Detail says only what `SPEC.md` does not: module boundaries, file names, how to test. Rules are cited by `[R#]`, never paraphrased.
 - A ticket is done when its code and tests pass, its Acceptance holds, every audit finding is fixed or explicitly deferred by the author, and its `Status` line says `done <hash>`. Code merely written is not done.
 - `docs/tasks/BACKLOG.md` holds the draft work items that each milestone's tickets are cut from. It is raw material, not a plan; `SPEC.md` wins where they disagree. Read it only when cutting or verifying a milestone's tickets, or patching it after a `SPEC.md` change, and only that milestone's block.
+
+## Commands
+
+Run from the repo root; each must exit 0.
+
+- Lint: `uv run ruff check .`
+- Type check: `uv run mypy`
+- Test: `uv run pytest`
