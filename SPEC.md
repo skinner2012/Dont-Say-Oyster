@@ -331,7 +331,7 @@ No LangGraph checkpoints are used; recovery works from files.
     - Whether the Describer and the Guesser each have thinking on or off will be decided in M5, and after that the real time will be worked out from the table above.
 - **Frameworks and versions**: will definitely use these: LangChain, LangGraph, Phoenix, each at its latest stable version.
 - **Data and persistence**: cards and the corpus should mostly be stored as JSON. Within a game, LangGraph State is passed between nodes. Cross-game memory uses JSON memory files.
-- **Repo**: the name is "Dont-Say-Oyster"; the directory structure draft is not worked out yet. The structure should be decided in M1.
+- **Repo**: the name is "Dont-Say-Oyster"; the directory structure was decided in M1, and the committed directories are its record.
 - **Commands**:
     - The parameters for the command that runs one game include: the model and num_ctx for each of the three roles, where the forty cards are, which card to run, where the corpus is, where to write experiment results, the variant, temperature, thinking on/off, and where the memory file is (V3).
     - The command that runs a whole batch of experiments just runs forty commands; it is just a script.
