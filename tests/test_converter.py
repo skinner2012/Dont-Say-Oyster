@@ -4,4 +4,7 @@ from opencc import OpenCC
 
 
 def test_converts_simplified_to_traditional() -> None:
-    assert OpenCC("s2t").convert("牡蛎煎") == "牡蠣煎"
+    converter = OpenCC("s2tw")
+    assert converter.convert("牡蛎煎") == "牡蠣煎"
+    # Taiwan form 麵, not 麪 as plain s2t gives.
+    assert converter.convert("炒面") == "炒麵"
