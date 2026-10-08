@@ -42,30 +42,30 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - **Depends on:** —
 
 ### T3 — Corpus schema and loader
-- **Status:** todo
-- **Produces:** the corpus entry schema and a loader in the package that reads the corpus JSON file into typed entries; an entry point that loads a corpus file and prints its entry count; good and bad fixtures.
+- **Status:** done db7f4ee (schema e73d81a, by the author)
+- **Produces:** the corpus schema `data/corpus/schema.json` (designed and settled by the author, e73d81a) and a loader in the package that validates the corpus JSON file against it and reads it into typed entries; an entry point that loads a corpus file and prints its entry count; good and bad fixtures.
 - **Consumes:** the attribute fields in `SPEC.md` from T2; the package and fixture locations from T1.
 - **Detail:**
-  - From BACKLOG M1.3. Entry fields: `SPEC.md` Corpus and Cards; attributes are exactly the T2 fields. JSON per `SPEC.md` Implementation (Data and persistence).
-  - The loader raises an error, not a warning, naming the entry and the field, on: an unknown or missing field; an empty official name; an empty English names list; an attribute value outside its allowed values; an attribute with more values than its field allows, or a required attribute with none; a value repeated within one attribute; a Physical form drink value on an entry whose Dish type is not Drink, or a Dish type of Drink without one (T2); two entries with the same official name, since distractors are looked up by official name [R17].
-  - Every attribute field is present on every entry; an optional field with no value is an empty list, so an absent attribute field is a missing-field error.
+  - From BACKLOG M1.3. The schema is the author's: designed and settled by the author (e73d81a, 2026-10-08) and named as the corpus format in `SPEC.md` Implementation (Data and persistence); it fixes entry fields, key names, and attribute values. The loader does not change it; from e73d81a on, a change to it is a spec change.
+  - The loader validates every entry against the schema with the `jsonschema` package (approved by the author 2026-10-08; pinned in `uv.lock`) and turns each validation error into an error, not a warning, naming the entry (its index, and its official name when present) and the failing field. The schema covers: an unknown or missing field; an empty official name; an empty English names list; a value outside its allowed values; too many or too few values in an attribute; a value repeated within one attribute; an empty or repeated string in aliases, English names, or forbidden words; a value of the wrong type; a drink Physical form exactly when Dish type is Drink (both ways: a drink form without Dish type Drink, and Dish type Drink without a drink form).
+  - The loader checks in code what the schema cannot: two entries with the same official name, since distractors are looked up by official name [R17]; an alias equal to its entry's official name (author, 2026-10-08); a name (official name or alias) held by two entries, since a guess of one would count as correct for the other [R20] (author, 2026-10-08). Names are compared as exact strings; normalization [R22] is M2's.
   - The empty official name and English names checks are the part of BACKLOG M1.4 that lands here (split with T4).
   - Empty aliases and empty forbidden words are allowed (author, 2026-10-03; changing this is a spec change).
   - No per-field language checks here; the Chinese-character detector is M2's (BACKLOG M2.5).
   - Fixtures: a hand-written three-entry corpus, plus one bad fixture per error above.
-- **Acceptance:** the test command passes: the three-entry fixture loads into three typed entries; each bad fixture fails with an error naming the entry and the field; the entry point prints the count 3 for the good fixture.
-- **Out of scope:** bringing in the real corpus (T4); cards, card ids, and distractors (T6, T7); normalization and name checks (M2); the search tool (M2).
+- **Acceptance:** the test command passes: the three-entry fixture loads into three typed entries; each bad fixture fails with an error naming the entry and the field; the entry point prints the count 3 for the good fixture; `data/corpus/schema.json` is unchanged by the loader commit.
+- **Out of scope:** changing `data/corpus/schema.json` after e73d81a (a spec change); bringing in the real corpus (T4); cards, card ids, and distractors (T6, T7); normalization and name checks (M2); the search tool (M2).
 - **Depends on:** T1, T2
 
 ### T4 — Bring in the corpus
 - **Status:** todo
 - **Produces:** the corpus JSON file at the corpus location from T1, aiming for about three hundred entries.
-- **Consumes:** the attribute fields from T2; the loader and entry point from T3.
+- **Consumes:** the attribute fields from T2; the schema (`data/corpus/schema.json`), loader, and entry point from T3.
 - **Detail:**
   - From BACKLOG M1.4, split: the non-empty checks are in T3, the file arrives here. What an entry holds and how the official name is chosen: `SPEC.md` Corpus and Cards.
   - The corpus is generated outside this repo, and which LLM generated it is not recorded (author, 2026-10-03); this ticket brings the file in.
   - Accepted by the record it leaves, not by the quality of the entries; the author reviews them in T5.
-  - Only mechanical fixes so the loader accepts the file (JSON syntax, field names); content corrections belong to T5.
+  - Only mechanical fixes so the loader accepts the file (JSON syntax, field names, anything the schema rejects); content corrections belong to T5.
 - **Acceptance:** the T3 entry point loads the committed corpus file without error and prints its entry count (the count is recorded, not gated: `SPEC.md` Corpus and Cards says "aiming for").
 - **Out of scope:** content corrections (T5); schema changes (if the file needs a field the schema lacks, stop and raise it under Open questions); distractors (T6–T8).
 - **Depends on:** T3
