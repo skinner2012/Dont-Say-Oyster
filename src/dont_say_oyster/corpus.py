@@ -35,8 +35,9 @@ class CorpusEntry:
 
 
 class CorpusError(Exception):
-    """The corpus file cannot be loaded. `problems` holds one line per error, each naming the
-    entry (its index, and its official name when present) and the field."""
+    """The corpus file cannot be loaded. `problems` holds one line per error. An error in an
+    entry names the entry (its index from 0, and its official name when present) and the field;
+    an error about the whole file (not valid JSON, not an array) names neither."""
 
     def __init__(self, path: Path, problems: list[str]) -> None:
         numbering = (

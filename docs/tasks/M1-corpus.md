@@ -52,8 +52,8 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
   - The empty official name and English names checks are the part of BACKLOG M1.4 that lands here (split with T4).
   - Empty aliases and empty forbidden words are allowed (author, 2026-10-03; changing this is a spec change).
   - No per-field language checks here; the Chinese-character detector is M2's (BACKLOG M2.5).
-  - Fixtures: a hand-written three-entry corpus, plus one bad fixture per error above.
-- **Acceptance:** the test command passes: the three-entry fixture loads into three typed entries; each bad fixture fails with an error naming the entry and the field; the entry point prints the count 3 for the good fixture; `data/corpus/schema.json` is unchanged by the loader commit.
+  - Fixtures: a hand-written three-entry corpus, plus one bad fixture per error above, one for an attribute given as a bare string instead of an array, and two for errors about the whole file (not an array, not valid JSON).
+- **Acceptance:** the test command passes: the three-entry fixture loads into three typed entries; each bad fixture for an error in an entry fails with an error naming the entry and the field, and each whole-file fixture fails with an error saying what is wrong with the file; the entry point prints the count 3 for the good fixture; `data/corpus/schema.json` is unchanged by the loader commit.
 - **Out of scope:** changing `data/corpus/schema.json` after e73d81a (a spec change); bringing in the real corpus (T4); cards, card ids, and distractors (T6, T7); normalization and name checks (M2); the search tool (M2).
 - **Depends on:** T1, T2
 
