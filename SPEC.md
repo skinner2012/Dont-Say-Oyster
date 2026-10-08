@@ -90,7 +90,47 @@ The main build will be the V3 variant, but with three toggles added to turn off 
     - English names. Used for checking descriptions and questions, not accepted answers.
     - Forbidden words.
     - Attributes.
-        - Which ones will be decided in M1. The one that is sure so far is location.
+        - Each field has a closed list of values. Every entry carries every field, with distinct values and no more than the field allows; an optional field may be empty.
+        - Dish type (required, one): Meal, Snack, Dessert, Drink.
+            - Meal: eaten on its own as lunch or dinner.
+            - Snack: any other savory food, side soups and side dishes included.
+            - Dessert: any other sweet food, pastries, sweet soups, and shaved ice included.
+            - Drink: drunk from a cup or through a straw, sweet or not, with or without add-ins.
+        - Main ingredients (required, one to three): Rice, Wheat, Noodles, Starch, Root Vegetables, Soy, Beans and Seeds, Pork, Beef, Poultry, Seafood, Other Meat, Egg, Vegetables, Fruit, Herbs, Tea, Milk.
+            - The ingredients a diner would name first.
+            - Noodles of any grain are Noodles, not Rice or Wheat.
+            - Wheat covers buns, dough, wrappers, and pastry.
+            - Starch is tapioca or sweet potato starch forming the body of the dish (pearls, translucent wrappers, omelette batter); taro and sweet potato eaten as themselves are Root Vegetables.
+            - Soy covers soybeans, tofu, and soy milk.
+            - Beans and Seeds covers red beans, mung beans, peanuts, sesame, almonds, and aiyu seeds.
+            - Fruit covers sugarcane.
+            - Tea covers tea leaves only; herbal and other "teas" go by their ingredient.
+            - Herbs covers grass jelly, herbal teas, and Chinese medicinal herbs.
+        - Cooking method (required, one or two): Deep-Fried, Pan-Fried, Stir-Fried, Grilled, Baked, Steamed, Boiled, Braised, Set, No Cooking.
+            - The step that gives the dish its character.
+            - Braised covers soy-based simmering and stewing.
+            - Boiled covers poaching and blanching.
+            - Set means left to set into a curd or jelly.
+            - No Cooking means assembled from prepared parts (drinks, shaved ice, cut fruit).
+        - Flavor (required, one to three): Savory, Sweet, Sour, Spicy, Fermented.
+            - Only tastes a first-time eater would notice.
+            - Spicy covers chili and pepper heat.
+            - Fermented covers stinky tofu and other pungent ferments.
+        - Physical form (required, one): Dry, Sauced, Soup, Thick Soup, Shaved Ice, Smooth Drink, Drink with Add-ins, Slush.
+            - Dry: no sauce or broth to speak of.
+            - Sauced: in or under a sauce, not a broth.
+            - Soup: pieces, curds, or jelly in a thin broth or syrup, eaten with a spoon.
+            - Thick Soup: a starch-thickened broth.
+            - Shaved Ice: toppings on shaved or snow ice, eaten with a spoon.
+            - Smooth Drink: nothing to chew.
+            - Drink with Add-ins: pieces to chew (pearls, jelly, beans).
+            - Slush: blended ice, with or without add-ins.
+            - The three drink values are used exactly when Dish type is Drink.
+        - Occasion (optional, any number): Breakfast, Night Market, Festival, Souvenir.
+            - Breakfast: sold mainly in the morning or at breakfast shops.
+            - Night Market: a signature night-market stall item.
+            - Festival: tied to a festival or holiday.
+            - Souvenir: sold boxed as a regional gift.
         - The Guesser will use them to search the corpus: they are the search tool's filter fields [R44].
     - Distractors.
         - Up to five Chinese official names picked from the corpus.
@@ -139,7 +179,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 - **R42** Can see: the description or answer the Describer gives (all variants), and the corpus (V1). And cross-game memory (V3).
 - **R43** (V1) Uses the search tool for the corpus; it can look up by itself at most five times per round, and on the sixth time the program blocks tool lookups and forces a question or guess directly.
 - Search tool (V1), the Guesser's only tool:
-    - **R44** Input: filled by the Guesser: attribute filters (fields decided in M1) and an optional keyword list; keywords are matched against English names.
+    - **R44** Input: filled by the Guesser: attribute filters (the fields and values in Corpus and Cards, Attributes) and an optional keyword list; keywords are matched against English names. An entry passes the filters when, for every field filtered on, it has at least one of the given values; an entry with no value in a field never passes a filter on that field.
     - **R45** Output: matching entries, each with official name, aliases, English names, and attributes.
     - **R46** Limit: at most ten results; if there are more, the output will say there are more.
 - **R47** The structured output for the question or guess is a separate call, and does not happen at the same time as a tool call.
@@ -158,7 +198,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 | Official name and accepted aliases on the card | String array | Me. | Describer, Challenger. |
 | English names on the card | String array | Me. | Describer. |
 | Forbidden words on the card | String array | Me. | Describer. |
-| Attributes on the card | JSON | Me. | Program. (The Guesser only uses them indirectly through tool filters.) |
+| Attributes on the card | JSON | Me. | Program. (The Guesser sees attributes only through the search tool, as filters [R44] and in results [R45].) |
 | Distractors on the card | String array. | Me (picked by an LLM, reviewed by me). | Challenger. |
 | Description based on the card, or answer to the Guesser's question | JSON, including: description or answer, latency, token count, and attempt number. | Program. | Guesser. |
 | Description based on the card | JSON, including: description, latency, token count, and attempt number. | Describer. | Challenger. |
@@ -346,7 +386,7 @@ No LangGraph checkpoints are used; recovery works from files.
 
 - Create the repository "Dont-Say-Oyster" and decide the directory structure.
 - Initialize Python environment.
-- Decide the schema, including which attribute fields there are (location is fixed so far), and build the corpus using LLM; each entry includes the Chinese official name and accepted aliases, English names, attributes, and forbidden words.
+- Decide the schema, including which attribute fields there are, and build the corpus using LLM; each entry includes the Chinese official name and accepted aliases, English names, attributes, and forbidden words.
 - I review every entry before the program reads the corpus and selects cards.
 - Decide the card-selection and ordering criterion and have the corresponding program.
 - The program builds the cards, and writes the order into the batch manifests.
