@@ -31,13 +31,13 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 
 ### T2 — Attribute fields in SPEC.md
 - **Status:** todo
-- **Produces:** the attribute field list, written into `SPEC.md` Corpus and Cards: for each field, its name, its allowed values (a closed list or free text), and whether every entry must have it.
+- **Produces:** the attribute field list, written into `SPEC.md` Corpus and Cards: for each field, its name, its allowed values (a closed list), how many values it takes, and whether every entry must have it.
 - **Consumes:** —
 - **Detail:**
   - From BACKLOG M1.2. The list lives in `SPEC.md`, not in a separate file, unless it grows too large for it (author, 2026-10-03).
   - A spec change: the author edits; the review, the cross-reference check, and the `DECISIONS.md` entry follow `CLAUDE.md`, Delegation (Changing `SPEC.md`). The cross-reference check also names any later BACKLOG item the list affects; that patch goes in the same commit as the spec change.
-  - Location is fixed (`SPEC.md` Corpus and Cards). The fields are the search tool's filter fields [R44].
-- **Acceptance:** a commit changes `SPEC.md` Corpus and Cards so it lists every attribute field, location included, each with its allowed values and whether it is required; the next commit adds a `docs/DECISIONS.md` entry citing that commit's hash.
+  - The fields are the search tool's filter fields [R44].
+- **Acceptance:** a commit changes `SPEC.md` Corpus and Cards so it lists every attribute field, each with its allowed values, how many values it takes, and whether it is required; the next commit adds a `docs/DECISIONS.md` entry citing that commit's hash.
 - **Out of scope:** the schema code (T3); the distractor model and prompt (T6); the card-selection and ordering criteria (T7); any other part of `SPEC.md`.
 - **Depends on:** —
 
@@ -47,7 +47,8 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - **Consumes:** the attribute fields in `SPEC.md` from T2; the package and fixture locations from T1.
 - **Detail:**
   - From BACKLOG M1.3. Entry fields: `SPEC.md` Corpus and Cards; attributes are exactly the T2 fields. JSON per `SPEC.md` Implementation (Data and persistence).
-  - The loader raises an error, not a warning, naming the entry and the field, on: an unknown or missing field; an empty official name; an empty English names list; an attribute value outside its allowed values, or a required attribute missing (T2); two entries with the same official name, since distractors are looked up by official name [R17].
+  - The loader raises an error, not a warning, naming the entry and the field, on: an unknown or missing field; an empty official name; an empty English names list; an attribute value outside its allowed values; an attribute with more values than its field allows, or a required attribute with none; a value repeated within one attribute; a Physical form drink value on an entry whose Dish type is not Drink, or a Dish type of Drink without one (T2); two entries with the same official name, since distractors are looked up by official name [R17].
+  - Every attribute field is present on every entry; an optional field with no value is an empty list, so an absent attribute field is a missing-field error.
   - The empty official name and English names checks are the part of BACKLOG M1.4 that lands here (split with T4).
   - Empty aliases and empty forbidden words are allowed (author, 2026-10-03; changing this is a spec change).
   - No per-field language checks here; the Chinese-character detector is M2's (BACKLOG M2.5).
@@ -76,6 +77,7 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - **Detail:**
   - From BACKLOG M1.5 and M1.6, merged: one review of one file; the backlog's 1–150 / 151–300 split was only for size. The author may review over several sittings and commits once.
   - What to check against each official name: `SPEC.md` Corpus and Cards; attributes also against the T2 list.
+  - Attribute edge cases left to this review (author, 2026-10-07): which Flavor an item with no clear taste gets; which Dish type a breakfast main gets (Occasion: Breakfast still finds it); the Dish type of an item both sweet and savory; whether a boiled or brewed drink is Boiled or No Cooking.
   - The author's ticket. An agent may run the entry point after edits; it does not change entries.
 - **Acceptance:** the author approves the reviewed corpus file and it is committed (if the review changed nothing, the T4 commit stands and the Status names it); the T3 entry point loads the file at that commit without error.
 - **Out of scope:** schema changes (stop and raise them under Open questions); card selection and distractors (T7, T8).
