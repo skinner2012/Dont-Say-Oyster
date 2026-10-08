@@ -103,6 +103,11 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 - Why: the corpus is generated outside the repo, so one file must serve both as the format handed to the external LLM and as the loader's rule; two copies would drift. The file encodes the Corpus and Cards fields and attribute values; every attribute is an array, one-value fields included, so the loader and the [R44] filter handle one shape. Two rules it cannot express stay in the loader: no two entries share an official name; no alias equals its entry's official name.
 - Rejected: key names recorded only in the T3 ticket (no single source); hand-coded loader rules with the schema as documentation only (drift); `$defs`/`$ref` (each definition used once); dropping the full `physical_form` enum in favour of the if/then/else alone (the enum is the readable value list for the external LLM and gives clearer validation errors).
 
+### 2026-10-08 — Each name belongs to one corpus entry  (commit f0152cf)
+- Changed: Corpus and Cards, added: no name is the official name or an alias of more than one entry, and no alias repeats its own entry's official name, compared after normalization [R22]. `data/corpus/schema.json` description, changed: states the loader's check of this rule on exact strings and points to the normalized rule. BACKLOG M2.20 added. Supersedes the two loader rules listed in the 160da07 entry.
+- Why: [R20] counts a guess as correct when it equals an official name or alias after normalization, so a name held by two entries would let a guess of one snack count as correct for another, and [R35] cannot be judged when a card and a distractor share a name. Found in the author's review of the T3 loader; the loader enforces the rule on exact strings now (db7f4ee), and M2.20 adds the normalized comparison once the M2.5 helpers exist.
+- Rejected: exact strings as the whole rule (R20 matches after normalization, so 凤梨酥 and 鳳梨酥 would both pass); the normalized check in M1 (pulls M2.5 forward into the open [R22] 面/麵 question; a hit in M2 costs a corpus correction and a T8 rerun, recorded in M2.20, and is unlikely for a hand-reviewed Traditional corpus); the rule only in the schema description (SPEC.md is the only authority).
+
 ## Agents and models
 
 ### 2026-09-18 — Models are starting points; M5 settles them  (spec v0.2)
