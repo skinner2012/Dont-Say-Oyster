@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Corpus",
+  "description": "The corpus file: an array of entries, one per Taiwanese snack. Field and attribute definitions: SPEC.md, Corpus and Cards. Checked by the loader, not expressible here: no two entries share an official name; an alias never equals the official name.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["official_name", "aliases", "english_names", "forbidden_words", "attributes"],
+    "properties": {
+      "official_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The official name, in Chinese: the accepted answer."
+      },
+      "aliases": {
+        "type": "array",
+        "items": { "type": "string", "minLength": 1 },
+        "uniqueItems": true,
+        "description": "Accepted aliases, in Chinese, not including the official name. May be empty."
+      },
+      "english_names": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "type": "string", "minLength": 1 },
+        "uniqueItems": true,
+        "description": "Common English translations and romanizations. For program checks only, not accepted answers."
+      },
+      "forbidden_words": {
+        "type": "array",
+        "items": { "type": "string", "minLength": 1 },
+        "uniqueItems": true,
+        "description": "Words the Describer may not use, in English. May be empty."
+      },
+      "attributes": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["dish_type", "main_ingredients", "cooking_method", "flavor", "physical_form", "occasion"],
+        "properties": {
+          "dish_type": {
+            "type": "array", "minItems": 1, "maxItems": 1, "uniqueItems": true,
+            "items": { "enum": ["Meal", "Snack", "Dessert", "Drink"] }
+          },
+          "main_ingredients": {
+            "type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true,
+            "items": { "enum": ["Rice", "Wheat", "Noodles", "Starch", "Root Vegetables", "Soy", "Beans and Seeds", "Pork", "Beef", "Poultry", "Seafood", "Other Meat", "Egg", "Vegetables", "Fruit", "Herbs", "Tea", "Milk"] }
+          },
+          "cooking_method": {
+            "type": "array", "minItems": 1, "maxItems": 2, "uniqueItems": true,
+            "items": { "enum": ["Deep-Fried", "Pan-Fried", "Stir-Fried", "Grilled", "Baked", "Steamed", "Boiled", "Braised", "Set", "No Cooking"] }
+          },
+          "flavor": {
+            "type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true,
+            "items": { "enum": ["Savory", "Sweet", "Sour", "Spicy", "Fermented"] }
+          },
+          "physical_form": {
+            "type": "array", "minItems": 1, "maxItems": 1, "uniqueItems": true,
+            "items": { "enum": ["Dry", "Sauced", "Soup", "Thick Soup", "Shaved Ice", "Smooth Drink", "Drink with Add-ins", "Slush"] },
+            "description": "The three drink values are used exactly when dish_type is Drink; see if/then/else."
+          },
+          "occasion": {
+            "type": "array", "uniqueItems": true,
+            "items": { "enum": ["Breakfast", "Night Market", "Festival", "Souvenir"] }
+          }
+        },
+        "if": { "properties": { "dish_type": { "contains": { "const": "Drink" } } } },
+        "then": { "properties": { "physical_form": { "items": { "enum": ["Smooth Drink", "Drink with Add-ins", "Slush"] } } } },
+        "else": { "properties": { "physical_form": { "items": { "enum": ["Dry", "Sauced", "Soup", "Thick Soup", "Shaved Ice"] } } } }
+      }
+    }
+  }
+}
