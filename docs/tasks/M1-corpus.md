@@ -30,7 +30,7 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - **Depends on:** —
 
 ### T2 — Attribute fields in SPEC.md
-- **Status:** todo
+- **Status:** done 5fbf77b
 - **Produces:** the attribute field list, written into `SPEC.md` Corpus and Cards: for each field, its name, its allowed values (a closed list), how many values it takes, and whether every entry must have it.
 - **Consumes:** —
 - **Detail:**
@@ -144,3 +144,12 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - T1 F1: converter smoke test used s2t (面→麪), breaking [R22] for 麵 names; fixed fb7ed56 (s2tw).
 - T1 F2: SPEC.md Implementation (Repo) still called the layout undecided; fixed 4b7f362 (author).
 - T1 F3: commit scope "repo" was not a module or doc; fixed by amending before push to 6becd4f (author approved 2026-10-07).
+- T2 F1: Main ingredients had no honest value for grass jelly, aiyu, sugarcane juice, almond tea, or sesame paste (Fable, blocking); fixed before commit in 5fbf77b (author).
+- T2 F2: "Drink" was a value in both Dish type and Physical form (Fable); fixed before commit in 5fbf77b, renamed Smooth Drink (author).
+- T2 F3: Tea had no definition, so herbal teas could land in Tea (Fable re-check); fixed before commit in 5fbf77b (author).
+- T2 F4: the spec change made T2's Detail ("Location is fixed") and Acceptance ("location included") false and left T3's loader errors incomplete (Sonnet, Fable); fixed c1da680.
+- T2 F5: the author's corpus review sentence in SPEC.md omitted attributes (Sonnet); fixed 6400cdb (author).
+- T2 F6: [R44] does not say how keywords combine with the filters or with each other (Sonnet, Fable; predates T2); deferred to BACKLOG M2.15 (author, 2026-10-07), recorded c1da680.
+- T2 F7: attribute values with spaces may not work as enum strings in Ollama tool schemas (Fable); deferred to BACKLOG M2.15 (author, 2026-10-07), recorded c1da680.
+- T2 F8: attribute labelling edge cases (Flavor for bland items, breakfast mains, sweet-and-savory items, Boiled vs No Cooking for drinks) (Fable); deferred to T5 (author, 2026-10-07), recorded c1da680. 冬粉 fitting Noodles only by a stretch: no change, not a snack in its own right (author).
+- T2 F9: BACKLOG M1.2 still says location is fixed (Sonnet); no change, the M1 block is no longer maintained (BACKLOG line 9; author approved c1da680 without it).
