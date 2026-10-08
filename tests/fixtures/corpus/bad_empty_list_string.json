@@ -1,0 +1,120 @@
+[
+  {
+    "official_name": "蚵仔煎",
+    "aliases": [
+      ""
+    ],
+    "english_names": [
+      "oyster omelette",
+      "oyster omelet",
+      "o-a-jian",
+      "o-ah-tsian"
+    ],
+    "forbidden_words": [
+      "oyster",
+      "omelette",
+      "omelet",
+      "egg"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Seafood",
+        "Egg",
+        "Starch"
+      ],
+      "cooking_method": [
+        "Pan-Fried"
+      ],
+      "flavor": [
+        "Savory",
+        "Sweet"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": [
+        "Night Market"
+      ]
+    }
+  },
+  {
+    "official_name": "珍珠奶茶",
+    "aliases": [
+      "波霸奶茶",
+      "粉圓奶茶"
+    ],
+    "english_names": [
+      "bubble tea",
+      "boba tea",
+      "pearl milk tea",
+      "boba milk tea",
+      "tapioca milk tea"
+    ],
+    "forbidden_words": [
+      "bubble",
+      "boba",
+      "pearl",
+      "tapioca",
+      "milk",
+      "tea"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Drink"
+      ],
+      "main_ingredients": [
+        "Tea",
+        "Milk",
+        "Starch"
+      ],
+      "cooking_method": [
+        "No Cooking"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Drink with Add-ins"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "鳳梨酥",
+    "aliases": [],
+    "english_names": [
+      "pineapple cake",
+      "pineapple pastry",
+      "fengli su"
+    ],
+    "forbidden_words": [
+      "pineapple",
+      "cake",
+      "pastry"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Wheat",
+        "Fruit"
+      ],
+      "cooking_method": [
+        "Baked"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Souvenir"
+      ]
+    }
+  }
+]

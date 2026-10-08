@@ -4,8 +4,12 @@ version = "0.1.0"
 description = "A Taboo-like guessing game about Taiwanese snacks, played by three local LLM agents."
 requires-python = ">=3.13"
 dependencies = [
+    "jsonschema>=4.26.0",
     "opencc-python-reimplemented>=0.1.7",
 ]
+
+[project.scripts]
+load-corpus = "dont_say_oyster.corpus:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -38,4 +42,5 @@ dev = [
     "mypy>=2.4.0",
     "pytest>=9.1.1",
     "ruff>=0.16.10",
+    "types-jsonschema>=4.26.0.20261006",
 ]

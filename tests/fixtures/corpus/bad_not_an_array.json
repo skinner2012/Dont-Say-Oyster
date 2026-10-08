@@ -1,0 +1,41 @@
+{
+  "official_name": "蚵仔煎",
+  "aliases": [
+    "蚵煎"
+  ],
+  "english_names": [
+    "oyster omelette",
+    "oyster omelet",
+    "o-a-jian",
+    "o-ah-tsian"
+  ],
+  "forbidden_words": [
+    "oyster",
+    "omelette",
+    "omelet",
+    "egg"
+  ],
+  "attributes": {
+    "dish_type": [
+      "Snack"
+    ],
+    "main_ingredients": [
+      "Seafood",
+      "Egg",
+      "Starch"
+    ],
+    "cooking_method": [
+      "Pan-Fried"
+    ],
+    "flavor": [
+      "Savory",
+      "Sweet"
+    ],
+    "physical_form": [
+      "Sauced"
+    ],
+    "occasion": [
+      "Night Market"
+    ]
+  }
+}
