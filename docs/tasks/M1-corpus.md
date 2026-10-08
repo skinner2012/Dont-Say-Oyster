@@ -153,3 +153,12 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - T2 F7: attribute values with spaces may not work as enum strings in Ollama tool schemas (Fable); deferred to BACKLOG M2.15 (author, 2026-10-07), recorded c1da680.
 - T2 F8: attribute labelling edge cases (Flavor for bland items, breakfast mains, sweet-and-savory items, Boiled vs No Cooking for drinks) (Fable); deferred to T5 (author, 2026-10-07), recorded c1da680. 冬粉 fitting Noodles only by a stretch: no change, not a snack in its own right (author).
 - T2 F9: BACKLOG M1.2 still says location is fixed (Sonnet); no change, the M1 block is no longer maintained (BACKLOG line 9; author approved c1da680 without it).
+- T3 F1: the drink-rule error says "Dish type is Drink" when dish_type is missing or not an array, since the schema's `if` passes vacuously (T3 audit); deferred (author, 2026-10-08): the dish_type error line beside it names the cause.
+- T3 F2: a name of only spaces or punctuation passes the loader and, once normalized [R22], would be contained in every text under [R21] (T3 audit); deferred to BACKLOG M2.20 (author, 2026-10-08), recorded 76547e9.
+- T3 F3: a corpus that is not an array printed the whole file in its error (T3 audit); fixed 569885a.
+- T3 F4: a corpus file that is not UTF-8 crashes the entry point with a traceback (T3 audit); deferred (author, 2026-10-08): the corpus comes from LLM tools, which write UTF-8.
+- T3 F5: T3 Acceptance, Detail, and the CorpusError docstring claimed every bad fixture names an entry and a field, false for the whole-file fixtures, and Detail did not list the three extra fixtures (T3 audit); fixed 867a764.
+- T3 F6: entry indices are 0-based without saying so, and a shared-name error named the earlier entry by index only (T3 audit); fixed bebafd6.
+- T3 F7: one problem line is not always one error: a bad physical_form value gives two lines, two empty strings in one list give one (T3 audit); deferred (author, 2026-10-08): the lines still point at the right entry and field.
+- T3 F8: Out of scope "normalization and name checks (M2)" reads against Detail's exact-string name checks (T3 audit); no change (author, 2026-10-08): "name check" is the Glossary's Oracle check.
+- T3 F9: the schema file is never checked against its metaschema (T3 audit); deferred (author, 2026-10-08): schema edits are spec changes and go through the Fable review.
