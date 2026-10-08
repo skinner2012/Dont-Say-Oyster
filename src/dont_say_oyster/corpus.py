@@ -109,12 +109,27 @@ def _field_messages(error: ValidationError, prefix: str) -> list[tuple[str, str]
         known = schema.get("properties", {})
         unknown = [k for k in instance if k not in known]
         return [(join(k), "unknown field") for k in unknown]
+    if error.validator == "type" and not error.absolute_path:
+        # jsonschema's message would print the whole file.
+        return [("", f"the file holds {_json_kind(instance)}, not an array of entries")]
     message = error.message
     if "then" in error.absolute_schema_path:
         message = f"Dish type is Drink, so Physical form must be a drink value: {message}"
     elif "else" in error.absolute_schema_path:
         message = f"Dish type is not Drink, so Physical form must not be a drink value: {message}"
     return [(prefix, message)]
+
+
+def _json_kind(value: Any) -> str:
+    if isinstance(value, dict):
+        return "an object"
+    if isinstance(value, bool):
+        return "a boolean"
+    if isinstance(value, int | float):
+        return "a number"
+    if isinstance(value, str):
+        return "a string"
+    return "null"
 
 
 def _name_problems(data: list[dict[str, Any]]) -> list[str]:

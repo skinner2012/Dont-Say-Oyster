@@ -137,9 +137,8 @@ def test_name_checks_run_only_after_the_schema_passes(tmp_path: Path) -> None:
 def test_corpus_that_is_not_an_array_fails() -> None:
     with pytest.raises(CorpusError) as info:
         load_corpus(FIXTURES / "bad_not_an_array.json")
-    assert len(info.value.problems) == 1
-    assert info.value.problems[0].startswith("corpus:")
-    assert "not of type 'array'" in info.value.problems[0]
+    # Only the top-level type, not the file's content.
+    assert info.value.problems == ["corpus: the file holds an object, not an array of entries"]
 
 
 def test_invalid_json_fails() -> None:
