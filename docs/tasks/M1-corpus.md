@@ -137,7 +137,7 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 
 ## Open questions for the author
 
-- [R22]: s2tw cannot tell 面 from 麵 outside its phrase table; 面线, 大肠面线, 猪肠面线, 鸭肉面线 all convert to 面線 and miss the Traditional 麵線 names. Raised in T1 F1; decide before M2 tickets (M2.5).
+- [R22]: s2tw cannot tell 面 from 麵 outside its phrase table; 面线, 大肠面线, 猪肠面线, 鸭肉面线 all convert to 面線 and miss the Traditional 麵線 names. Raised in T1 F1; decide before M2 tickets (M2.5, M2.20).
 
 ## Audit findings
 
