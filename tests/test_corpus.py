@@ -69,18 +69,26 @@ BAD = [
         "entry 1 (珍珠奶茶), field attributes.physical_form:",
         "Dish type is Drink",
     ),
-    ("bad_duplicate_official_name", "entry 2 (蚵仔煎), field official_name:", "entry 0"),
+    (
+        "bad_duplicate_official_name",
+        "entry 2 (蚵仔煎), field official_name:",
+        "official name of entry 0 (蚵仔煎)",
+    ),
     ("bad_alias_equals_official_name", "entry 1 (珍珠奶茶), field aliases:", "official name"),
-    ("bad_alias_shared_across_entries", "entry 2 (鳳梨酥), field aliases:", "alias of entry 0"),
+    (
+        "bad_alias_shared_across_entries",
+        "entry 2 (鳳梨酥), field aliases:",
+        "alias of entry 0 (蚵仔煎)",
+    ),
     (
         "bad_alias_is_other_official_name",
         "entry 2 (鳳梨酥), field aliases:",
-        "official name of entry 1",
+        "official name of entry 1 (珍珠奶茶)",
     ),
     (
         "bad_official_name_is_other_alias",
         "entry 2 (波霸奶茶), field official_name:",
-        "alias of entry 1",
+        "alias of entry 1 (珍珠奶茶)",
     ),
 ]
 
@@ -164,3 +172,13 @@ def test_entry_point_exits_non_zero_on_missing_file(
 ) -> None:
     assert main([str(tmp_path / "absent.json")]) == 1
     assert capsys.readouterr().out == ""
+
+
+def test_error_says_entries_are_numbered_from_zero() -> None:
+    with pytest.raises(CorpusError) as info:
+        load_corpus(FIXTURES / "bad_wrong_type.json")
+    assert str(info.value).splitlines()[0].endswith("(entries are numbered from 0):")
+    # A file-level error names no entry, so the note is left out.
+    with pytest.raises(CorpusError) as info:
+        load_corpus(FIXTURES / "bad_json_syntax.json")
+    assert "numbered" not in str(info.value)

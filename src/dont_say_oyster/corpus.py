@@ -39,7 +39,12 @@ class CorpusError(Exception):
     entry (its index, and its official name when present) and the field."""
 
     def __init__(self, path: Path, problems: list[str]) -> None:
-        super().__init__(f"{path}:\n" + "\n".join(f"  {p}" for p in problems))
+        numbering = (
+            " (entries are numbered from 0)"
+            if any(p.startswith("entry ") for p in problems)
+            else ""
+        )
+        super().__init__(f"{path}{numbering}:\n" + "\n".join(f"  {p}" for p in problems))
         self.problems = problems
 
 
@@ -150,7 +155,10 @@ def _name_problems(data: list[dict[str, Any]]) -> list[str]:
         for field, name, _ in names:
             if name in first_seen:
                 other, role = first_seen[name]
-                problems.append(f"{label}, field {field}: {name!r} is also {role} of entry {other}")
+                problems.append(
+                    f"{label}, field {field}: {name!r} is also {role} of "
+                    f"{_entry_label(data, other)}"
+                )
         for _, name, role in names:
             first_seen.setdefault(name, (index, role))
     return problems
