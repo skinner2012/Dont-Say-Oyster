@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Corpus",
-  "description": "The corpus file: an array of entries, one per Taiwanese snack. Field and attribute definitions: SPEC.md, Corpus and Cards. Checked by the loader, not expressible here: no two entries share an official name; an alias never equals the official name.",
+  "description": "The corpus file: an array of entries, one per Taiwanese snack. Field and attribute definitions: SPEC.md, Corpus and Cards. Checked by the loader, comparing exact strings: no name is the official name or an alias of more than one entry; an alias never equals its own entry's official name. SPEC.md, Corpus and Cards, states this rule after normalization; the loader adds that comparison in M2.",
   "type": "array",
   "items": {
     "type": "object",
