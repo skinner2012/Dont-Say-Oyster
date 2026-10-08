@@ -98,6 +98,11 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 - Changed: Corpus and Cards (the author's review of every entry), changed: the review also checks that the attributes follow the definitions in Attributes.
 - Why: the attributes are the Guesser's search filters [R44], so a wrong value drops the right entry from the results. T5 already reviewed attributes against the list, but the spec sentence named only aliases, English names, and forbidden words (a finding of the cross-reference check on 5fbf77b).
 
+### 2026-10-08 — Corpus format is a JSON Schema file validated by the loader  (commit 160da07)
+- Changed: Implementation (Data and persistence), changed: the corpus file's format is `data/corpus/schema.json`, and the loader validates the corpus against it.
+- Why: the corpus is generated outside the repo, so one file must serve both as the format handed to the external LLM and as the loader's rule; two copies would drift. The file encodes the Corpus and Cards fields and attribute values; every attribute is an array, one-value fields included, so the loader and the [R44] filter handle one shape. Two rules it cannot express stay in the loader: no two entries share an official name; no alias equals its entry's official name.
+- Rejected: key names recorded only in the T3 ticket (no single source); hand-coded loader rules with the schema as documentation only (drift); `$defs`/`$ref` (each definition used once); dropping the full `physical_form` enum in favour of the if/then/else alone (the enum is the readable value list for the external LLM and gives clearer validation errors).
+
 ## Agents and models
 
 ### 2026-09-18 — Models are starting points; M5 settles them  (spec v0.2)
