@@ -92,8 +92,8 @@ The main build will be the V3 variant, but with three toggles added to turn off 
     - Attributes.
         - Each field has a closed list of values. Every entry carries every field, with distinct values and no more than the field allows; an optional field may be empty.
         - Dish type (required, one): Meal, Snack, Dessert, Drink.
-            - Meal: eaten on its own as lunch or dinner.
-            - Snack: any other savory food, side soups and side dishes included.
+            - Meal: filling enough to be eaten on its own as a meal, at any time of day.
+            - Snack: any other mainly savory food, side soups and side dishes included.
             - Dessert: any other sweet food, pastries, sweet soups, and shaved ice included.
             - Drink: drunk from a cup or through a straw, sweet or not, with or without add-ins.
         - Main ingredients (required, one to three): Rice, Wheat, Noodles, Starch, Root Vegetables, Soy, Beans and Seeds, Pork, Beef, Poultry, Seafood, Other Meat, Egg, Vegetables, Fruit, Herbs, Tea, Milk.
@@ -112,6 +112,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
             - Boiled covers poaching and blanching.
             - Set means left to set into a curd or jelly.
             - No Cooking means assembled from prepared parts (drinks, shaved ice, cut fruit).
+            - A drink the stall boils itself (herbal tea, winter melon tea, soy milk, rice milk) is Boiled; a drink pressed, blended, or assembled from prepared parts (sugarcane juice, papaya milk, boba tea) is No Cooking.
         - Flavor (required, one to three): Savory, Sweet, Sour, Spicy, Fermented.
             - Only tastes a first-time eater would notice.
             - Spicy covers chili and pepper heat.
