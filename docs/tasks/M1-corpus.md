@@ -77,7 +77,6 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - **Detail:**
   - From BACKLOG M1.5 and M1.6, merged: one review of one file; the backlog's 1–150 / 151–300 split was only for size. The author may review over several sittings and commits once.
   - What to check against each official name: `SPEC.md` Corpus and Cards; attributes also against the T2 list.
-  - Attribute edge cases left to this review (author, 2026-10-07): which Flavor an item with no clear taste gets; which Dish type a breakfast main gets (Occasion: Breakfast still finds it); the Dish type of an item both sweet and savory; whether a boiled or brewed drink is Boiled or No Cooking.
   - The author's ticket. An agent may run the entry point after edits; it does not change entries.
 - **Acceptance:** the author approves the reviewed corpus file and it is committed (if the review changed nothing, the T4 commit stands and the Status names it); the T3 entry point loads the file at that commit without error.
 - **Out of scope:** schema changes (stop and raise them under Open questions); card selection and distractors (T7, T8).
@@ -151,7 +150,7 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - T2 F5: the author's corpus review sentence in SPEC.md omitted attributes (Sonnet); fixed 6400cdb (author).
 - T2 F6: [R44] does not say how keywords combine with the filters or with each other (Sonnet, Fable; predates T2); deferred to BACKLOG M2.15 (author, 2026-10-07), recorded c1da680.
 - T2 F7: attribute values with spaces may not work as enum strings in Ollama tool schemas (Fable); deferred to BACKLOG M2.15 (author, 2026-10-07), recorded c1da680.
-- T2 F8: attribute labelling edge cases (Flavor for bland items, breakfast mains, sweet-and-savory items, Boiled vs No Cooking for drinks) (Fable); deferred to T5 (author, 2026-10-07), recorded c1da680. 冬粉 fitting Noodles only by a stretch: no change, not a snack in its own right (author).
+- T2 F8: attribute labelling edge cases (Flavor for bland items, breakfast mains, sweet-and-savory items, Boiled vs No Cooking for drinks) (Fable); deferred to T5 (author, 2026-10-07), recorded c1da680; settled in SPEC f1fdc15 (Meal, Snack, drink cooking method), and bland items are not in the corpus (author, 2026-10-09). 冬粉 fitting Noodles only by a stretch: no change, not a snack in its own right (author).
 - T2 F9: BACKLOG M1.2 still says location is fixed (Sonnet); no change, the M1 block is no longer maintained (BACKLOG line 9; author approved c1da680 without it).
 - T3 F1: the drink-rule error says "Dish type is Drink" when dish_type is missing or not an array, since the schema's `if` passes vacuously (T3 audit); deferred (author, 2026-10-08): the dish_type error line beside it names the cause.
 - T3 F2: a name of only spaces or punctuation passes the loader and, once normalized [R22], would be contained in every text under [R21] (T3 audit); deferred to BACKLOG M2.20 (author, 2026-10-08), recorded 76547e9.
