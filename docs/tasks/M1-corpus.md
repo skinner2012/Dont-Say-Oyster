@@ -58,7 +58,7 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - **Depends on:** T1, T2
 
 ### T4 — Bring in the corpus
-- **Status:** todo
+- **Status:** done 4124ea9
 - **Produces:** the corpus JSON file at the corpus location from T1, aiming for about three hundred entries.
 - **Consumes:** the attribute fields from T2; the schema (`data/corpus/schema.json`), loader, and entry point from T3.
 - **Detail:**
