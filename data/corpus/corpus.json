@@ -43,8 +43,7 @@
     "aliases": [
       "爌肉飯",
       "炕肉飯",
-      "控肉飯",
-      "南部滷肉飯"
+      "控肉飯"
     ],
     "english_names": [
       "Braised Pork Belly Rice",
@@ -116,57 +115,26 @@
     }
   },
   {
-    "official_name": "雞肉飯",
-    "aliases": [
-      "雞絲飯"
-    ],
-    "english_names": [
-      "Shredded Chicken Rice",
-      "Ji Rou Fan"
-    ],
-    "forbidden_words": [
-      "chicken",
-      "rice",
-      "shredded",
-      "shallot",
-      "oil"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Meal"
-      ],
-      "main_ingredients": [
-        "Rice",
-        "Poultry"
-      ],
-      "cooking_method": [
-        "Boiled"
-      ],
-      "flavor": [
-        "Savory"
-      ],
-      "physical_form": [
-        "Sauced"
-      ],
-      "occasion": []
-    }
-  },
-  {
     "official_name": "火雞肉飯",
     "aliases": [
-      "嘉義火雞肉飯"
+      "嘉義火雞肉飯",
+      "雞肉飯",
+      "雞絲飯"
     ],
     "english_names": [
       "Turkey Rice",
       "hue-ke-bah-png",
-      "Huo Ji Rou Fan"
+      "Huo Ji Rou Fan",
+      "Shredded Chicken Rice",
+      "Ji Rou Fan"
     ],
     "forbidden_words": [
       "turkey",
       "rice",
       "shredded",
       "shallot",
-      "chiayi"
+      "chiayi",
+      "chicken"
     ],
     "attributes": {
       "dish_type": [
@@ -275,7 +243,7 @@
         "Poultry"
       ],
       "cooking_method": [
-        "Boiled"
+        "Smoked"
       ],
       "flavor": [
         "Savory"
@@ -354,7 +322,9 @@
       "physical_form": [
         "Dry"
       ],
-      "occasion": []
+      "occasion": [
+        "Festival"
+      ]
     }
   },
   {
@@ -511,6 +481,7 @@
         "Dry"
       ],
       "occasion": [
+        "Breakfast",
         "Festival"
       ]
     }
@@ -699,7 +670,9 @@
       "physical_form": [
         "Soup"
       ],
-      "occasion": []
+      "occasion": [
+        "Breakfast"
+      ]
     }
   },
   {
@@ -1268,7 +1241,7 @@
         "Sour"
       ],
       "physical_form": [
-        "Thick Soup"
+        "Sauced"
       ],
       "occasion": []
     }
@@ -1290,7 +1263,7 @@
     ],
     "attributes": {
       "dish_type": [
-        "Snack"
+        "Meal"
       ],
       "main_ingredients": [
         "Noodles",
@@ -1325,7 +1298,7 @@
     ],
     "attributes": {
       "dish_type": [
-        "Snack"
+        "Meal"
       ],
       "main_ingredients": [
         "Noodles",
@@ -1361,7 +1334,7 @@
     ],
     "attributes": {
       "dish_type": [
-        "Snack"
+        "Meal"
       ],
       "main_ingredients": [
         "Noodles"
@@ -1375,7 +1348,9 @@
       "physical_form": [
         "Thick Soup"
       ],
-      "occasion": []
+      "occasion": [
+        "Breakfast"
+      ]
     }
   },
   {
@@ -1539,41 +1514,6 @@
       "main_ingredients": [
         "Rice",
         "Seafood",
-        "Egg"
-      ],
-      "cooking_method": [
-        "Stir-Fried"
-      ],
-      "flavor": [
-        "Savory"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": []
-    }
-  },
-  {
-    "official_name": "肉絲炒飯",
-    "aliases": [],
-    "english_names": [
-      "Pork Fried Rice",
-      "Rou Si Chao Fan"
-    ],
-    "forbidden_words": [
-      "pork",
-      "shredded",
-      "egg",
-      "wok",
-      "fried"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Meal"
-      ],
-      "main_ingredients": [
-        "Rice",
-        "Pork",
         "Egg"
       ],
       "cooking_method": [
@@ -1788,44 +1728,6 @@
     }
   },
   {
-    "official_name": "炸甜不辣",
-    "aliases": [
-      "炸黑輪",
-      "炸魚板"
-    ],
-    "english_names": [
-      "Deep-Fried Tian Bu La",
-      "Deep-Fried Fish Cake"
-    ],
-    "forbidden_words": [
-      "fish",
-      "paste",
-      "puffed",
-      "crispy",
-      "fried"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Snack"
-      ],
-      "main_ingredients": [
-        "Seafood"
-      ],
-      "cooking_method": [
-        "Deep-Fried"
-      ],
-      "flavor": [
-        "Savory"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": [
-        "Night Market"
-      ]
-    }
-  },
-  {
     "official_name": "大腸包小腸",
     "aliases": [
       "糯米腸包香腸"
@@ -1914,7 +1816,6 @@
   {
     "official_name": "肉圓",
     "aliases": [
-      "肉丸",
       "彰化肉圓",
       "新竹肉圓"
     ],
@@ -1989,7 +1890,9 @@
       "physical_form": [
         "Sauced"
       ],
-      "occasion": []
+      "occasion": [
+        "Breakfast"
+      ]
     }
   },
   {
@@ -2127,7 +2030,7 @@
       ],
       "main_ingredients": [
         "Rice",
-        "Vegetables",
+        "Root Vegetables",
         "Pork"
       ],
       "cooking_method": [
@@ -2166,7 +2069,8 @@
       ],
       "main_ingredients": [
         "Rice",
-        "Herbs"
+        "Herbs",
+        "Vegetables"
       ],
       "cooking_method": [
         "Steamed"
@@ -2639,7 +2543,7 @@
         "Savory"
       ],
       "physical_form": [
-        "Dry"
+        "Sauced"
       ],
       "occasion": [
         "Night Market"
@@ -2686,39 +2590,6 @@
       "occasion": [
         "Night Market"
       ]
-    }
-  },
-  {
-    "official_name": "一串心",
-    "aliases": [],
-    "english_names": [
-      "Skewered Tofu and Offal"
-    ],
-    "forbidden_words": [
-      "tofu",
-      "offal",
-      "skewer",
-      "scallion",
-      "heart"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Snack"
-      ],
-      "main_ingredients": [
-        "Soy",
-        "Pork"
-      ],
-      "cooking_method": [
-        "Braised"
-      ],
-      "flavor": [
-        "Savory"
-      ],
-      "physical_form": [
-        "Sauced"
-      ],
-      "occasion": []
     }
   },
   {
@@ -3391,7 +3262,7 @@
         "Savory"
       ],
       "physical_form": [
-        "Dry"
+        "Sauced"
       ],
       "occasion": [
         "Night Market"
@@ -3565,40 +3436,7 @@
         "Seafood"
       ],
       "cooking_method": [
-        "Steamed"
-      ],
-      "flavor": [
-        "Savory"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": []
-    }
-  },
-  {
-    "official_name": "奶油螃蟹",
-    "aliases": [],
-    "english_names": [
-      "Butter Crab"
-    ],
-    "forbidden_words": [
-      "crab",
-      "butter",
-      "garlic",
-      "steamed",
-      "cream"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Snack"
-      ],
-      "main_ingredients": [
-        "Seafood",
-        "Milk"
-      ],
-      "cooking_method": [
-        "Steamed"
+        "Smoked"
       ],
       "flavor": [
         "Savory"
@@ -4348,6 +4186,7 @@
         "Snack"
       ],
       "main_ingredients": [
+        "Beans and Seeds",
         "Pork",
         "Herbs"
       ],
@@ -4453,7 +4292,7 @@
       ],
       "main_ingredients": [
         "Pork",
-        "Vegetables"
+        "Root Vegetables"
       ],
       "cooking_method": [
         "Deep-Fried",
@@ -4491,7 +4330,7 @@
         "Snack"
       ],
       "main_ingredients": [
-        "Vegetables",
+        "Root Vegetables",
         "Pork"
       ],
       "cooking_method": [
@@ -4530,7 +4369,8 @@
         "Boiled"
       ],
       "flavor": [
-        "Savory"
+        "Savory",
+        "Spicy"
       ],
       "physical_form": [
         "Soup"
@@ -4559,10 +4399,11 @@
         "Pork"
       ],
       "cooking_method": [
-        "Stir-Fried"
+        "Boiled"
       ],
       "flavor": [
-        "Savory"
+        "Savory",
+        "Spicy"
       ],
       "physical_form": [
         "Soup"
@@ -4590,13 +4431,15 @@
         "Meal"
       ],
       "main_ingredients": [
-        "Poultry"
+        "Poultry",
+        "Herbs"
       ],
       "cooking_method": [
         "Boiled"
       ],
       "flavor": [
-        "Savory"
+        "Savory",
+        "Spicy"
       ],
       "physical_form": [
         "Soup"
@@ -4897,13 +4740,19 @@
     "aliases": [
       "原味蛋餅",
       "台式蛋餅",
-      "粉漿蛋餅"
+      "粉漿蛋餅",
+      "肉鬆蛋餅",
+      "鮪魚蛋餅",
+      "火腿蛋餅"
     ],
     "english_names": [
       "Taiwanese Egg Crepe",
       "Taiwanese omelet",
       "tann-ping",
-      "Dan Bing"
+      "Dan Bing",
+      "Pork Floss Egg Crepe",
+      "Tuna Egg Crepe",
+      "Ham Egg Crepe"
     ],
     "forbidden_words": [
       "egg",
@@ -4935,164 +4784,24 @@
     }
   },
   {
-    "official_name": "肉鬆蛋餅",
-    "aliases": [],
-    "english_names": [
-      "Pork Floss Egg Crepe"
-    ],
-    "forbidden_words": [
-      "pork",
-      "floss",
-      "egg",
-      "crepe",
-      "rolled"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Meal"
-      ],
-      "main_ingredients": [
-        "Wheat",
-        "Egg",
-        "Pork"
-      ],
-      "cooking_method": [
-        "Pan-Fried"
-      ],
-      "flavor": [
-        "Savory"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": [
-        "Breakfast"
-      ]
-    }
-  },
-  {
-    "official_name": "鮪魚蛋餅",
-    "aliases": [],
-    "english_names": [
-      "Tuna Egg Crepe"
-    ],
-    "forbidden_words": [
-      "tuna",
-      "egg",
-      "crepe",
-      "rolled",
-      "mayonnaise"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Meal"
-      ],
-      "main_ingredients": [
-        "Wheat",
-        "Egg",
-        "Seafood"
-      ],
-      "cooking_method": [
-        "Pan-Fried"
-      ],
-      "flavor": [
-        "Savory"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": [
-        "Breakfast"
-      ]
-    }
-  },
-  {
-    "official_name": "火腿蛋餅",
-    "aliases": [],
-    "english_names": [
-      "Ham Egg Crepe"
-    ],
-    "forbidden_words": [
-      "ham",
-      "egg",
-      "crepe",
-      "rolled",
-      "breakfast"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Meal"
-      ],
-      "main_ingredients": [
-        "Wheat",
-        "Egg",
-        "Pork"
-      ],
-      "cooking_method": [
-        "Pan-Fried"
-      ],
-      "flavor": [
-        "Savory"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": [
-        "Breakfast"
-      ]
-    }
-  },
-  {
     "official_name": "飯糰",
     "aliases": [
       "台式飯糰",
-      "糯米糰"
+      "糯米糰",
+      "紫米飯糰"
     ],
     "english_names": [
       "Taiwanese Sticky Rice Roll",
       "Taiwanese rice ball",
       "png-tuan",
-      "Fan Tuan"
+      "Fan Tuan",
+      "Purple Rice Roll"
     ],
     "forbidden_words": [
       "glutinous",
       "cruller",
       "floss",
       "radish",
-      "rolled"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Meal"
-      ],
-      "main_ingredients": [
-        "Rice"
-      ],
-      "cooking_method": [
-        "Steamed"
-      ],
-      "flavor": [
-        "Savory"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": [
-        "Breakfast"
-      ]
-    }
-  },
-  {
-    "official_name": "紫米飯糰",
-    "aliases": [],
-    "english_names": [
-      "Purple Rice Roll"
-    ],
-    "forbidden_words": [
-      "purple",
-      "glutinous",
-      "cruller",
-      "floss",
       "rolled"
     ],
     "attributes": {
@@ -5142,7 +4851,7 @@
       ],
       "main_ingredients": [
         "Rice",
-        "Vegetables"
+        "Root Vegetables"
       ],
       "cooking_method": [
         "Steamed",
@@ -5269,77 +4978,6 @@
     }
   },
   {
-    "official_name": "培根蛋吐司",
-    "aliases": [],
-    "english_names": [
-      "Bacon and Egg Toast"
-    ],
-    "forbidden_words": [
-      "toast",
-      "bacon",
-      "egg",
-      "sandwich",
-      "mayonnaise"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Meal"
-      ],
-      "main_ingredients": [
-        "Wheat",
-        "Pork",
-        "Egg"
-      ],
-      "cooking_method": [
-        "Pan-Fried"
-      ],
-      "flavor": [
-        "Savory"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": [
-        "Breakfast"
-      ]
-    }
-  },
-  {
-    "official_name": "煎蛋吐司",
-    "aliases": [],
-    "english_names": [
-      "Fried Egg Toast"
-    ],
-    "forbidden_words": [
-      "toast",
-      "egg",
-      "fried",
-      "mayonnaise",
-      "sandwich"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Meal"
-      ],
-      "main_ingredients": [
-        "Wheat",
-        "Egg"
-      ],
-      "cooking_method": [
-        "Pan-Fried"
-      ],
-      "flavor": [
-        "Savory"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": [
-        "Breakfast"
-      ]
-    }
-  },
-  {
     "official_name": "花生厚片",
     "aliases": [],
     "english_names": [
@@ -5366,42 +5004,6 @@
       ],
       "flavor": [
         "Sweet"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": [
-        "Breakfast"
-      ]
-    }
-  },
-  {
-    "official_name": "香蒜厚片",
-    "aliases": [
-      "大蒜麵包"
-    ],
-    "english_names": [
-      "Garlic toast"
-    ],
-    "forbidden_words": [
-      "garlic",
-      "butter",
-      "thick",
-      "toast",
-      "sliced"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Snack"
-      ],
-      "main_ingredients": [
-        "Wheat"
-      ],
-      "cooking_method": [
-        "Baked"
-      ],
-      "flavor": [
-        "Savory"
       ],
       "physical_form": [
         "Dry"
@@ -5449,18 +5051,21 @@
   },
   {
     "official_name": "總匯三明治",
-    "aliases": [],
+    "aliases": [
+      "台式總匯三明治"
+    ],
     "english_names": [
+      "Taiwanese Club Sandwich",
       "Club Sandwich",
       "Zong Hui San Ming Zhi"
     ],
     "forbidden_words": [
       "layers",
-      "triple",
       "toast",
       "ham",
       "egg",
-      "cucumber"
+      "cucumber",
+      "mayonnaise"
     ],
     "attributes": {
       "dish_type": [
@@ -5475,7 +5080,8 @@
         "No Cooking"
       ],
       "flavor": [
-        "Savory"
+        "Savory",
+        "Sweet"
       ],
       "physical_form": [
         "Dry"
@@ -5641,70 +5247,6 @@
       "tears",
       "pearl",
       "sweet"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Dessert"
-      ],
-      "main_ingredients": [
-        "Beans and Seeds"
-      ],
-      "cooking_method": [
-        "Boiled"
-      ],
-      "flavor": [
-        "Sweet"
-      ],
-      "physical_form": [
-        "Soup"
-      ],
-      "occasion": []
-    }
-  },
-  {
-    "official_name": "紅豆薏仁湯",
-    "aliases": [],
-    "english_names": [
-      "Red Bean and Job's Tears Soup"
-    ],
-    "forbidden_words": [
-      "red",
-      "bean",
-      "barley",
-      "job",
-      "tears"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Dessert"
-      ],
-      "main_ingredients": [
-        "Beans and Seeds"
-      ],
-      "cooking_method": [
-        "Boiled"
-      ],
-      "flavor": [
-        "Sweet"
-      ],
-      "physical_form": [
-        "Soup"
-      ],
-      "occasion": []
-    }
-  },
-  {
-    "official_name": "綠豆薏仁湯",
-    "aliases": [],
-    "english_names": [
-      "Mung Bean and Job's Tears Soup"
-    ],
-    "forbidden_words": [
-      "mung",
-      "bean",
-      "barley",
-      "job",
-      "tears"
     ],
     "attributes": {
       "dish_type": [
@@ -6012,12 +5554,13 @@
     "official_name": "豆花",
     "aliases": [
       "豆腐花",
-      "豆腐腦"
+      "花生豆花"
     ],
     "english_names": [
       "Tofu Pudding",
       "tau-hue",
-      "Dou Hua"
+      "Dou Hua",
+      "Peanut Tofu Pudding"
     ],
     "forbidden_words": [
       "soybean",
@@ -6046,42 +5589,8 @@
     }
   },
   {
-    "official_name": "花生豆花",
-    "aliases": [],
-    "english_names": [
-      "Peanut Tofu Pudding"
-    ],
-    "forbidden_words": [
-      "soybean",
-      "curd",
-      "peanut",
-      "syrup",
-      "silky"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Dessert"
-      ],
-      "main_ingredients": [
-        "Soy",
-        "Beans and Seeds"
-      ],
-      "cooking_method": [
-        "Set"
-      ],
-      "flavor": [
-        "Sweet"
-      ],
-      "physical_form": [
-        "Soup"
-      ],
-      "occasion": []
-    }
-  },
-  {
-    "official_name": "芋圓",
+    "official_name": "芋圓湯",
     "aliases": [
-      "芋圓湯",
       "九份芋圓"
     ],
     "english_names": [
@@ -6147,78 +5656,6 @@
         "Soup"
       ],
       "occasion": []
-    }
-  },
-  {
-    "official_name": "芝麻湯圓",
-    "aliases": [],
-    "english_names": [
-      "Black Sesame Tangyuan",
-      "Sesame tangyuan"
-    ],
-    "forbidden_words": [
-      "glutinous",
-      "sesame",
-      "black",
-      "balls",
-      "winter",
-      "solstice"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Dessert"
-      ],
-      "main_ingredients": [
-        "Rice",
-        "Beans and Seeds"
-      ],
-      "cooking_method": [
-        "Boiled"
-      ],
-      "flavor": [
-        "Sweet"
-      ],
-      "physical_form": [
-        "Soup"
-      ],
-      "occasion": [
-        "Festival"
-      ]
-    }
-  },
-  {
-    "official_name": "花生湯圓",
-    "aliases": [],
-    "english_names": [
-      "Peanut Tangyuan"
-    ],
-    "forbidden_words": [
-      "glutinous",
-      "peanut",
-      "balls",
-      "winter",
-      "solstice"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Dessert"
-      ],
-      "main_ingredients": [
-        "Rice",
-        "Beans and Seeds"
-      ],
-      "cooking_method": [
-        "Boiled"
-      ],
-      "flavor": [
-        "Sweet"
-      ],
-      "physical_form": [
-        "Soup"
-      ],
-      "occasion": [
-        "Festival"
-      ]
     }
   },
   {
@@ -6317,7 +5754,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Rice"
+        "Rice",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "Boiled"
@@ -6367,7 +5805,6 @@
   {
     "official_name": "愛玉冰",
     "aliases": [
-      "洗愛玉",
       "檸檬愛玉"
     ],
     "english_names": [
@@ -6585,9 +6022,8 @@
     }
   },
   {
-    "official_name": "粉粿",
+    "official_name": "粉粿冰",
     "aliases": [
-      "粉粿冰",
       "冰粉粿"
     ],
     "english_names": [
@@ -6611,13 +6047,13 @@
         "Starch"
       ],
       "cooking_method": [
-        "Steamed"
+        "No Cooking"
       ],
       "flavor": [
         "Sweet"
       ],
       "physical_form": [
-        "Soup"
+        "Shaved Ice"
       ],
       "occasion": []
     }
@@ -6642,7 +6078,7 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Fruit"
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "No Cooking"
@@ -6678,7 +6114,7 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Fruit"
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "No Cooking"
@@ -6693,12 +6129,13 @@
     }
   },
   {
-    "official_name": "泡泡冰",
+    "official_name": "花生泡泡冰",
     "aliases": [
+      "泡泡冰",
       "基隆泡泡冰"
     ],
     "english_names": [
-      "Fluffy Hand-Beaten Ice"
+      "Fluffy Hand-Beaten Peanut Ice"
     ],
     "forbidden_words": [
       "fluffy",
@@ -7071,7 +6508,8 @@
         "Boiled"
       ],
       "flavor": [
-        "Sweet"
+        "Sweet",
+        "Bitter"
       ],
       "physical_form": [
         "Smooth Drink"
@@ -7099,7 +6537,8 @@
         "Drink"
       ],
       "main_ingredients": [
-        "Vegetables"
+        "Vegetables",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "Boiled"
@@ -7150,39 +6589,6 @@
     }
   },
   {
-    "official_name": "菊花茶",
-    "aliases": [],
-    "english_names": [
-      "Chrysanthemum Tea",
-      "Ju Hua Cha"
-    ],
-    "forbidden_words": [
-      "chrysanthemum",
-      "flower",
-      "dried",
-      "yellow",
-      "floral"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Drink"
-      ],
-      "main_ingredients": [
-        "Herbs"
-      ],
-      "cooking_method": [
-        "Boiled"
-      ],
-      "flavor": [
-        "Sweet"
-      ],
-      "physical_form": [
-        "Smooth Drink"
-      ],
-      "occasion": []
-    }
-  },
-  {
     "official_name": "苦茶",
     "aliases": [],
     "english_names": [
@@ -7207,7 +6613,8 @@
         "Boiled"
       ],
       "flavor": [
-        "Sweet"
+        "Sweet",
+        "Bitter"
       ],
       "physical_form": [
         "Smooth Drink"
@@ -7228,7 +6635,8 @@
       "cassia",
       "seeds",
       "old",
-      "fashioned"
+      "fashioned",
+      "tea"
     ],
     "attributes": {
       "dish_type": [
@@ -7252,8 +6660,7 @@
   {
     "official_name": "豆漿",
     "aliases": [
-      "甜豆漿",
-      "白飲"
+      "甜豆漿"
     ],
     "english_names": [
       "Soy Milk",
@@ -7368,13 +6775,16 @@
     "official_name": "珍珠奶茶",
     "aliases": [
       "珍奶",
-      "波霸奶茶"
+      "波霸奶茶",
+      "珍珠鮮奶茶",
+      "波霸鮮奶茶"
     ],
     "english_names": [
       "Bubble Milk Tea",
       "Bubble tea",
       "Pearl milk tea",
-      "Zhen Zhu Nai Cha"
+      "Zhen Zhu Nai Cha",
+      "Bubble Fresh Milk Tea"
     ],
     "forbidden_words": [
       "tapioca",
@@ -7382,44 +6792,8 @@
       "boba",
       "chewy",
       "milk",
-      "straw"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Drink"
-      ],
-      "main_ingredients": [
-        "Tea",
-        "Milk",
-        "Starch"
-      ],
-      "cooking_method": [
-        "No Cooking"
-      ],
-      "flavor": [
-        "Sweet"
-      ],
-      "physical_form": [
-        "Drink with Add-ins"
-      ],
-      "occasion": []
-    }
-  },
-  {
-    "official_name": "珍珠鮮奶茶",
-    "aliases": [
-      "波霸鮮奶茶"
-    ],
-    "english_names": [
-      "Bubble Fresh Milk Tea"
-    ],
-    "forbidden_words": [
-      "tapioca",
-      "pearls",
-      "fresh",
-      "milk",
-      "boba",
-      "straw"
+      "straw",
+      "tea"
     ],
     "attributes": {
       "dish_type": [
@@ -7464,8 +6838,9 @@
         "Drink"
       ],
       "main_ingredients": [
-        "Milk",
-        "Starch"
+        "Starch",
+        "Sugar and Sweeteners",
+        "Milk"
       ],
       "cooking_method": [
         "No Cooking"
@@ -7669,13 +7044,15 @@
         "Drink"
       ],
       "main_ingredients": [
+        "Sugar and Sweeteners",
         "Herbs"
       ],
       "cooking_method": [
         "Boiled"
       ],
       "flavor": [
-        "Sweet"
+        "Sweet",
+        "Spicy"
       ],
       "physical_form": [
         "Smooth Drink"
@@ -7857,8 +7234,7 @@
   {
     "official_name": "綠豆沙",
     "aliases": [
-      "綠豆冰沙",
-      "綠豆沙牛奶"
+      "綠豆冰沙"
     ],
     "english_names": [
       "Mung Bean Slush",
@@ -7950,42 +7326,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Wheat"
-      ],
-      "cooking_method": [
-        "Baked"
-      ],
-      "flavor": [
-        "Sweet"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": [
-        "Souvenir"
-      ]
-    }
-  },
-  {
-    "official_name": "老婆餅",
-    "aliases": [],
-    "english_names": [
-      "Wife Cake",
-      "Lao Po Bing"
-    ],
-    "forbidden_words": [
-      "flaky",
-      "winter",
-      "melon",
-      "filling",
-      "wife"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Dessert"
-      ],
-      "main_ingredients": [
-        "Wheat"
+        "Wheat",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "Baked"
@@ -8310,8 +7652,7 @@
     "official_name": "車輪餅",
     "aliases": [
       "紅豆餅",
-      "輪胎餅",
-      "奶油餅"
+      "輪胎餅"
     ],
     "english_names": [
       "Wheel Cake",
@@ -8477,7 +7818,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Wheat"
+        "Wheat",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "Steamed"
@@ -8555,7 +7897,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Beans and Seeds"
+        "Beans and Seeds",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "No Cooking"
@@ -8590,8 +7933,9 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Milk",
-        "Beans and Seeds"
+        "Beans and Seeds",
+        "Sugar and Sweeteners",
+        "Milk"
       ],
       "cooking_method": [
         "No Cooking"
@@ -8633,7 +7977,8 @@
       ],
       "main_ingredients": [
         "Rice",
-        "Beans and Seeds"
+        "Beans and Seeds",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "Deep-Fried"
@@ -8653,9 +7998,7 @@
   {
     "official_name": "麻糬",
     "aliases": [
-      "麻吉",
-      "粢粑",
-      "糍粑"
+      "麻吉"
     ],
     "english_names": [
       "Mochi",
@@ -8692,8 +8035,10 @@
     }
   },
   {
-    "official_name": "雪花餅",
-    "aliases": [],
+    "official_name": "雪花酥",
+    "aliases": [
+      "雪Q餅"
+    ],
     "english_names": [
       "Snowflake Crisp"
     ],
@@ -8709,8 +8054,9 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Milk",
-        "Fruit"
+        "Wheat",
+        "Sugar and Sweeteners",
+        "Milk"
       ],
       "cooking_method": [
         "No Cooking"
@@ -8821,7 +8167,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Wheat"
+        "Wheat",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "Baked"
@@ -9002,7 +8349,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Beans and Seeds"
+        "Beans and Seeds",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "No Cooking"
@@ -9037,7 +8385,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Beans and Seeds"
+        "Beans and Seeds",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "No Cooking"
@@ -9075,7 +8424,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Wheat"
+        "Wheat",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "No Cooking"
@@ -9111,10 +8461,11 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Rice"
+        "Rice",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
-        "No Cooking"
+        "Baked"
       ],
       "flavor": [
         "Sweet"
@@ -9180,7 +8531,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Rice"
+        "Rice",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "Deep-Fried"
@@ -9268,7 +8620,6 @@
   {
     "official_name": "芝麻球",
     "aliases": [
-      "煎堆",
       "炸芝麻球"
     ],
     "english_names": [
@@ -9437,7 +8788,7 @@
         "Fruit"
       ],
       "cooking_method": [
-        "No Cooking"
+        "Dried"
       ],
       "flavor": [
         "Sweet"
@@ -9547,7 +8898,7 @@
         "Poultry"
       ],
       "cooking_method": [
-        "Grilled"
+        "Smoked"
       ],
       "flavor": [
         "Savory"
@@ -9705,8 +9056,7 @@
     ],
     "english_names": [
       "Taiwanese Fried Twin Buns",
-      "Shuangbaotai",
-      "Horse hooves"
+      "Shuangbaotai"
     ],
     "forbidden_words": [
       "twin",
@@ -9798,7 +9148,8 @@
         "Pork"
       ],
       "cooking_method": [
-        "Grilled"
+        "Grilled",
+        "Dried"
       ],
       "flavor": [
         "Savory",
@@ -9830,7 +9181,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Wheat"
+        "Wheat",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "Steamed"
@@ -9869,8 +9221,9 @@
         "Dessert"
       ],
       "main_ingredients": [
+        "Rice",
         "Beans and Seeds",
-        "Rice"
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "No Cooking"
@@ -9977,7 +9330,7 @@
     ],
     "attributes": {
       "dish_type": [
-        "Meal"
+        "Snack"
       ],
       "main_ingredients": [
         "Rice",
@@ -9990,7 +9343,7 @@
         "Savory"
       ],
       "physical_form": [
-        "Dry"
+        "Sauced"
       ],
       "occasion": []
     }
@@ -10016,7 +9369,8 @@
         "Rice"
       ],
       "cooking_method": [
-        "Grilled"
+        "Grilled",
+        "Steamed"
       ],
       "flavor": [
         "Savory"
@@ -10052,7 +9406,8 @@
         "Pork"
       ],
       "cooking_method": [
-        "Boiled"
+        "Grilled",
+        "Steamed"
       ],
       "flavor": [
         "Savory"
@@ -10241,7 +9596,9 @@
       "physical_form": [
         "Sauced"
       ],
-      "occasion": []
+      "occasion": [
+        "Festival"
+      ]
     }
   },
   {
@@ -10387,9 +9744,7 @@
   },
   {
     "official_name": "炸湯圓",
-    "aliases": [
-      "花好月圓"
-    ],
+    "aliases": [],
     "english_names": [
       "Fried rice balls"
     ],
@@ -10550,14 +9905,14 @@
         "Seafood"
       ],
       "cooking_method": [
-        "Stir-Fried"
+        "Braised"
       ],
       "flavor": [
         "Savory",
         "Spicy"
       ],
       "physical_form": [
-        "Dry"
+        "Sauced"
       ],
       "occasion": [
         "Night Market"
@@ -10567,7 +9922,9 @@
   {
     "official_name": "滷豆干",
     "aliases": [
-      "大溪豆干"
+      "大溪豆干",
+      "滷豆乾",
+      "大溪豆乾"
     ],
     "english_names": [
       "Braised dried tofu"
@@ -10696,8 +10053,8 @@
         "Wheat"
       ],
       "cooking_method": [
-        "Deep-Fried",
-        "No Cooking"
+        "Pan-Fried",
+        "Deep-Fried"
       ],
       "flavor": [
         "Savory",
@@ -10749,11 +10106,16 @@
     "official_name": "湯圓",
     "aliases": [
       "紅白湯圓",
-      "甜湯圓"
+      "甜湯圓",
+      "芝麻湯圓",
+      "花生湯圓"
     ],
     "english_names": [
       "Tangyuan",
-      "Glutinous rice balls"
+      "Glutinous rice balls",
+      "Black Sesame Tangyuan",
+      "Sesame tangyuan",
+      "Peanut Tangyuan"
     ],
     "forbidden_words": [
       "glutinous",
@@ -10768,7 +10130,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Rice"
+        "Rice",
+        "Beans and Seeds"
       ],
       "cooking_method": [
         "Boiled"
@@ -10790,7 +10153,8 @@
       "冰糖葫蘆"
     ],
     "english_names": [
-      "Candied haw on a stick"
+      "Candied haw on a stick",
+      "Candied fruit skewer"
     ],
     "forbidden_words": [
       "skewer",
@@ -10805,7 +10169,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Fruit"
+        "Fruit",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "No Cooking"
@@ -10826,8 +10191,8 @@
     "official_name": "涼糕",
     "aliases": [],
     "english_names": [
-      "Banana roll",
-      "liang-ko"
+      "liang-ko",
+      "Liang Gao"
     ],
     "forbidden_words": [
       "red",
@@ -10878,7 +10243,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Vegetables"
+        "Vegetables",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "Set"
@@ -10931,8 +10297,8 @@
   {
     "official_name": "麵煎餅",
     "aliases": [
-      "麥仔煎",
-      "免煎嗲"
+      "免煎嗲",
+      "麥仔煎"
     ],
     "english_names": [
       "Peanut pancake"
@@ -10984,7 +10350,8 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Fruit"
+        "Milk",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "No Cooking"
@@ -10993,7 +10360,7 @@
         "Sweet"
       ],
       "physical_form": [
-        "Dry"
+        "Ice Pop"
       ],
       "occasion": []
     }
@@ -11026,7 +10393,7 @@
         "Sweet"
       ],
       "physical_form": [
-        "Dry"
+        "Ice Pop"
       ],
       "occasion": []
     }
@@ -11119,7 +10486,8 @@
         "Drink"
       ],
       "main_ingredients": [
-        "Vegetables"
+        "Vegetables",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "No Cooking"
@@ -11150,7 +10518,7 @@
     ],
     "attributes": {
       "dish_type": [
-        "Drink"
+        "Dessert"
       ],
       "main_ingredients": [
         "Wheat"
@@ -11162,7 +10530,7 @@
         "Sweet"
       ],
       "physical_form": [
-        "Smooth Drink"
+        "Thick Soup"
       ],
       "occasion": []
     }
@@ -11295,7 +10663,8 @@
         "Pork"
       ],
       "cooking_method": [
-        "Baked"
+        "Baked",
+        "Dried"
       ],
       "flavor": [
         "Savory",
@@ -11332,7 +10701,7 @@
         "Seafood"
       ],
       "cooking_method": [
-        "Grilled"
+        "Dried"
       ],
       "flavor": [
         "Savory",
@@ -11732,7 +11101,8 @@
         "Boiled"
       ],
       "flavor": [
-        "Savory"
+        "Savory",
+        "Bitter"
       ],
       "physical_form": [
         "Soup"
@@ -11800,13 +11170,14 @@
         "Root Vegetables"
       ],
       "cooking_method": [
-        "No Cooking"
+        "Steamed",
+        "Boiled"
       ],
       "flavor": [
         "Sweet"
       ],
       "physical_form": [
-        "Dry"
+        "Ice Pop"
       ],
       "occasion": []
     }
@@ -11847,12 +11218,11 @@
     }
   },
   {
-    "official_name": "紅燒肉",
-    "aliases": [
-      "炸紅燒肉"
-    ],
+    "official_name": "紅糟肉",
+    "aliases": [],
     "english_names": [
-      "Fried red pork"
+      "Fried red pork",
+      "Red yeast pork"
     ],
     "forbidden_words": [
       "yilan",
@@ -12118,7 +11488,8 @@
         "Pan-Fried"
       ],
       "flavor": [
-        "Savory"
+        "Savory",
+        "Bitter"
       ],
       "physical_form": [
         "Dry"
@@ -12254,7 +11625,8 @@
         "Boiled"
       ],
       "flavor": [
-        "Savory"
+        "Savory",
+        "Bitter"
       ],
       "physical_form": [
         "Soup"
@@ -12277,7 +11649,7 @@
     ],
     "attributes": {
       "dish_type": [
-        "Snack"
+        "Meal"
       ],
       "main_ingredients": [
         "Pork",
@@ -12353,10 +11725,11 @@
         "Boiled"
       ],
       "flavor": [
-        "Savory"
+        "Savory",
+        "Spicy"
       ],
       "physical_form": [
-        "Dry"
+        "Sauced"
       ],
       "occasion": []
     }
@@ -12462,39 +11835,6 @@
     }
   },
   {
-    "official_name": "糖炒栗子",
-    "aliases": [],
-    "english_names": [
-      "Roasted chestnuts"
-    ],
-    "forbidden_words": [
-      "chestnut",
-      "roasted",
-      "sugar",
-      "sand",
-      "shell",
-      "wok"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Dessert"
-      ],
-      "main_ingredients": [
-        "Beans and Seeds"
-      ],
-      "cooking_method": [
-        "Stir-Fried"
-      ],
-      "flavor": [
-        "Sweet"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": []
-    }
-  },
-  {
     "official_name": "蜜地瓜",
     "aliases": [
       "糖蜜地瓜"
@@ -12514,45 +11854,11 @@
         "Dessert"
       ],
       "main_ingredients": [
-        "Root Vegetables"
+        "Root Vegetables",
+        "Sugar and Sweeteners"
       ],
       "cooking_method": [
         "Boiled"
-      ],
-      "flavor": [
-        "Sweet"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": []
-    }
-  },
-  {
-    "official_name": "雞蛋布丁",
-    "aliases": [
-      "烤布丁"
-    ],
-    "english_names": [
-      "Caramel egg pudding"
-    ],
-    "forbidden_words": [
-      "caramel",
-      "custard",
-      "egg",
-      "milk",
-      "flan"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Dessert"
-      ],
-      "main_ingredients": [
-        "Egg",
-        "Milk"
-      ],
-      "cooking_method": [
-        "Baked"
       ],
       "flavor": [
         "Sweet"
@@ -12837,39 +12143,6 @@
     }
   },
   {
-    "official_name": "涼拌小黃瓜",
-    "aliases": [],
-    "english_names": [
-      "Cucumber salad"
-    ],
-    "forbidden_words": [
-      "cucumber",
-      "smashed",
-      "garlic",
-      "vinegar",
-      "cold"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Snack"
-      ],
-      "main_ingredients": [
-        "Vegetables"
-      ],
-      "cooking_method": [
-        "No Cooking"
-      ],
-      "flavor": [
-        "Savory",
-        "Sour"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": []
-    }
-  },
-  {
     "official_name": "涼拌豬耳朵",
     "aliases": [
       "豬耳朵"
@@ -12892,13 +12165,13 @@
         "Pork"
       ],
       "cooking_method": [
-        "Braised"
+        "Smoked"
       ],
       "flavor": [
         "Savory"
       ],
       "physical_form": [
-        "Dry"
+        "Sauced"
       ],
       "occasion": []
     }
@@ -12931,7 +12204,7 @@
         "Sour"
       ],
       "physical_form": [
-        "Dry"
+        "Sauced"
       ],
       "occasion": []
     }
@@ -12976,7 +12249,7 @@
       "滷豬腳飯"
     ],
     "english_names": [
-      "Pork hock rice"
+      "Pig's trotter rice"
     ],
     "forbidden_words": [
       "pork",
@@ -13070,41 +12343,6 @@
         "Dry"
       ],
       "occasion": []
-    }
-  },
-  {
-    "official_name": "牛奶棒",
-    "aliases": [],
-    "english_names": [
-      "Milk stick"
-    ],
-    "forbidden_words": [
-      "milk",
-      "stick",
-      "crunchy",
-      "biscuit",
-      "long"
-    ],
-    "attributes": {
-      "dish_type": [
-        "Dessert"
-      ],
-      "main_ingredients": [
-        "Wheat",
-        "Milk"
-      ],
-      "cooking_method": [
-        "Baked"
-      ],
-      "flavor": [
-        "Sweet"
-      ],
-      "physical_form": [
-        "Dry"
-      ],
-      "occasion": [
-        "Souvenir"
-      ]
     }
   },
   {
