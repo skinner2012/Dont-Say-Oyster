@@ -71,13 +71,14 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - **Depends on:** T3
 
 ### T5 — Review every corpus entry
-- **Status:** todo
+- **Status:** done 2d8029c
 - **Produces:** the corrected corpus file, every entry reviewed by the author.
 - **Consumes:** the corpus file from T4; the entry point from T3.
 - **Detail:**
   - From BACKLOG M1.5 and M1.6, merged: one review of one file; the backlog's 1–150 / 151–300 split was only for size. The author may review over several sittings and commits once.
   - What to check against each official name: `SPEC.md` Corpus and Cards; attributes also against the T2 list.
-  - The author's ticket. An agent may run the entry point after edits; it does not change entries.
+  - The author's ticket. An agent may run the entry point after edits and apply the author's decisions to entries; every decision is the author's.
+  - Conventions settled in the review (author, 2026-10-11): an alias may carry a place name or a shop name when people say it (台南蝦捲, 度小月擔仔麵); a topping or component is not an entry or an alias (芋圓, 粉粿); forbidden words are single lowercase words, the content words of the English names and the main ingredients, never category words (soup, noodles, ice); a dish sold in several versions is one entry, with the version names as aliases and in the English names (蛋餅 with 肉鬆蛋餅, 鮪魚蛋餅, 火腿蛋餅).
 - **Acceptance:** the author approves the reviewed corpus file and it is committed (if the review changed nothing, the T4 commit stands and the Status names it); the T3 entry point loads the file at that commit without error.
 - **Out of scope:** schema changes (stop and raise them under Open questions); card selection and distractors (T7, T8).
 - **Depends on:** T4
@@ -136,7 +137,9 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 
 ## Open questions for the author
 
-- [R22]: s2tw cannot tell 面 from 麵 outside its phrase table; 面线, 大肠面线, 猪肠面线, 鸭肉面线 all convert to 面線 and miss the Traditional 麵線 names. Raised in T1 F1; decide before M2 tickets (M2.5, M2.20).
+- [R22]: s2tw cannot tell 面 from 麵 outside its phrase table; 面线, 大肠面线, 猪肠面线, 鸭肉面线 all convert to 面線 and miss the Traditional 麵線 names. Raised in T1 F1; decide before M2 tickets (M2.5, M2.20). The same with 干, found in T5 F3: s2tw turns 滷豆干 into 滷豆乾 but 大溪豆干 into 大溪豆幹, so a guess of 大溪豆乾 would miss; the corpus carries both spellings as aliases (2d8029c), which hedges this one entry but not the rule.
+- [R22]: English lists match whole words, and forbidden words are stored singular (oyster, egg, peanut, bean, shrimp, pearl), so "oysters" passes the Describer check [R21]. Decide whether the matcher accepts a trailing s or es, or the corpus stores both forms. Raised in T5 F4; decide before M2.5.
+- [R5]: "in Chinese" is not defined for a guess that mixes Chinese characters and Latin letters; 雪Q餅, QQ蛋, and 地瓜QQ球 are aliases (2d8029c). Decide whether the check is "contains Chinese characters" or "no Latin letters" before the M2 Oracle tickets. Raised in T5 F2.
 
 ## Audit findings
 
@@ -161,3 +164,22 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - T3 F7: one problem line is not always one error: a bad physical_form value gives two lines, two empty strings in one list give one (T3 audit); deferred (author, 2026-10-08): the lines still point at the right entry and field.
 - T3 F8: Out of scope "normalization and name checks (M2)" reads against Detail's exact-string name checks (T3 audit); no change (author, 2026-10-08): "name check" is the Glossary's Oracle check.
 - T3 F9: the schema file is never checked against its metaschema (T3 audit); deferred (author, 2026-10-08): schema edits are spec changes and go through the Fable review.
+- T5 F1: 苦瓜排骨湯 had no Bitter, though SPEC.md names bitter melon under Bitter; 刈菜雞 and 煎魚腸 likewise (T5 audit); fixed 2d8029c (author: an oversight).
+- T5 F2: the official name 雪Q餅 held a Latin letter, and [R5] does not say whether such a guess is "in Chinese" (T5 audit); fixed 2d8029c, 雪花酥 is the official name and 雪Q餅 an alias (author); the [R5] question is deferred to Open questions.
+- T5 F3: s2tw converts 大溪豆干 and 滷豆干 to different characters (幹, 乾), so one spelling of a guess would miss (T5 audit); fixed 2d8029c, both spellings are aliases (author: 豆干 and 豆乾 are both current in Taiwan); the [R22] question is deferred to Open questions.
+- T5 F4: singular forbidden words let plurals through the whole-word match [R22] (T5 audit); deferred to Open questions (author, 2026-10-11).
+- T5 F5: the bare names 芋圓 and 粉粿 are neither entries nor aliases after the review renamed the entries 芋圓湯 and 粉粿冰 (T5 audit); no change (author, 2026-10-11): they are toppings, not dishes.
+- T5 F6: T5 Detail said an agent does not change entries, but the labelling agent applied the author's decisions (T5 audit); fixed in this file.
+- T5 F7: 潤餅 is Meal while 刈包 is Snack, against the author's remark of 2026-10-09 (T5 audit); no change (author, 2026-10-11): one 潤餅 is a meal, 刈包 needs a soup beside it.
+- T5 F8: 豬心冬粉 was Snack while 鴨肉冬粉 and every other noodle bowl is Meal (T5 audit); fixed 2d8029c.
+- T5 F9: 麻油麵線 had no Spicy while 麻油雞, 麻油腰子, and 薑母鴨 have it for ginger heat, and 麻油腰子 was Stir-Fried where 麻油雞 is Boiled (T5 audit); fixed 2d8029c.
+- T5 F10: 涼拌豬耳朵 was Braised under the English name Smoked pig's ear (T5 audit); fixed 2d8029c, Smoked (author: cured, then smoked).
+- T5 F11: 粉粿冰 was Steamed while the other eleven shaved ices are No Cooking (T5 audit); fixed 2d8029c.
+- T5 F12: 地瓜粥 is the only Meal or Snack without Savory and has no Breakfast while the other congees do (T5 audit); no change (author, 2026-10-11): the congee itself is sweet, side dishes are not part of it, and it is eaten at any hour, not a breakfast.
+- T5 F13: 雞蛋冰 had Fruit as its main ingredient; it is a molded ice of sugar water and milk powder (T5 audit); fixed 2d8029c, Milk and Sugar and Sweeteners (author).
+- T5 F14: "tea" was a forbidden word in five Tea drinks but not in 珍珠奶茶 and 古早味紅茶 (T5 audit); fixed 2d8029c.
+- T5 F15: 楊桃汁 is the only Drink with Savory (T5 audit); no change (author, 2026-10-11): pickled starfruit is salty.
+- T5 F16: 洗愛玉 was an alias of 愛玉冰 but names the process, not the dish (T5 audit); fixed 2d8029c.
+- T5 F17: shop names as aliases (度小月擔仔麵) (T5 audit); no change (author, 2026-10-11): allowed, recorded in T5 Detail.
+- T5 F18: 大餅包小餅 was Deep-Fried and No Cooking, though No Cooking means assembled from prepared parts (T5 audit); fixed 2d8029c, Pan-Fried and Deep-Fried.
+- T5 audit, not checked: the accuracy of each English translation and romanization; whether each alias is in use; whether `~/Downloads/uncertain.md` was answered line by line; the suitability of entries as distractors (T6, T8). Checked and clean: the loader on 2d8029c (342 entries); no two entries share a name after [R22] normalization; SPEC.md value lists equal the schema enums; the DECISIONS entry for 476155b matches the diff; forbidden words all single lowercase words, four to six per entry; no English name shared by two entries.
