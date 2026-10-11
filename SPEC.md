@@ -91,46 +91,55 @@ The main build will be the V3 variant, but with three toggles added to turn off 
     - Forbidden words.
     - Attributes.
         - Each field has a closed list of values. Every entry carries every field, with distinct values and no more than the field allows; an optional field may be empty.
+        - An item sold in several versions is labeled by its most common version; when two versions are about equally common and the field allows more than one value, both are listed.
         - Dish type (required, one): Meal, Snack, Dessert, Drink.
-            - Meal: filling enough to be eaten on its own as a meal, at any time of day.
+            - Meal: a dish substantial enough and commonly eaten on its own as a meal, regardless of the time of day; it need not be nutritionally balanced.
             - Snack: any other mainly savory food, side soups and side dishes included.
             - Dessert: any other sweet food, pastries, sweet soups, and shaved ice included.
             - Drink: drunk from a cup or through a straw, sweet or not, with or without add-ins.
-        - Main ingredients (required, one to three): Rice, Wheat, Noodles, Starch, Root Vegetables, Soy, Beans and Seeds, Pork, Beef, Poultry, Seafood, Other Meat, Egg, Vegetables, Fruit, Herbs, Tea, Milk.
+        - Main ingredients (required, one to three): Rice, Wheat, Noodles, Starch, Root Vegetables, Soy, Beans and Seeds, Pork, Beef, Poultry, Seafood, Other Meat, Egg, Vegetables, Fruit, Sugar and Sweeteners, Herbs, Tea, Milk.
             - The ingredients a diner would name first.
-            - Noodles of any grain are Noodles, not Rice or Wheat.
+            - Noodles of any grain are Noodles, not Rice or Wheat; noodles are kneaded, cut, or extruded into strips, so batter scraped from the wok in pieces (ding bian cuo) is Rice.
             - Wheat covers buns, dough, wrappers, and pastry.
-            - Starch is tapioca or sweet potato starch forming the body of the dish (pearls, translucent wrappers, omelette batter); taro and sweet potato eaten as themselves are Root Vegetables.
+            - Starch is tapioca or sweet potato starch forming the body or defining texture of the dish (pearls, translucent wrappers, omelette batter, taro balls), not a thickener or a fried coating; taro, sweet potato, carrot, and daikon radish eaten as themselves are Root Vegetables.
             - Soy covers soybeans, tofu, and soy milk.
             - Beans and Seeds covers red beans, mung beans, peanuts, sesame, almonds, and aiyu seeds.
+            - Offal and blood go by their animal (pig's blood is Pork, duck blood is Poultry); Other Meat covers animals without their own value, such as lamb.
+            - Vegetables covers pickled and preserved vegetables (dried radish, pickled mustard greens).
             - Fruit covers sugarcane.
+            - Sugar and Sweeteners covers brown sugar, maltose, honey, and syrups when the dish is named for that sweetener or tastes mainly of it; sugarcane itself stays Fruit.
             - Tea covers tea leaves only; herbal and other "teas" go by their ingredient.
-            - Herbs covers grass jelly, herbal teas, and Chinese medicinal herbs.
-        - Cooking method (required, one or two): Deep-Fried, Pan-Fried, Stir-Fried, Grilled, Baked, Steamed, Boiled, Braised, Set, No Cooking.
+            - Herbs covers grass jelly, herbal teas, Chinese medicinal herbs, mugwort, cudweed, roselle, and ginger.
+        - Cooking method (required, one or two): Deep-Fried, Pan-Fried, Stir-Fried, Grilled, Baked, Smoked, Dried, Steamed, Boiled, Braised, Set, No Cooking.
             - The step that gives the dish its character.
-            - Braised covers soy-based simmering and stewing.
-            - Boiled covers poaching and blanching.
+            - Braised covers simmering and stewing in a soy-sauce-based liquid; a little soy sauce as seasoning does not count.
+            - Smoked covers smoking over sugar, tea, or wood, whether or not the food was cooked first.
+            - Dried covers sun-drying, air-drying, and oven-drying.
+            - Boiled covers boiling, poaching, blanching, and simmering or stewing in water, stock, or any other liquid that is not soy-sauce-based.
             - Set means left to set into a curd or jelly.
-            - No Cooking means assembled from prepared parts (drinks, shaved ice, cut fruit).
+            - No Cooking means assembled from prepared parts (shaved ice, cut fruit, wraps and sandwiches).
             - A drink the stall boils itself (herbal tea, winter melon tea, soy milk, rice milk) is Boiled; a drink pressed, blended, or assembled from prepared parts (sugarcane juice, papaya milk, boba tea) is No Cooking.
-        - Flavor (required, one to three): Savory, Sweet, Sour, Spicy, Fermented.
+            - A candy made from syrup the maker boils itself, alone or binding or coating nuts or fruit (maltose candy, peanut brittle, nougat, candied haws), is No Cooking.
+        - Flavor (required, one to three): Savory, Sweet, Sour, Bitter, Spicy, Fermented.
             - Only tastes a first-time eater would notice.
-            - Spicy covers chili and pepper heat.
-            - Fermented covers stinky tofu and other pungent ferments.
-        - Physical form (required, one): Dry, Sauced, Soup, Thick Soup, Shaved Ice, Smooth Drink, Drink with Add-ins, Slush.
-            - Dry: no sauce or broth to speak of.
-            - Sauced: in or under a sauce, not a broth.
+            - Bitter covers bitter melon, bitter herbal teas, and other plainly bitter foods.
+            - Spicy covers chili, pepper, and ginger heat.
+            - Fermented covers stinky tofu, century egg, and other foods with a pungent, fermented smell or taste.
+        - Physical form (required, one): Dry, Sauced, Soup, Thick Soup, Shaved Ice, Ice Pop, Smooth Drink, Drink with Add-ins, Slush.
+            - Dry: solid food served without broth, gravy, or substantial sauce; food with only a dipping sauce on the side is Dry.
+            - Sauced: food coated, tossed, or served with a substantial sauce, dressing, or seasoned oil, without being submerged in broth.
             - Soup: pieces, curds, or jelly in a thin broth or syrup, eaten with a spoon.
-            - Thick Soup: a starch-thickened broth.
+            - Thick Soup: a broth or sweet soup thickened with starch or flour.
             - Shaved Ice: toppings on shaved or snow ice, eaten with a spoon.
+            - Ice Pop: frozen in one piece and eaten as is (on a stick, in a bag, or as a block).
             - Smooth Drink: nothing to chew.
             - Drink with Add-ins: pieces to chew (pearls, jelly, beans).
             - Slush: blended ice, with or without add-ins.
             - The three drink values are used exactly when Dish type is Drink.
-        - Occasion (optional, any number): Breakfast, Night Market, Festival, Souvenir.
-            - Breakfast: sold mainly in the morning or at breakfast shops.
+        - Occasion (optional, any number): Breakfast, Night Market, Festival, Souvenir. An occasion is listed only when the association is culturally established and specific to the dish, not merely because the dish can be found there.
+            - Breakfast: commonly eaten for breakfast, or a staple of breakfast-shop menus.
             - Night Market: a signature night-market stall item.
-            - Festival: tied to a festival or holiday.
+            - Festival: traditionally associated with a specific festival, holiday, or culturally significant life-cycle ritual, even if the dish is also commonly eaten year-round.
             - Souvenir: sold boxed as a regional gift.
         - The Guesser will use them to search the corpus: they are the search tool's filter fields [R44].
     - Distractors.

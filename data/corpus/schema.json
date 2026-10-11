@@ -43,19 +43,19 @@
           },
           "main_ingredients": {
             "type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true,
-            "items": { "enum": ["Rice", "Wheat", "Noodles", "Starch", "Root Vegetables", "Soy", "Beans and Seeds", "Pork", "Beef", "Poultry", "Seafood", "Other Meat", "Egg", "Vegetables", "Fruit", "Herbs", "Tea", "Milk"] }
+            "items": { "enum": ["Rice", "Wheat", "Noodles", "Starch", "Root Vegetables", "Soy", "Beans and Seeds", "Pork", "Beef", "Poultry", "Seafood", "Other Meat", "Egg", "Vegetables", "Fruit", "Sugar and Sweeteners", "Herbs", "Tea", "Milk"] }
           },
           "cooking_method": {
             "type": "array", "minItems": 1, "maxItems": 2, "uniqueItems": true,
-            "items": { "enum": ["Deep-Fried", "Pan-Fried", "Stir-Fried", "Grilled", "Baked", "Steamed", "Boiled", "Braised", "Set", "No Cooking"] }
+            "items": { "enum": ["Deep-Fried", "Pan-Fried", "Stir-Fried", "Grilled", "Baked", "Smoked", "Dried", "Steamed", "Boiled", "Braised", "Set", "No Cooking"] }
           },
           "flavor": {
             "type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true,
-            "items": { "enum": ["Savory", "Sweet", "Sour", "Spicy", "Fermented"] }
+            "items": { "enum": ["Savory", "Sweet", "Sour", "Bitter", "Spicy", "Fermented"] }
           },
           "physical_form": {
             "type": "array", "minItems": 1, "maxItems": 1, "uniqueItems": true,
-            "items": { "enum": ["Dry", "Sauced", "Soup", "Thick Soup", "Shaved Ice", "Smooth Drink", "Drink with Add-ins", "Slush"] },
+            "items": { "enum": ["Dry", "Sauced", "Soup", "Thick Soup", "Shaved Ice", "Ice Pop", "Smooth Drink", "Drink with Add-ins", "Slush"] },
             "description": "The three drink values are used exactly when dish_type is Drink; see if/then/else."
           },
           "occasion": {
@@ -65,7 +65,7 @@
         },
         "if": { "properties": { "dish_type": { "contains": { "const": "Drink" } } } },
         "then": { "properties": { "physical_form": { "items": { "enum": ["Smooth Drink", "Drink with Add-ins", "Slush"] } } } },
-        "else": { "properties": { "physical_form": { "items": { "enum": ["Dry", "Sauced", "Soup", "Thick Soup", "Shaved Ice"] } } } }
+        "else": { "properties": { "physical_form": { "items": { "enum": ["Dry", "Sauced", "Soup", "Thick Soup", "Shaved Ice", "Ice Pop"] } } } }
       }
     }
   }
