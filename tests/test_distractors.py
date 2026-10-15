@@ -12,6 +12,7 @@ from dont_say_oyster.distractors import (
     PROMPT_PATH,
     DistractorFileError,
     DroppedPick,
+    ModelError,
     Pick,
     build_prompt,
     load_distractors,
@@ -217,6 +218,43 @@ def test_repick_of_a_corpus_name_not_yet_in_the_file_adds_it_with_round_1(
     assert after["滷肉飯"] == before["滷肉飯"]
     assert [r.round for r in after["鵝肉飯"].rounds] == [1]
     assert after["鵝肉飯"].current == ("燻鵝",)
+
+
+def test_model_error_prints_one_line_exits_non_zero_and_keeps_the_names_done(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    class FailsAfterFirstCall(Scripted):
+        def __call__(self, prompt: str) -> str:
+            if self.prompts:
+                raise ModelError("model call failed: APIConnectionError: Connection error.")
+            return super().__call__(prompt)
+
+    ask = FailsAfterFirstCall(answer("焢肉飯"))
+    out = tmp_path / "distractors.json"
+    names = names_file(tmp_path, ["滷肉飯", "油飯", "筒仔米糕"])
+    code = main([str(CORPUS), str(out), "--names", str(names)], ask=ask)
+    assert code != 0
+    err = capsys.readouterr().err.strip().splitlines()
+    assert err[-1] == "油飯: model call failed: APIConnectionError: Connection error."
+    assert "Traceback" not in "\n".join(err)
+    assert list(load_distractors(out)) == ["滷肉飯"]
+
+
+def test_model_ask_turns_an_api_error_into_a_model_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import anthropic
+    import httpx2
+
+    class Failing:
+        def invoke(self, prompt: str) -> None:
+            request = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
+            raise anthropic.APIConnectionError(message="Connection\nerror.", request=request)
+
+    monkeypatch.setattr(distractors, "model_client", Failing)
+    with pytest.raises(ModelError) as raised:
+        distractors.model_ask()("prompt")
+    assert str(raised.value) == "model call failed: APIConnectionError: Connection error."
 
 
 def test_repick_without_a_distractor_file_exits_non_zero(tmp_path: Path) -> None:

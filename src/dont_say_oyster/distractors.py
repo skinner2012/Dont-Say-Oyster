@@ -80,6 +80,10 @@ class PickError(Exception):
     """The pick command cannot run with the names it was given."""
 
 
+class ModelError(Exception):
+    """A model call failed after the client's own retries."""
+
+
 _STRINGS = {"type": "array", "items": {"type": "string"}}
 _FILE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -297,7 +301,10 @@ def run_pick(
 
     for name in names:
         earlier = records[name].rounds if name in records else ()
-        new = pick_round(by_name[name], corpus, template, ask, len(earlier) + 1)
+        try:
+            new = pick_round(by_name[name], corpus, template, ask, len(earlier) + 1)
+        except ModelError as e:
+            raise ModelError(f"{name}: {e}") from e
         current = tuple(pick.name for pick in new.kept)
         records[name] = DistractorRecord(rounds=(*earlier, new), current=current)
         write_distractors(out, records)
@@ -324,11 +331,18 @@ def model_client() -> "ChatAnthropic":
 
 
 def model_ask() -> Ask:
-    """The real model call, one prompt in and the reply text out."""
+    """The real model call, one prompt in and the reply text out. An API error left after the
+    client's retries becomes a one-line ModelError."""
+    import anthropic
+
     llm = model_client()
 
     def ask(prompt: str) -> str:
-        return llm.invoke(prompt).text
+        try:
+            return llm.invoke(prompt).text
+        except anthropic.APIError as e:
+            message = " ".join(str(e).split())
+            raise ModelError(f"model call failed: {type(e).__name__}: {message}") from e
 
     return ask
 
@@ -374,7 +388,14 @@ def main(argv: Sequence[str] | None = None, ask: Ask | None = None) -> int:
             ask or model_ask(),
             repick=bool(args.repick),
         )
-    except (CorpusError, DistractorFileError, PickError, OSError, json.JSONDecodeError) as e:
+    except (
+        CorpusError,
+        DistractorFileError,
+        PickError,
+        ModelError,
+        OSError,
+        json.JSONDecodeError,
+    ) as e:
         print(e, file=sys.stderr)
         return 1
     return 0
