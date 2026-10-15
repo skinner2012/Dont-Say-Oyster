@@ -11,7 +11,7 @@ See `SPEC.md`, Milestones, M1. Do not copy the bullets here; they go stale.
 
 ## How to use these tickets
 
-T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows both. Then the work runs on two tracks: the corpus track T4 → T5 (T5 is the author's hand review) and the code track T6 → T7. T8 joins them and closes the milestone. T6 and T7 each carry author decisions marked "author fills in"; they are not dispatched until those are filled in. T2, T4, T5, and T8 need the author (in T8 an agent runs the commands); the rest are an implementer's. Any commit may be made by an agent with the author's approval. One ticket, one commit; Status updates, audit fixes, and the `DECISIONS.md` entry after a spec change are their own small commits.
+T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows both. Then the work runs on two tracks: the corpus track T4 → T5 (T5 is the author's hand review) and the code track T6 → T7. T8 joins them and closes the milestone. T7 carries author decisions marked "author fills in" (T6's were filled in 2026-10-14); a ticket is not dispatched until those are filled in. T2, T4, T5, and T8 need the author (in T8 an agent runs the commands); the rest are an implementer's. Any commit may be made by an agent with the author's approval. One ticket, one commit; Status updates, audit fixes, and the `DECISIONS.md` entry after a spec change are their own small commits.
 
 ## Tickets
 
@@ -89,16 +89,34 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - **Consumes:** the schema and loader from T3; the prompts and card-file locations from T1.
 - **Detail:**
   - From BACKLOG M1.7 and M1.8 (the code and the re-pick); the live run and the review are T8. Merged because the prompt is useless without the code that sends it, and the code cannot be tested without a prompt. Re-pick is here because it touches only this ticket's file (author, 2026-10-03).
-  - **Model** (author fills in before dispatch): _model and version, local or cloud._ A cloud model needs a provider package, which is not pre-approved (`CLAUDE.md`, Rules of engagement); the author's approval is written here with the model. Keys come from `.env`.
-  - **Prompt** (author fills in before dispatch): _what makes another entry confusable with this card_ (`SPEC.md` Corpus and Cards, Distractors; [R35]). The implementer puts it in the prompt file as written.
-  - Each prompt carries the card's entry and every other entry's official name, English names, and attributes. If that does not fit the model's context, stop and raise it under Open questions.
+  - **Model:** Claude Opus 5.5 (`claude-opus-5-5`, cloud) through `langchain-anthropic`, thinking on (adaptive); approved by the author 2026-10-14. The key is `ANTHROPIC_API_KEY` from `.env`.
+  - **Prompt** (author, 2026-10-14; `SPEC.md` Corpus and Cards, Distractors; [R35]): the text below, which the implementer puts in the prompt file as written; it is the starting version, and the committed prompt file is the record of the version the author approved in the trials. The program fills `{target}` with the card's whole entry and `{others}` with every other entry's official name, English names, and attributes, both serialized as JSON. If that does not fit the model's context, stop and raise it under Open questions.
+
+    ```
+    You pick distractors for a Taboo-like guessing game about Taiwanese snacks.
+
+    How the game uses your picks: a Describer writes three or four English sentences about the target dish without using its names (official name, aliases, English names) or its forbidden words.
+    A Challenger then checks whether that description also points to any distractor.
+    Good distractors are the dishes such a description would most easily also point to.
+
+    The target entry: {target}
+
+    List of every other entry in the corpus (official name, English names, attributes): {others}
+
+    Judge each other entry by one question: could a careful three-or-four-sentence English description of the target, written to avoid its names and forbidden words, still point to this entry?
+
+    Weigh together everything you have: how many attributes the target entry and other entry share and which ones; shared characters in the Chinese names or shared words in the English names; and what you know about the two dishes themselves: how they look, how they are made, how and where they are sold and eaten. A dish that shares fewer attributes but looks and eats alike outranks one that matches on attributes alone. Only include the other entries that are hard to distinguish from the target based on a simple description.
+
+    Answer with a JSON array of official names, copied exactly as written in the list above, ranked from most to least confusable, at most eight. Give fewer when fewer entries genuinely qualify; never pad the list. No other text.
+    ```
   - The program keeps a pick only if it equals the official name of another entry (exact string), drops duplicates, keeps the first five valid picks, and lists every other pick as dropped with its reason. Zero valid picks is allowed.
   - The distractor file holds, for each official name, numbered rounds of kept and dropped picks, and one current distractor list: the list the author reviews and may edit by hand, and the list T7 builds the cards from. A pick round sets the current list to that round's kept picks.
   - Re-pick: given official names, the command runs a new round for those names only and replaces their current lists; every other name, including the author's hand edits, stays unchanged; an unknown name is an error. A full run starts a fresh distractor file.
   - This ticket also provides the distractor file's loader; T7 reads the file only through it, so the file's shape is defined in one place.
   - This ticket adds the model client package (LangChain's, pre-approved, or the cloud provider package approved above). The LLM call sits behind one function so tests feed scripted replies.
-- **Acceptance:** the prompt file exists at the prompts location; the test command passes on a fixture corpus of at least eight entries with scripted replies: a reply naming the card itself, a name not in the corpus, a duplicate, and seven valid names gives a current list of the first five valid names and every other pick as dropped with its reason; an empty reply gives an empty current list; after a hand edit to one name's current list, re-picking a different name with a different scripted reply changes only that name's current list, leaves the hand edit and every other name's rounds unchanged, and gives the re-picked name rounds 1 and 2; re-picking an unknown name exits non-zero.
-- **Out of scope:** selecting the forty names and building cards (T7); running on the real corpus (T8); retrying the LLM automatically after bad picks.
+  - The prompt trial, separate from the tests and run once they are green so no paid call is spent on a broken command: pick on five official names the author gives at dispatch, with the real model. The agent shows the author the picks; the author either approves the prompt or edits the prompt file, and the agent runs the five again. This repeats until the author approves. The distractor files the trials write are not committed.
+- **Acceptance:** the prompt file exists at the prompts location; the test command passes on a fixture corpus of at least eight entries with scripted replies: a reply naming the card itself, a name not in the corpus, a duplicate, and seven valid names gives a current list of the first five valid names and every other pick as dropped with its reason; an empty reply gives an empty current list; after a hand edit to one name's current list, re-picking a different name with a different scripted reply changes only that name's current list, leaves the hand edit and every other name's rounds unchanged, and gives the re-picked name rounds 1 and 2; re-picking an unknown name exits non-zero. The author has approved the prompt after the five-name trials, and the committed prompt file is the approved one.
+- **Out of scope:** selecting the forty names and building cards (T7); the forty-card run and the review (T8); retrying the LLM automatically after bad picks.
 - **Depends on:** T3
 
 ### T7 — Card selection, card builder, and batch manifests
@@ -127,7 +145,7 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - **Consumes:** the reviewed corpus from T5; the pick command from T6; the select and build commands and the data test from T7.
 - **Detail:**
   - From BACKLOG M1.8, M1.9, and M1.10 (the run) and M1.11 (the review).
-  - Order: an agent runs select, then pick on the selection. After the review starts, only re-pick is used: a full pick run starts a fresh distractor file and discards the author's edits. The author reviews every name's current list in the distractor file and fixes a wrong one by editing it (removing, replacing, or adding; the author picks the final set) or by re-pick, after which only the re-picked names need another look. Then the agent runs build.
+  - Order: an agent runs select, then pick on the selection. The author skims about ten names' current lists first; if the picks point the wrong way, the author edits the prompt file and the agent runs pick again on the whole selection, until the direction is right. Only then does the review start. After the review starts, only re-pick is used: a full pick run starts a fresh distractor file and discards the author's edits. The author reviews every name's current list in the distractor file and fixes a wrong one by editing it (removing, replacing, or adding; the author picks the final set) or by re-pick, after which only the re-picked names need another look. Then the agent runs build.
   - One commit, because unreviewed distractors must never be committed as if they were final. The distractor file keeps every round, so the author's changes are the difference between each name's latest round and its current list.
   - Card ids and order are not edited by hand; changing them means changing a T7 criterion and rerunning from select.
   - A live run: accepted by the record, not by the quality of the picks.
