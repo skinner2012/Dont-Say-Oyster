@@ -4,11 +4,12 @@ point to, keeps the valid picks, and writes the distractor file. Run as
 `--repick NAME ...` to run a new round for those names only.
 
 The distractor file is a JSON object keyed by official name, in the order the names were
-given. Each value holds `rounds` (numbered from 1; each round's `kept` picks, its `dropped`
-picks with their reasons, and `invalid_reply`: null, or the raw reply when it was not a JSON
-array of strings) and `current`, the list the author reviews and may edit by hand and the list
-the cards are built from. A round sets `current` to its kept picks. Read the file only through
-`load_distractors`."""
+given. Each value holds `rounds` (numbered from 1; each round's `kept` picks as `name` and the
+model's `why`, its `dropped` picks with their `why` and the program's `reason`, and
+`invalid_reply`: null, or the raw reply when it was not a JSON array of `name`/`why` objects)
+and `current`, a list of official names: the list the author reviews and may edit by hand and
+the list the cards are built from. A round sets `current` to its kept names. Read the file only
+through `load_distractors`."""
 
 import argparse
 import json
@@ -17,14 +18,18 @@ import sys
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from jsonschema import Draft202012Validator
 
 from dont_say_oyster.corpus import CorpusEntry, CorpusError, load_corpus
 
+if TYPE_CHECKING:
+    from langchain_anthropic import ChatAnthropic
+
 PROMPT_PATH = Path(__file__).resolve().parents[2] / "prompts" / "distractors.txt"
 MODEL = "claude-opus-5-5"
+EFFORT: Literal["high"] = "high"
 # Thinking tokens count against max_tokens; the reply streams, so a large cap is safe.
 MAX_TOKENS = 64000
 MAX_DISTRACTORS = 5
@@ -34,15 +39,24 @@ Ask = Callable[[str], str]
 
 
 @dataclass(frozen=True)
+class Pick:
+    """One pick from the model's reply: an official name and the model's reason for it."""
+
+    name: str
+    why: str
+
+
+@dataclass(frozen=True)
 class DroppedPick:
-    pick: str
+    name: str
+    why: str
     reason: str
 
 
 @dataclass(frozen=True)
 class PickRound:
     round: int
-    kept: tuple[str, ...]
+    kept: tuple[Pick, ...]
     dropped: tuple[DroppedPick, ...]
     invalid_reply: str | None
 
@@ -82,15 +96,27 @@ _FILE_SCHEMA: dict[str, Any] = {
                     "additionalProperties": False,
                     "properties": {
                         "round": {"type": "integer"},
-                        "kept": _STRINGS,
+                        "kept": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": ["name", "why"],
+                                "additionalProperties": False,
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "why": {"type": "string"},
+                                },
+                            },
+                        },
                         "dropped": {
                             "type": "array",
                             "items": {
                                 "type": "object",
-                                "required": ["pick", "reason"],
+                                "required": ["name", "why", "reason"],
                                 "additionalProperties": False,
                                 "properties": {
-                                    "pick": {"type": "string"},
+                                    "name": {"type": "string"},
+                                    "why": {"type": "string"},
                                     "reason": {"type": "string"},
                                 },
                             },
@@ -139,8 +165,8 @@ def _record(record: dict[str, Any]) -> DistractorRecord:
         rounds=tuple(
             PickRound(
                 round=r["round"],
-                kept=tuple(r["kept"]),
-                dropped=tuple(DroppedPick(d["pick"], d["reason"]) for d in r["dropped"]),
+                kept=tuple(Pick(k["name"], k["why"]) for k in r["kept"]),
+                dropped=tuple(DroppedPick(d["name"], d["why"], d["reason"]) for d in r["dropped"]),
                 invalid_reply=r["invalid_reply"],
             )
             for r in record["rounds"]
@@ -175,43 +201,52 @@ def build_prompt(template: str, target: CorpusEntry, corpus: Sequence[CorpusEntr
     ).replace("{others}", json.dumps(others, ensure_ascii=False))
 
 
-def parse_reply(reply: str) -> list[str] | None:
-    """The reply's picks, or None when the reply is not a JSON array of strings."""
+def parse_reply(reply: str) -> list[Pick] | None:
+    """The reply's picks, or None when the reply is not a JSON array of objects that each hold
+    exactly a string `name` and a string `why`."""
     try:
         data = json.loads(reply)
     except json.JSONDecodeError:
         return None
-    if not isinstance(data, list) or not all(isinstance(p, str) for p in data):
+    if not isinstance(data, list):
         return None
-    return data
+    picks = []
+    for item in data:
+        if not isinstance(item, dict) or set(item) != {"name", "why"}:
+            return None
+        if not isinstance(item["name"], str) or not isinstance(item["why"], str):
+            return None
+        picks.append(Pick(item["name"], item["why"]))
+    return picks
 
 
 def sort_picks(
-    target: str, picks: Sequence[str], corpus: Sequence[CorpusEntry]
-) -> tuple[tuple[str, ...], tuple[DroppedPick, ...]]:
-    """Keep the first five picks that are the official name of another entry (exact string);
-    every other pick is dropped with its reason."""
+    target: str, picks: Sequence[Pick], corpus: Sequence[CorpusEntry]
+) -> tuple[tuple[Pick, ...], tuple[DroppedPick, ...]]:
+    """Keep, in the reply's order, the first five picks whose name is the official name of
+    another entry (exact string); every other pick is dropped with its reason."""
     official = {e.official_name for e in corpus}
     alias_of = {alias: e.official_name for e in corpus for alias in e.aliases}
-    kept: list[str] = []
+    kept: list[Pick] = []
     dropped: list[DroppedPick] = []
     seen: set[str] = set()
     for pick in picks:
-        if pick in seen:
+        name = pick.name
+        if name in seen:
             reason = "repeats an earlier pick"
-        elif pick == target:
+        elif name == target:
             reason = "the card itself"
-        elif pick in alias_of:
-            reason = f"an alias of {alias_of[pick]}, not an official name"
-        elif pick not in official:
+        elif name in alias_of:
+            reason = f"an alias of {alias_of[name]}, not an official name"
+        elif name not in official:
             reason = "not a name in the corpus"
         elif len(kept) >= MAX_DISTRACTORS:
             reason = f"over the limit of {MAX_DISTRACTORS}"
         else:
             reason = ""
-        seen.add(pick)
+        seen.add(name)
         if reason:
-            dropped.append(DroppedPick(pick, reason))
+            dropped.append(DroppedPick(name, pick.why, reason))
         else:
             kept.append(pick)
     return tuple(kept), tuple(dropped)
@@ -264,27 +299,34 @@ def run_pick(
     for name in names:
         earlier = records[name].rounds if name in records else ()
         new = pick_round(by_name[name], corpus, template, ask, len(earlier) + 1)
-        records[name] = DistractorRecord(rounds=(*earlier, new), current=new.kept)
+        current = tuple(pick.name for pick in new.kept)
+        records[name] = DistractorRecord(rounds=(*earlier, new), current=current)
         write_distractors(out, records)
-        status = "reply was not a JSON array of strings" if new.invalid_reply is not None else (
+        status = "reply was not a JSON array of picks" if new.invalid_reply is not None else (
             f"kept {len(new.kept)}, dropped {len(new.dropped)}"
         )
         print(f"{name}: round {new.round}, {status}", file=sys.stderr)
 
 
-def model_ask() -> Ask:
-    """The real model call: Claude through langchain-anthropic, adaptive thinking. The key is
+def model_client() -> "ChatAnthropic":
+    """The model: Claude through langchain-anthropic, adaptive thinking, effort high. The key is
     ANTHROPIC_API_KEY, read from `.env` when it is not already in the environment."""
     from dotenv import load_dotenv
     from langchain_anthropic import ChatAnthropic
 
     load_dotenv()
-    llm = ChatAnthropic(  # type: ignore[call-arg]
+    return ChatAnthropic(  # type: ignore[call-arg]
         model=MODEL,
         max_tokens=MAX_TOKENS,
         thinking={"type": "adaptive"},
+        reasoning_effort=EFFORT,
         streaming=True,
     )
+
+
+def model_ask() -> Ask:
+    """The real model call, one prompt in and the reply text out."""
+    llm = model_client()
 
     def ask(prompt: str) -> str:
         return llm.invoke(prompt).text

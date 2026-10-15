@@ -12,6 +12,7 @@ from dont_say_oyster.distractors import (
     PROMPT_PATH,
     DistractorFileError,
     DroppedPick,
+    Pick,
     build_prompt,
     load_distractors,
     main,
@@ -33,6 +34,12 @@ class Scripted:
     def __call__(self, prompt: str) -> str:
         self.prompts.append(prompt)
         return self.replies.pop(0)
+
+
+def answer(*names: str) -> str:
+    """A well-formed reply naming `names` in order; each why says which place it held."""
+    picks = [{"name": n, "why": f"why {i}"} for i, n in enumerate(names)]
+    return json.dumps(picks, ensure_ascii=False)
 
 
 def names_file(tmp_path: Path, names: list[str]) -> Path:
@@ -57,31 +64,41 @@ def test_prompt_file_is_at_the_prompts_location_with_both_placeholders() -> None
 def test_reply_keeps_first_five_valid_picks_and_drops_the_rest_with_reasons(
     tmp_path: Path,
 ) -> None:
-    reply = ["滷肉飯", "肉夾饃", "焢肉飯", "焢肉飯", "腿庫飯", "火雞肉飯", "鴨肉飯"]
-    reply += ["鵝肉飯", "燻鵝", "鹽水鵝"]
-    code, out = pick(tmp_path, ["滷肉飯"], Scripted(json.dumps(reply, ensure_ascii=False)))
+    reply = answer(
+        *("滷肉飯", "肉夾饃", "焢肉飯", "焢肉飯", "腿庫飯"),
+        *("火雞肉飯", "鴨肉飯", "鵝肉飯", "燻鵝", "鹽水鵝"),
+    )
+    code, out = pick(tmp_path, ["滷肉飯"], Scripted(reply))
     assert code == 0
     record = load_distractors(out)["滷肉飯"]
     assert record.current == ("焢肉飯", "腿庫飯", "火雞肉飯", "鴨肉飯", "鵝肉飯")
     (only,) = record.rounds
     assert only.round == 1
-    assert only.kept == record.current
+    assert only.kept == (
+        Pick("焢肉飯", "why 2"),
+        Pick("腿庫飯", "why 4"),
+        Pick("火雞肉飯", "why 5"),
+        Pick("鴨肉飯", "why 6"),
+        Pick("鵝肉飯", "why 7"),
+    )
     assert only.dropped == (
-        DroppedPick("滷肉飯", "the card itself"),
-        DroppedPick("肉夾饃", "not a name in the corpus"),
-        DroppedPick("焢肉飯", "repeats an earlier pick"),
-        DroppedPick("燻鵝", "over the limit of 5"),
-        DroppedPick("鹽水鵝", "over the limit of 5"),
+        DroppedPick("滷肉飯", "why 0", "the card itself"),
+        DroppedPick("肉夾饃", "why 1", "not a name in the corpus"),
+        DroppedPick("焢肉飯", "why 3", "repeats an earlier pick"),
+        DroppedPick("燻鵝", "why 8", "over the limit of 5"),
+        DroppedPick("鹽水鵝", "why 9", "over the limit of 5"),
     )
     assert only.invalid_reply is None
 
 
 def test_alias_pick_is_dropped_naming_its_entry(tmp_path: Path) -> None:
-    code, out = pick(tmp_path, ["油飯"], Scripted('["魯肉飯", "筒仔米糕"]'))
+    code, out = pick(tmp_path, ["油飯"], Scripted(answer("魯肉飯", "筒仔米糕")))
     assert code == 0
     (only,) = load_distractors(out)["油飯"].rounds
-    assert only.kept == ("筒仔米糕",)
-    assert only.dropped == (DroppedPick("魯肉飯", "an alias of 滷肉飯, not an official name"),)
+    assert only.kept == (Pick("筒仔米糕", "why 1"),)
+    assert only.dropped == (
+        DroppedPick("魯肉飯", "why 0", "an alias of 滷肉飯, not an official name"),
+    )
 
 
 def test_empty_reply_gives_an_empty_current_list(tmp_path: Path) -> None:
@@ -94,13 +111,25 @@ def test_empty_reply_gives_an_empty_current_list(tmp_path: Path) -> None:
     assert record.rounds[0].invalid_reply is None
 
 
-@pytest.mark.parametrize(
-    "reply", ["Here are the picks: 焢肉飯", '{"picks": ["焢肉飯"]}', '["焢肉飯", 3]', ""]
-)
-def test_reply_that_is_not_an_array_of_strings_is_zero_picks_and_the_run_continues(
+NOT_PICKS = [
+    "Here are the picks: 焢肉飯",
+    "",
+    '{"name": "焢肉飯", "why": "w"}',  # an object, not an array
+    '["焢肉飯"]',  # names without objects, the old format
+    '[{"name": "焢肉飯", "why": "w"}, "腿庫飯"]',
+    '[{"name": "焢肉飯"}]',  # no why
+    '[{"why": "w"}]',  # no name
+    '[{"name": "焢肉飯", "why": "w", "rank": 1}]',  # an extra key
+    '[{"name": "焢肉飯", "why": 3}]',
+    '[{"name": ["焢肉飯"], "why": "w"}]',
+]
+
+
+@pytest.mark.parametrize("reply", NOT_PICKS)
+def test_reply_that_is_not_an_array_of_name_why_objects_is_zero_picks_and_the_run_continues(
     tmp_path: Path, reply: str
 ) -> None:
-    code, out = pick(tmp_path, ["滷肉飯", "油飯"], Scripted(reply, '["筒仔米糕"]'))
+    code, out = pick(tmp_path, ["滷肉飯", "油飯"], Scripted(reply, answer("筒仔米糕")))
     assert code == 0
     records = load_distractors(out)
     bad = records["滷肉飯"]
@@ -136,7 +165,7 @@ def test_command_sends_the_prompt_file_filled_in(tmp_path: Path) -> None:
 
 
 def test_repick_changes_only_the_named_name(tmp_path: Path) -> None:
-    ask = Scripted('["焢肉飯", "腿庫飯"]', '["筒仔米糕"]', '["油飯", "鴨肉飯"]')
+    ask = Scripted(answer("焢肉飯", "腿庫飯"), answer("筒仔米糕"), answer("油飯", "鴨肉飯"))
     code, out = pick(tmp_path, ["滷肉飯", "油飯", "筒仔米糕"], ask)
     assert code == 0
 
@@ -146,7 +175,7 @@ def test_repick_changes_only_the_named_name(tmp_path: Path) -> None:
     out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     before = load_distractors(out)
 
-    code = main([str(CORPUS), str(out), "--repick", "筒仔米糕"], ask=Scripted('["鵝肉飯"]'))
+    code = main([str(CORPUS), str(out), "--repick", "筒仔米糕"], ask=Scripted(answer("鵝肉飯")))
     assert code == 0
     after = load_distractors(out)
 
@@ -157,7 +186,7 @@ def test_repick_changes_only_the_named_name(tmp_path: Path) -> None:
     repicked = after["筒仔米糕"]
     assert [r.round for r in repicked.rounds] == [1, 2]
     assert repicked.rounds[0] == before["筒仔米糕"].rounds[0]
-    assert repicked.rounds[1].kept == ("鵝肉飯",)
+    assert repicked.rounds[1].kept == (Pick("鵝肉飯", "why 0"),)
     assert repicked.current == ("鵝肉飯",)
 
 
@@ -165,7 +194,7 @@ def test_repick_changes_only_the_named_name(tmp_path: Path) -> None:
 def test_repick_of_an_unknown_name_exits_non_zero_and_changes_nothing(
     tmp_path: Path, name: str, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    code, out = pick(tmp_path, ["滷肉飯"], Scripted('["焢肉飯"]'))
+    code, out = pick(tmp_path, ["滷肉飯"], Scripted(answer("焢肉飯")))
     assert code == 0
     before = out.read_bytes()
     ask = Scripted()
@@ -196,7 +225,7 @@ def test_full_run_with_a_repeated_name_exits_non_zero(tmp_path: Path) -> None:
 
 def test_full_run_starts_a_fresh_file(tmp_path: Path) -> None:
     pick(tmp_path, ["滷肉飯", "油飯"], Scripted("[]", "[]"))
-    code, out = pick(tmp_path, ["油飯"], Scripted('["滷肉飯"]'))
+    code, out = pick(tmp_path, ["油飯"], Scripted(answer("滷肉飯")))
     assert code == 0
     records = load_distractors(out)
     assert list(records) == ["油飯"]
@@ -230,9 +259,14 @@ BAD_FILES = [
         "numbered [2]",
     ),
     (
-        '{"滷肉飯": {"rounds": [{"round": 1, "kept": [], "dropped": [{"pick": "x"}],'
+        '{"滷肉飯": {"rounds": [{"round": 1, "kept": [], "dropped": [{"name": "x", "reason": "r"}],'
         ' "invalid_reply": null}], "current": []}}',
-        "'reason' is a required property",
+        "'why' is a required property",
+    ),
+    (
+        '{"滷肉飯": {"rounds": [{"round": 1, "kept": ["焢肉飯"], "dropped": [],'
+        ' "invalid_reply": null}], "current": ["焢肉飯"]}}',
+        "滷肉飯/rounds/0/kept/0",
     ),
     (
         '{"滷肉飯": {"rounds": [{"round": 1, "kept": [], "dropped": [], "invalid_reply": null}],'
@@ -250,3 +284,13 @@ def test_loader_rejects_a_malformed_file(tmp_path: Path, content: str, reason: s
         load_distractors(path)
     assert len(raised.value.problems) == 1
     assert reason in raised.value.problems[0]
+
+
+def test_model_client_asks_for_adaptive_thinking_at_effort_high(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-not-used")
+    payload = distractors.model_client()._get_request_payload("hello")
+    assert payload["model"] == "claude-opus-5-5"
+    assert payload["thinking"] == {"type": "adaptive"}
+    assert payload["output_config"] == {"effort": "high"}
