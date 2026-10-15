@@ -35,6 +35,19 @@ EFFORT: Literal["high"] = "high"
 # Thinking tokens count against max_tokens; the reply streams, so a large cap is safe.
 MAX_TOKENS = 64000
 MAX_DISTRACTORS = 5
+# The reply's shape, sent as the API's structured output. The API cannot enforce maxItems (the
+# SDK moves it into the schema's description), and parse_reply does not either: a longer reply
+# is still sorted, since the program keeps five picks anyway.
+REPLY_SCHEMA: dict[str, Any] = {
+    "type": "array",
+    "maxItems": 8,
+    "items": {
+        "type": "object",
+        "required": ["name", "why"],
+        "additionalProperties": False,
+        "properties": {"name": {"type": "string"}, "why": {"type": "string"}},
+    },
+}
 
 Ask = Callable[[str], str]
 """Sends one prompt to the model and returns the reply text."""
@@ -209,21 +222,15 @@ def build_prompt(template: str, target: CorpusEntry, corpus: Sequence[CorpusEntr
 
 def parse_reply(reply: str) -> list[Pick] | None:
     """The reply's picks, or None when the reply is not a JSON array of objects that each hold
-    exactly a string `name` and a string `why`."""
+    exactly a string `name` and a string `why` (REPLY_SCHEMA without its maxItems)."""
     try:
         data = json.loads(reply)
     except json.JSONDecodeError:
         return None
-    if not isinstance(data, list):
+    shape = {k: v for k, v in REPLY_SCHEMA.items() if k != "maxItems"}
+    if not Draft202012Validator(shape).is_valid(data):
         return None
-    picks = []
-    for item in data:
-        if not isinstance(item, dict) or set(item) != {"name", "why"}:
-            return None
-        if not isinstance(item["name"], str) or not isinstance(item["why"], str):
-            return None
-        picks.append(Pick(item["name"], item["why"]))
-    return picks
+    return [Pick(item["name"], item["why"]) for item in data]
 
 
 def sort_picks(
@@ -322,8 +329,10 @@ def run_pick(
 
 
 def model_client() -> "ChatAnthropic":
-    """The model: Claude through langchain-anthropic, adaptive thinking, effort high. The key is
-    ANTHROPIC_API_KEY, read from `.env` when it is not already in the environment."""
+    """The model: Claude through langchain-anthropic, adaptive thinking, effort high, the reply
+    constrained to REPLY_SCHEMA by the API's structured output. The key is ANTHROPIC_API_KEY,
+    read from `.env` when it is not already in the environment."""
+    from anthropic import transform_schema
     from dotenv import load_dotenv
     from langchain_anthropic import ChatAnthropic
 
@@ -333,6 +342,9 @@ def model_client() -> "ChatAnthropic":
         max_tokens=MAX_TOKENS,
         thinking={"type": "adaptive"},
         reasoning_effort=EFFORT,
+        output_config={
+            "format": {"type": "json_schema", "schema": transform_schema(REPLY_SCHEMA)}
+        },
         streaming=True,
     )
 

@@ -367,11 +367,22 @@ def test_loader_rejects_a_malformed_file(tmp_path: Path, content: str, reason: s
     assert reason in raised.value.problems[0]
 
 
-def test_model_client_asks_for_adaptive_thinking_at_effort_high(
+def test_model_client_asks_for_adaptive_thinking_effort_high_and_structured_output(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-not-used")
     payload = distractors.model_client()._get_request_payload("hello")
     assert payload["model"] == "claude-opus-5-5"
     assert payload["thinking"] == {"type": "adaptive"}
-    assert payload["output_config"] == {"effort": "high"}
+    assert payload["output_config"]["effort"] == "high"
+    output_format = payload["output_config"]["format"]
+    assert output_format["type"] == "json_schema"
+    schema = output_format["schema"]
+    assert schema["type"] == "array"
+    assert "maxItems: 8" in schema["description"]  # a hint only; the API cannot enforce it
+    assert schema["items"] == {
+        "type": "object",
+        "properties": {"name": {"type": "string"}, "why": {"type": "string"}},
+        "required": ["name", "why"],
+        "additionalProperties": False,
+    }
