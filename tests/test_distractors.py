@@ -141,6 +141,24 @@ def test_reply_that_is_not_an_array_of_name_why_objects_is_zero_picks_and_the_ru
     assert records["油飯"].current == ("筒仔米糕",)
 
 
+def test_invalid_reply_on_repick_keeps_the_current_list_and_records_the_round(
+    tmp_path: Path,
+) -> None:
+    code, out = pick(tmp_path, ["滷肉飯"], Scripted(answer("焢肉飯", "腿庫飯")))
+    assert code == 0
+    data = json.loads(out.read_text(encoding="utf-8"))
+    data["滷肉飯"]["current"] = ["腿庫飯", "油飯"]  # a hand edit
+    out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    code = main([str(CORPUS), str(out), "--repick", "滷肉飯"], ask=Scripted("Sorry, no."))
+    assert code == 0
+    record = load_distractors(out)["滷肉飯"]
+    assert record.current == ("腿庫飯", "油飯")
+    assert [r.round for r in record.rounds] == [1, 2]
+    assert record.rounds[1].invalid_reply == "Sorry, no."
+    assert record.rounds[1].kept == ()
+
+
 def test_prompt_holds_the_whole_target_entry_and_the_others_reduced(tmp_path: Path) -> None:
     corpus = load_corpus(CORPUS)
     template = "T={target}\nO={others}"

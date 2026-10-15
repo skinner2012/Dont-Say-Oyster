@@ -9,8 +9,9 @@ given. Each value holds `rounds` (numbered from 1; each round's `kept` picks as 
 model's `why`, its `dropped` picks with their `why` and the program's `reason`, and
 `invalid_reply`: null, or the raw reply when it was not a JSON array of `name`/`why` objects)
 and `current`, a list of official names: the list the author reviews and may edit by hand and
-the list the cards are built from. A round sets `current` to its kept names. Read the file only
-through `load_distractors`."""
+the list the cards are built from. A round sets `current` to its kept names, except a round
+whose reply was invalid: it leaves `current` as it was (empty for a name's first round), so hand
+edits survive. Read the file only through `load_distractors`."""
 
 import argparse
 import json
@@ -305,7 +306,10 @@ def run_pick(
             new = pick_round(by_name[name], corpus, template, ask, len(earlier) + 1)
         except ModelError as e:
             raise ModelError(f"{name}: {e}") from e
-        current = tuple(pick.name for pick in new.kept)
+        if new.invalid_reply is not None and name in records:
+            current = records[name].current
+        else:
+            current = tuple(pick.name for pick in new.kept)
         records[name] = DistractorRecord(rounds=(*earlier, new), current=current)
         write_distractors(out, records)
         status = "reply was not a JSON array of picks" if new.invalid_reply is not None else (
