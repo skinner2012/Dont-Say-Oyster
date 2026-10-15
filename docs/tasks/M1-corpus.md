@@ -89,7 +89,7 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 - **Consumes:** the schema and loader from T3; the prompts and card-file locations from T1.
 - **Detail:**
   - From BACKLOG M1.7 and M1.8 (the code and the re-pick); the live run and the review are T8. Merged because the prompt is useless without the code that sends it, and the code cannot be tested without a prompt. Re-pick is here because it touches only this ticket's file (author, 2026-10-03).
-  - **Model:** Claude Opus 5.5 (`claude-opus-5-5`, cloud) through `langchain-anthropic`, thinking on (adaptive); approved by the author 2026-10-14. The key is `ANTHROPIC_API_KEY` from `.env`.
+  - **Model:** Claude Opus 5.5 (`claude-opus-5-5`, cloud) through `langchain-anthropic`, thinking on (adaptive), effort high; approved by the author 2026-10-14. The key is `ANTHROPIC_API_KEY` from `.env`.
   - **Prompt** (author, 2026-10-14; `SPEC.md` Corpus and Cards, Distractors; [R35]): the text below, which the implementer puts in the prompt file as written; it is the starting version, and the committed prompt file is the record of the version the author approved in the trials. The program fills `{target}` with the card's whole entry and `{others}` with every other entry's official name, English names, and attributes, both serialized as JSON. If that does not fit the model's context, stop and raise it under Open questions.
 
     ```
@@ -107,10 +107,10 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 
     Weigh together everything you have: how many attributes the target entry and other entry share and which ones; shared characters in the Chinese names or shared words in the English names; and what you know about the two dishes themselves: how they look, how they are made, how and where they are sold and eaten. A dish that shares fewer attributes but looks and eats alike outranks one that matches on attributes alone. Only include the other entries that are hard to distinguish from the target based on a simple description.
 
-    Answer with a JSON array of official names, copied exactly as written in the list above, ranked from most to least confusable, at most eight. Give fewer when fewer entries genuinely qualify; never pad the list. No other text.
+    Answer with a JSON array of objects, ranked from most to least confusable, at most eight: each object has "name", the official name copied exactly as written in the list above, and "why", one sentence on what a description of the target could say that would also point to this entry. Give fewer when fewer entries genuinely qualify; never pad the list. No other text.
     ```
-  - The program keeps a pick only if it equals the official name of another entry (exact string), drops duplicates, keeps the first five valid picks, and lists every other pick as dropped with its reason. Zero valid picks is allowed.
-  - The distractor file holds, for each official name, numbered rounds of kept and dropped picks, and one current distractor list: the list the author reviews and may edit by hand, and the list T7 builds the cards from. A pick round sets the current list to that round's kept picks.
+  - The program keeps a pick only if its name equals the official name of another entry (exact string), drops duplicates, keeps the first five valid picks, and lists every other pick as dropped with its reason. Zero valid picks is allowed. The model's "why" sentence is stored beside each kept and dropped pick for the author's review (author, 2026-10-14); it is not a card field, and T7 ignores it.
+  - The distractor file holds, for each official name, numbered rounds of kept and dropped picks (each with the model's "why"), and one current distractor list: the list the author reviews and may edit by hand, and the list T7 builds the cards from. A pick round sets the current list to that round's kept picks.
   - Re-pick: given official names, the command runs a new round for those names only and replaces their current lists; every other name, including the author's hand edits, stays unchanged; an unknown name is an error. A full run starts a fresh distractor file.
   - This ticket also provides the distractor file's loader; T7 reads the file only through it, so the file's shape is defined in one place.
   - This ticket adds the model client package (LangChain's, pre-approved, or the cloud provider package approved above). The LLM call sits behind one function so tests feed scripted replies.
