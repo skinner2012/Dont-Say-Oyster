@@ -285,9 +285,12 @@ def run_pick(
 ) -> None:
     """A full run (`repick` false) starts a fresh distractor file holding `names`; a re-pick
     adds a round for `names` only (round 1 for a name not yet in the file) and leaves every
-    other name as it is. Every name is checked against the corpus before the first model call.
+    other name as it is. An empty `names` is an error. Every name is checked against the corpus
+    before the first model call.
     The file is written after each name, so when a call fails the names already done stay in
     the file, and re-picking the names not reached finishes the run."""
+    if not names:
+        raise PickError("no official names given")
     by_name = {e.official_name: e for e in corpus}
     unknown = [n for n in names if n not in by_name]
     if unknown:

@@ -293,6 +293,17 @@ def test_full_run_with_a_repeated_name_exits_non_zero(tmp_path: Path) -> None:
     assert code != 0
 
 
+def test_empty_names_array_exits_non_zero_and_writes_no_file(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    ask = Scripted()
+    code, out = pick(tmp_path, [], ask)
+    assert code != 0
+    assert "no official names" in capsys.readouterr().err
+    assert ask.prompts == []
+    assert not out.exists()
+
+
 def test_full_run_starts_a_fresh_file(tmp_path: Path) -> None:
     pick(tmp_path, ["滷肉飯", "油飯"], Scripted("[]", "[]"))
     code, out = pick(tmp_path, ["油飯"], Scripted(answer("滷肉飯")))
