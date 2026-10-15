@@ -1,7 +1,8 @@
 """Distractor picker: asks a model which corpus entries a description of a card could also
 point to, keeps the valid picks, and writes the distractor file. Run as
 `uv run pick-distractors CORPUS DISTRACTORS --names NAMES` for a full run, or with
-`--repick NAME ...` to run a new round for those names only.
+`--repick NAME ...` to run a new round for those names only; a corpus name not yet in the file
+gets its round 1, so a full run that stopped partway is finished by re-picking the rest.
 
 The distractor file is a JSON object keyed by official name, in the order the names were
 given. Each value holds `rounds` (numbered from 1; each round's `kept` picks as `name` and the
@@ -278,9 +279,10 @@ def run_pick(
     repick: bool,
 ) -> None:
     """A full run (`repick` false) starts a fresh distractor file holding `names`; a re-pick
-    adds a round for `names` only and leaves every other name as it is. Every name is checked
-    before the first model call; the file is written after each name, so a failed call keeps
-    the names already done."""
+    adds a round for `names` only (round 1 for a name not yet in the file) and leaves every
+    other name as it is. Every name is checked against the corpus before the first model call.
+    The file is written after each name, so when a call fails the names already done stay in
+    the file, and re-picking the names not reached finishes the run."""
     by_name = {e.official_name: e for e in corpus}
     unknown = [n for n in names if n not in by_name]
     if unknown:
@@ -292,9 +294,6 @@ def run_pick(
     records: dict[str, DistractorRecord] = {}
     if repick:
         records = load_distractors(out)
-        missing = [n for n in names if n not in records]
-        if missing:
-            raise PickError(f"not in the distractor file: {', '.join(missing)}")
 
     for name in names:
         earlier = records[name].rounds if name in records else ()
@@ -351,7 +350,8 @@ def main(argv: Sequence[str] | None = None, ask: Ask | None = None) -> int:
         "--repick",
         nargs="+",
         metavar="NAME",
-        help="run a new round for these names only, keeping every other name as it is",
+        help="run a new round for these names only, keeping every other name as it is; "
+        "a name not yet in the file gets its round 1",
     )
     args = parser.parse_args(argv)
     try:

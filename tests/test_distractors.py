@@ -190,19 +190,33 @@ def test_repick_changes_only_the_named_name(tmp_path: Path) -> None:
     assert repicked.current == ("鵝肉飯",)
 
 
-@pytest.mark.parametrize("name", ["肉夾饃", "鵝肉飯"])  # not in the corpus; not in the file
-def test_repick_of_an_unknown_name_exits_non_zero_and_changes_nothing(
-    tmp_path: Path, name: str, capsys: pytest.CaptureFixture[str]
+def test_repick_of_a_name_not_in_the_corpus_exits_non_zero_and_changes_nothing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     code, out = pick(tmp_path, ["滷肉飯"], Scripted(answer("焢肉飯")))
     assert code == 0
     before = out.read_bytes()
     ask = Scripted()
-    code = main([str(CORPUS), str(out), "--repick", "滷肉飯", name], ask=ask)
+    code = main([str(CORPUS), str(out), "--repick", "滷肉飯", "肉夾饃"], ask=ask)
     assert code != 0
-    assert name in capsys.readouterr().err
+    assert "肉夾饃" in capsys.readouterr().err
     assert ask.prompts == []
     assert out.read_bytes() == before
+
+
+def test_repick_of_a_corpus_name_not_yet_in_the_file_adds_it_with_round_1(
+    tmp_path: Path,
+) -> None:
+    code, out = pick(tmp_path, ["滷肉飯"], Scripted(answer("焢肉飯")))
+    assert code == 0
+    before = load_distractors(out)
+    code = main([str(CORPUS), str(out), "--repick", "鵝肉飯"], ask=Scripted(answer("燻鵝")))
+    assert code == 0
+    after = load_distractors(out)
+    assert list(after) == ["滷肉飯", "鵝肉飯"]
+    assert after["滷肉飯"] == before["滷肉飯"]
+    assert [r.round for r in after["鵝肉飯"].rounds] == [1]
+    assert after["鵝肉飯"].current == ("燻鵝",)
 
 
 def test_repick_without_a_distractor_file_exits_non_zero(tmp_path: Path) -> None:
