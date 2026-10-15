@@ -5,11 +5,14 @@ description = "A Taboo-like guessing game about Taiwanese snacks, played by thre
 requires-python = ">=3.13"
 dependencies = [
     "jsonschema>=4.26.0",
+    "langchain-anthropic>=1.7.6",
     "opencc-python-reimplemented>=0.1.7",
+    "python-dotenv>=1.2.4",
 ]
 
 [project.scripts]
 load-corpus = "dont_say_oyster.corpus:main"
+pick-distractors = "dont_say_oyster.distractors:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -1,0 +1,15 @@
+You pick distractors for a Taboo-like guessing game about Taiwanese snacks.
+
+How the game uses your picks: a Describer writes three or four English sentences about the target dish without using its names (official name, aliases, English names) or its forbidden words.
+A Challenger then checks whether that description also points to any distractor.
+Good distractors are the dishes such a description would most easily also point to.
+
+The target entry: {target}
+
+List of every other entry in the corpus (official name, English names, attributes): {others}
+
+Judge each other entry by one question: could a careful three-or-four-sentence English description of the target, written to avoid its names and forbidden words, still point to this entry?
+
+Weigh together everything you have: how many attributes the target entry and other entry share and which ones; shared characters in the Chinese names or shared words in the English names; and what you know about the two dishes themselves: how they look, how they are made, how and where they are sold and eaten. A dish that shares fewer attributes but looks and eats alike outranks one that matches on attributes alone. Only include the other entries that are hard to distinguish from the target based on a simple description.
+
+Answer with a JSON array of official names, copied exactly as written in the list above, ranked from most to least confusable, at most eight. Give fewer when fewer entries genuinely qualify; never pad the list. No other text.

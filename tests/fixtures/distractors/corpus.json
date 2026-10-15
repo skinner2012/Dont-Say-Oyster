@@ -1,0 +1,369 @@
+[
+  {
+    "official_name": "滷肉飯",
+    "aliases": [
+      "魯肉飯",
+      "肉燥飯",
+      "肉臊飯"
+    ],
+    "english_names": [
+      "Braised Pork Rice",
+      "loo-bah-png",
+      "Lu Rou Fan"
+    ],
+    "forbidden_words": [
+      "pork",
+      "rice",
+      "soy",
+      "minced",
+      "braised"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Braised"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "焢肉飯",
+    "aliases": [
+      "爌肉飯",
+      "炕肉飯",
+      "控肉飯"
+    ],
+    "english_names": [
+      "Braised Pork Belly Rice",
+      "khong-bah-png",
+      "Kong Rou Fan"
+    ],
+    "forbidden_words": [
+      "pork",
+      "belly",
+      "rice",
+      "soy",
+      "braised",
+      "slab"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Braised"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "腿庫飯",
+    "aliases": [
+      "蹄膀飯"
+    ],
+    "english_names": [
+      "Braised Pork Knuckle Rice",
+      "Tui Ku Fan"
+    ],
+    "forbidden_words": [
+      "pork",
+      "knuckle",
+      "hock",
+      "rice",
+      "braised"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Braised"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "火雞肉飯",
+    "aliases": [
+      "嘉義火雞肉飯",
+      "雞肉飯",
+      "雞絲飯"
+    ],
+    "english_names": [
+      "Turkey Rice",
+      "hue-ke-bah-png",
+      "Huo Ji Rou Fan",
+      "Shredded Chicken Rice",
+      "Ji Rou Fan"
+    ],
+    "forbidden_words": [
+      "turkey",
+      "rice",
+      "shredded",
+      "shallot",
+      "chiayi",
+      "chicken"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Poultry"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "鴨肉飯",
+    "aliases": [],
+    "english_names": [
+      "Duck Rice",
+      "Ya Rou Fan"
+    ],
+    "forbidden_words": [
+      "duck",
+      "rice",
+      "sliced",
+      "sauce"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Poultry"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "鵝肉飯",
+    "aliases": [],
+    "english_names": [
+      "Goose Rice",
+      "E Rou Fan"
+    ],
+    "forbidden_words": [
+      "goose",
+      "rice",
+      "sliced",
+      "sauce"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Poultry"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "燻鵝",
+    "aliases": [],
+    "english_names": [
+      "Smoked goose"
+    ],
+    "forbidden_words": [
+      "goose",
+      "smoked",
+      "sugar",
+      "sliced",
+      "dipping"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Poultry"
+      ],
+      "cooking_method": [
+        "Smoked"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "鹽水鵝",
+    "aliases": [],
+    "english_names": [
+      "Salt-water boiled goose"
+    ],
+    "forbidden_words": [
+      "goose",
+      "salt",
+      "brine",
+      "sliced",
+      "dipping"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Poultry"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "油飯",
+    "aliases": [
+      "台灣油飯"
+    ],
+    "english_names": [
+      "Taiwanese Sticky Rice",
+      "Glutinous oil rice",
+      "iu-png",
+      "You Fan"
+    ],
+    "forbidden_words": [
+      "glutinous",
+      "sticky",
+      "mushroom",
+      "shallot",
+      "shrimp",
+      "rice"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Festival"
+      ]
+    }
+  },
+  {
+    "official_name": "筒仔米糕",
+    "aliases": [
+      "米糕"
+    ],
+    "english_names": [
+      "Steamed Sticky Rice Cake",
+      "Tube rice pudding",
+      "tang-a-bi-ko",
+      "Tong Zai Mi Gao"
+    ],
+    "forbidden_words": [
+      "glutinous",
+      "sticky",
+      "tube",
+      "steamed",
+      "rice",
+      "pork"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    }
+  }
+]
