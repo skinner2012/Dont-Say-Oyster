@@ -13,6 +13,8 @@ dependencies = [
 [project.scripts]
 load-corpus = "dont_say_oyster.corpus:main"
 pick-distractors = "dont_say_oyster.distractors:main"
+select-cards = "dont_say_oyster.selection:main"
+build-cards = "dont_say_oyster.cards:main"
 
 [build-system]
 requires = ["hatchling"]
