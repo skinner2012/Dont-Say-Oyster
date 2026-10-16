@@ -5771,7 +5771,9 @@
   },
   {
     "official_name": "杏仁豆腐",
-    "aliases": [],
+    "aliases": [
+      "杏仁凍"
+    ],
     "english_names": [
       "Almond Jelly",
       "Xing Ren Dou Fu"
@@ -6625,7 +6627,9 @@
   {
     "official_name": "古早味紅茶",
     "aliases": [
-      "決明子紅茶"
+      "決明子紅茶",
+      "古早味冰紅茶",
+      "古早味紅茶冰"
     ],
     "english_names": [
       "Traditional Taiwanese Black Tea"
@@ -8583,8 +8587,10 @@
     }
   },
   {
-    "official_name": "甜年糕",
-    "aliases": [],
+    "official_name": "年糕",
+    "aliases": [
+      "甜年糕"
+    ],
     "english_names": [
       "Sweet Sticky Rice Cake"
     ],
@@ -11498,8 +11504,11 @@
     }
   },
   {
-    "official_name": "烤生蠔",
-    "aliases": [],
+    "official_name": "烤蚵仔",
+    "aliases": [
+      "烤牡蠣",
+      "烤生蠔"
+    ],
     "english_names": [
       "Grilled oyster"
     ],
