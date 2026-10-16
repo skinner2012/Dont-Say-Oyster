@@ -194,3 +194,6 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 
 ### 2026-10-07 — First code commit; two-week limit starts  (no spec change)
 - Why: CLAUDE.md, Start here, step 4. The Non-goals two-week limit counts from the first code commit, 6becd4f (T1), dated 2026-10-07.
+
+### 2026-10-16 — M1 (Corpus) done  (no spec change)
+- Why: the M1 Done when holds: the corpus (342 entries, 338f56b) and the forty cards (645fc01) load without error, every entry (T5) and every distractor (T8) was reviewed by the author, and the four manifests carry the same card order. Tickets T1–T8 in `docs/tasks/M1-corpus.md`, 62 commits on `m1-corpus`, fast-forwarded into `main` (the author prefers no merge commits; CLAUDE.md updated in the next commit). The three Open questions in that file ([R22] 面/麵 and 干/乾, plurals; [R5] "in Chinese") were answered in chat and become the first `SPEC.md` changes after the merge.
