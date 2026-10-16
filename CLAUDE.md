@@ -60,7 +60,7 @@ Progress lives in the repo: each ticket carries a `Status` line (`todo`, `done <
 - Commit only currently staged files. One commit is one of: a ticket's implementation; an audit fix for one finding; a ticket's `Status` or `Audit findings` update; one `SPEC.md` change with its `BACKLOG.md` patch; one doc fix. If staged files span two of these, stop and report.
 - In the session talking to the author: propose the commit message and wait for explicit approval before committing, even in auto mode. A dispatched implementer commits its ticket without asking once the ticket's Acceptance passes, with the message format below. Format: Conventional Commits, title only, `type(scope): concise description`, no body except the `Co-Authored-By` trailer. Scope is the module or doc touched (`corpus`, `oracle`, `spec`, `tasks`, `docs`).
 
-- Branches: one branch per milestone (`m1-corpus`, `m2-one-game`, …). Every commit during a milestone, including `SPEC.md`, `BACKLOG.md`, and `DECISIONS.md` changes, lands on that branch. When the milestone's `Done when` holds, rebase onto `main` and merge with `--no-ff`, so each milestone is one merge commit. `main` receives only the initial import and milestone merges.
+- Branches: one branch per milestone (`m1-corpus`, `m2-one-game`, …). Every commit during a milestone, including `SPEC.md`, `BACKLOG.md`, and `DECISIONS.md` changes, lands on that branch. When the milestone's `Done when` holds, rebase onto `main` and fast-forward `main` to the branch; never create a merge commit (the author's preference, 2026-10-16). `main` moves only at the end of a milestone.
 
 ## Start here (first session in this repo)
 
@@ -71,7 +71,7 @@ Progress lives in the repo: each ticket carries a `Status` line (`todo`, `done <
 
 ## Milestones and tickets
 
-- `SPEC.md` lists the milestones in order (M1, M2, …); each is a bullet list ending in a `Done when` line. A milestone is done when that line is true; the author declares it, in the merge commit to `main` and a one-line `docs/DECISIONS.md` Process entry.
+- `SPEC.md` lists the milestones in order (M1, M2, …); each is a bullet list ending in a `Done when` line. A milestone is done when that line is true; the author declares it in a one-line `docs/DECISIONS.md` Process entry, the last commit on the branch before `main` is fast-forwarded.
 - Tickets live in `docs/tasks/M<n>-<short-name>.md` (short name: two or three lowercase words from the milestone title, hyphenated, e.g. `M1-corpus.md`, `M2-one-game.md`), one file per milestone, written **only when the previous milestone is done**. The format is in `docs/tasks/TEMPLATE.md`.
 - One ticket = one implementation commit (audit fixes and Status updates are separate small commits), so a ticket does one thing; its scope boundary (what it does and does not touch) is part of the ticket. A ticket's Acceptance must be observable; program logic is verified with scripted model outputs, and a ticket whose job is a live run is accepted by the record it leaves, not by the result's quality.
 - A ticket's Detail says only what `SPEC.md` does not: module boundaries, file names, how to test. Rules are cited by `[R#]`, never paraphrased.
