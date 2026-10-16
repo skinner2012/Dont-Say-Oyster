@@ -1,0 +1,2047 @@
+{
+  "筒仔米糕": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "油飯",
+            "why": "A description of savory chewy rice studded with braised pork, shiitake and dried shrimp, cooked in steam and seasoned with soy, fits this dish almost exactly."
+          },
+          {
+            "name": "肉粽",
+            "why": "Talk of seasoned chewy rice steamed around a filling of pork belly, mushroom and egg yolk would also suit the leaf-wrapped dumpling."
+          },
+          {
+            "name": "碗粿",
+            "why": "Saying it is steamed in a small individual cup, turned out as a mound with pork inside and topped with a sweet soy-based sauce also describes this bowl-steamed southern snack."
+          },
+          {
+            "name": "竹筒飯",
+            "why": "Mentioning rice packed with savory ingredients and cooked inside a cylindrical container points just as well to rice cooked in bamboo."
+          },
+          {
+            "name": "糯米腸",
+            "why": "A description of chewy savory rice with peanuts or pork stuffed into a casing-like shape and steamed overlaps this night-market item."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "滷肉飯",
+            "why": "A cheap counter meal of rice under a ladle of sweet-savory pork sauce, sold at Tainan-style eateries, could also be read as braised pork over rice.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "桂圓米糕",
+            "why": "It shares the same Chinese name element and is chewy rice steamed into a molded portion, so any description that leans on shape and texture rather than savory flavor points here too.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "大腸包小腸",
+            "why": "References to chewy rice served as a pork-accompanied snack at street stalls could also point to the sausage tucked into a rice casing.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "油飯",
+      "肉粽",
+      "碗粿",
+      "竹筒飯",
+      "糯米腸"
+    ]
+  },
+  "湯粄條": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "米粉湯",
+            "why": "A description of a savory soup with slippery noodles milled from grain, a clear pork-bone stock, and slices of pork also fits this rice vermicelli soup."
+          },
+          {
+            "name": "切仔麵",
+            "why": "Blanched noodles in a light pork stock, topped with bean sprouts, chives, sliced pork and fried shallots, would describe this simple noodle soup just as well."
+          },
+          {
+            "name": "鼎邊銼",
+            "why": "Soft, slippery ribbon strips made from a grain batter and served in a savory soup bowl also match these wok-edge noodle sheets."
+          },
+          {
+            "name": "乾粄條",
+            "why": "Any mention of the distinctive smooth, thick-cut noodle sheets from Meinong or Xinpu points to the same noodle, served here without soup."
+          },
+          {
+            "name": "魚丸米粉",
+            "why": "A clear savory soup with pale grain-based noodles as the everyday base also fits this vermicelli soup topped with fish balls."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "陽春麵",
+            "why": "A plain, inexpensive bowl of noodles in clear stock with scallions and a little meat could just as easily be this simple noodle soup.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "炒粄條",
+            "why": "A description built around the same pale, chewy noodle sheets tied to Hakka towns overlaps with this stir-fried version unless it stresses the soup.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "米粉湯",
+      "切仔麵",
+      "鼎邊銼",
+      "陽春麵",
+      "魚丸米粉"
+    ]
+  },
+  "滷豆干": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "鐵蛋",
+            "why": "A description of a chewy, dark, savory-sweet snack slow-simmered in a soy-based liquid and bought in vacuum packs as a hometown souvenir fits these braised eggs just as well."
+          },
+          {
+            "name": "炸豆腐",
+            "why": "Saying it is a firm, savory snack made from pressed bean curd, cut into blocks and eaten plain or with sauce, also points to this fried bean-curd snack."
+          },
+          {
+            "name": "滷海帶",
+            "why": "Describing a dark, chewy item simmered in a spiced soy-sauce master stock and picked from a lu wei side-dish tray as a cold savory nibble also fits braised kelp."
+          },
+          {
+            "name": "滷蛋",
+            "why": "A description of something stewed in a star-anise soy marinade until brown on the outside and served as a savory side to rice or noodles also matches braised eggs."
+          },
+          {
+            "name": "肉乾",
+            "why": "Calling it a chewy, savory-sweet, flat-sheet snack sold in shops as a packaged gift for travelers also points to pork jerky."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "臭豆腐",
+            "why": "Mentioning a bean-curd snack cut into blocks and eaten as a popular Taiwanese savory street treat could also lead to stinky tofu.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "茶葉蛋",
+            "why": "Describing a snack steeped for hours in spiced dark liquid until deeply colored and sold from a simmering pot also fits tea eggs.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "滷花生",
+            "why": "A description of a plant-protein snack simmered in spiced soy-based stock and eaten as a savory side or drinking nibble also fits braised peanuts.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "鐵蛋",
+      "炸豆腐",
+      "滷海帶",
+      "滷蛋",
+      "滷花生"
+    ]
+  },
+  "薑絲大腸": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "滷大腸",
+            "why": "A description of chewy, fatty pig large-bowel pieces served as a savory side dish fits this braised version of the same cut."
+          },
+          {
+            "name": "燙粉腸",
+            "why": "Mentioning tender, chewy pork offal tubes eaten as a small side plate also matches this blanched pork small-intestine dish."
+          },
+          {
+            "name": "客家小炒",
+            "why": "Calling it a classic stir-fried pork side dish from the Hakka community's home cooking points straight to this other signature Hakka stir-fry."
+          },
+          {
+            "name": "麻油腰子",
+            "why": "Describing pork offal cooked with lots of thin pungent root strips for a warming, savory dish also fits this sesame-oil pork kidney dish."
+          },
+          {
+            "name": "大腸麵線",
+            "why": "Highlighting chewy pieces of pig bowel as the star ingredient also evokes this vermicelli thick soup known for its intestine pieces."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "生炒花枝",
+            "why": "A description of a quick wok stir-fry with a tangy sour sauce and chewy bite also matches this sour-sweet stir-fried cuttlefish.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "涼拌豬耳朵",
+            "why": "Mentioning chewy, crunchy pork offal dressed in a savory sauce as a side dish can also point to this pig's ear plate.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "鱔魚意麵",
+            "why": "A wok-fried, chewy protein in a sauce with a sour edge also describes this eel stir-fry, which has a sweet-sour sauce.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "滷大腸",
+      "燙粉腸",
+      "客家小炒",
+      "麻油腰子",
+      "大腸麵線"
+    ]
+  },
+  "肉羹": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "魷魚羹",
+            "why": "A description of a glossy cornstarch-thickened broth with chewy bits, wood-ear and cabbage shreds, finished with black vinegar and basil, sold as a cheap stall snack, fits squid thick soup almost equally."
+          },
+          {
+            "name": "花枝羹",
+            "why": "The same viscous, savory-sweet gravy soup with springy seafood-bound morsels, eaten from a bowl with vinegar at night-market stalls, describes cuttlefish thick soup too."
+          },
+          {
+            "name": "土魠魚羹",
+            "why": "A Tainan-style thickened soup containing coated protein chunks, cabbage and a sweet-sour vinegar finish would also point to the mackerel version."
+          },
+          {
+            "name": "米粉羹",
+            "why": "A gloopy savory broth with meat pieces and mushrooms describes this vermicelli thick soup, which is essentially the target with rice noodles added."
+          },
+          {
+            "name": "大麵羹",
+            "why": "A thickened savory broth served in a bowl as a cheap everyday snack also points to this Taichung thick noodle soup."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "肉粿",
+            "why": "The target's hallmark viscous savory meat gravy is also poured over this rice cake, which shares the 肉 character and the pork-seafood thick-soup profile.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "豆簽羹",
+            "why": "A thickened seafood-flavored broth with assorted ingredients eaten as a bowl snack overlaps with this bean vermicelli thick soup.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "生炒鴨肉羹",
+            "why": "A sweet-savory, cornstarch-thickened soup with meat strips, cabbage and vinegar fits this duck thick soup apart from the specific meat.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "魷魚羹",
+      "花枝羹",
+      "土魠魚羹",
+      "米粉羹",
+      "生炒鴨肉羹"
+    ]
+  },
+  "年糕": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "炸年糕",
+            "why": "A dense, chewy, sweet cake of pounded rice eaten at the Lunar festival is exactly what this dish is, only sliced and deep-fried."
+          },
+          {
+            "name": "發粿",
+            "why": "A sweet rice cake steamed for the Lunar festival and offered for prosperity fits this steamed, cup-shaped dessert too."
+          },
+          {
+            "name": "黑糖糕",
+            "why": "A dark, caramel-colored, sweet steamed cake would also suggest this molasses-colored steamed cake, even though it is made with wheat."
+          },
+          {
+            "name": "紅龜粿",
+            "why": "A chewy, sweet, steamed rice-dough cake made for festivals and temple offerings also describes this tortoise-shaped cake."
+          },
+          {
+            "name": "九層粿",
+            "why": "A sweet steamed rice cake cut into chewy slices also describes this layered steamed rice dessert."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "麻糬",
+            "why": "A soft, chewy, sweet treat made from steamed and pounded rice points just as easily to this dessert.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "蘿蔔糕",
+            "why": "A steamed rice cake that families make for the Lunar festival and slice and pan-fry also fits this cake, unless the description stresses sweetness.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "白糖粿",
+            "why": "A chewy rice-dough dessert coated in sugar could also be this fried cake if the description does not mention steaming.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "炸年糕",
+      "發粿",
+      "黑糖糕",
+      "紅龜粿",
+      "九層粿"
+    ]
+  },
+  "杏仁豆腐": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "仙草凍",
+            "why": "A sweet chilled dessert set into a wobbly block, cut into pieces and served in sweet liquid with ice, which fits grass jelly apart from its colour."
+          },
+          {
+            "name": "愛玉冰",
+            "why": "A seed-derived, translucent, set dessert served chilled in sweet liquid fits aiyu almost exactly."
+          },
+          {
+            "name": "豆花",
+            "why": "A soft, pale, set dessert served in a bowl of sweet liquid with toppings also matches tofu pudding."
+          },
+          {
+            "name": "菜燕",
+            "why": "Agar is often the setting agent for the target, so a sweet chilled set block described by its firmness and texture points to agar jelly too."
+          },
+          {
+            "name": "杏仁茶",
+            "why": "Shares the same nutty ground-kernel flavour and aroma, so any mention of that distinctive fragrance points here as well."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "粉粿冰",
+            "why": "Chewy translucent cut pieces served with ice and sweet liquid resemble a description of the target's chilled bowl.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "仙草凍",
+      "愛玉冰",
+      "豆花",
+      "菜燕",
+      "杏仁茶"
+    ]
+  },
+  "四果冰": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "八寶冰",
+            "why": "A description of a mound of shaved ice heaped with several traditional sweet toppings and drizzled with sugar water fits the multi-topping eight-treasure ice just as well."
+          },
+          {
+            "name": "仙人掌冰",
+            "why": "Shaved ice built around fruit and sweet sugary flavors also fits the fruit-based cactus ice."
+          },
+          {
+            "name": "芒果冰",
+            "why": "Saying it is a summer shaved-ice dessert topped with fruit would also point to mango shaved ice."
+          },
+          {
+            "name": "黑糖剉冰",
+            "why": "An old-fashioned shaved ice with assorted toppings soaked in sweet brown sugar water fits the brown sugar shaved ice."
+          },
+          {
+            "name": "燒冷冰",
+            "why": "A traditional shaved-ice bowl topped with multiple sweet add-ins could also describe hot-toppings shaved ice."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "清冰",
+            "why": "A plain-style traditional shaved ice sweetened with sugar water from old ice shops also matches the banana-flavored ice.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "紅豆煉乳冰",
+            "why": "A classic Taiwanese shaved ice with sweet toppings poured over it could be confused with red bean milk ice.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "粉粿冰",
+            "why": "A traditional ice-shop shaved ice with chewy, colorful sweet toppings in sugar water also fits jelly cake shaved ice.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "八寶冰",
+      "粉粿冰",
+      "芒果冰",
+      "黑糖剉冰",
+      "燒冷冰"
+    ]
+  },
+  "杏仁茶": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "米漿",
+            "why": "A sweet, smooth, pale-beige breakfast drink made by grinding seeds or nuts with rice, served hot alongside fried dough sticks, describes this peanut-rice milk almost exactly."
+          },
+          {
+            "name": "豆漿",
+            "why": "A creamy, sweetened drink made by grinding soaked seeds and boiling the liquid, drunk hot at traditional breakfast shops with fried crullers, fits soy milk just as well."
+          },
+          {
+            "name": "杏仁豆腐",
+            "why": "Any mention of the distinctive fragrant, marzipan-like aroma from ground seeds points straight to this jelly, which uses the same flavoring and shares the first two characters of its name."
+          },
+          {
+            "name": "麵茶",
+            "why": "A thick, sweet, comforting cup stirred from powder with hot water and called a 'tea' though it contains no tea leaves also describes this roasted flour drink."
+          },
+          {
+            "name": "花生湯",
+            "why": "A sweet, milky-looking, hot bowl made from simmered seeds and sometimes eaten with fried dough overlaps with this peanut soup."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "擂茶",
+            "why": "A drink made by grinding seeds into a paste and adding liquid, with a nutty sweet taste and the word 'tea' in its name, could also point to Hakka pounded tea.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "鹹豆漿",
+            "why": "A hot breakfast-shop bowl made from ground beans and paired with fried dough sticks could suggest this curdled soy milk if sweetness is not stressed.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "米漿",
+      "豆漿",
+      "杏仁豆腐",
+      "麵茶",
+      "花生湯"
+    ]
+  },
+  "百香果汁": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "百香綠茶",
+            "why": "A description of a sweet-tart tropical drink with crunchy black pips floating in it, sold iced at drink stands, fits this tea version almost exactly."
+          },
+          {
+            "name": "金桔檸檬",
+            "why": "A tangy-sweet, uncooked, iced citrus-like drink sold at drink shops could easily be read as this kumquat-lemon drink."
+          },
+          {
+            "name": "四味果汁",
+            "why": "A sweet and tart blended juice served cold with no cooking matches this mixed juice drink."
+          },
+          {
+            "name": "檸檬紅茶",
+            "why": "A refreshing sweet-tart iced drink from a beverage stand could also describe this lemon tea."
+          },
+          {
+            "name": "楊桃汁",
+            "why": "A tangy-sweet juice made from a tropical produce item, served cold, could point to this starfruit drink."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "酸梅湯",
+            "why": "A tart, sweet, refreshing summer drink could also suggest this plum beverage.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "洛神花茶",
+            "why": "A tangy, sweet, chilled drink sold for summer refreshment overlaps with roselle tea.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "芭樂汁",
+            "why": "A tropical juice pressed from fresh produce and sold chilled could be confused with guava juice.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "百香綠茶",
+      "金桔檸檬",
+      "四味果汁",
+      "芭樂汁",
+      "楊桃汁"
+    ]
+  },
+  "炒冬粉": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "炒米粉",
+            "why": "A description of thin, dry strands stir-fried in a wok with shredded pork, cabbage, mushrooms and soy sauce fits stir-fried rice vermicelli almost exactly."
+          },
+          {
+            "name": "炒麵",
+            "why": "Saying it is a savory, dry plate of noodles stir-fried with meat and vegetables at a local eatery also describes ordinary Taiwanese fried noodles."
+          },
+          {
+            "name": "炒米苔目",
+            "why": "A dry, savory wok-fried noodle dish with soy sauce, pork and vegetables also matches stir-fried rice pin noodles."
+          },
+          {
+            "name": "炒粄條",
+            "why": "A savory stir-fried noodle plate tossed with pork, bean sprouts and soy sauce could equally be stir-fried Hakka rice noodles."
+          },
+          {
+            "name": "鴨肉冬粉",
+            "why": "Mentioning the slippery, chewy starch noodle that turns clear when cooked also points to the duck noodle soup made with the same noodle."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "豬心冬粉",
+            "why": "Describing the specific clear, springy starch noodle would also point to this pig's heart soup, which uses the same noodle type.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "鐵板麵",
+            "why": "A stir-fried, savory plate of noodles served as a quick meal could be confused with hot plate noodles, though those are wheat noodles served in sauce.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "炒米粉",
+      "炒麵",
+      "炒米苔目",
+      "炒粄條",
+      "鴨肉冬粉"
+    ]
+  },
+  "牛肉麵": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "爌肉麵",
+            "why": "A bowl of wheat noodles in a rich, savory soup topped with large chunks of slow-stewed, fatty meat fits this pork belly noodle dish almost exactly."
+          },
+          {
+            "name": "牛肉湯",
+            "why": "Mentioning cattle meat in a savory soup, or a Tainan connection, points to this fresh beef soup, though it lacks noodles and is not stewed."
+          },
+          {
+            "name": "排骨酥麵",
+            "why": "Noodles in a hearty savory soup crowned with big, tender, long-cooked chunks of meat also describes this fried pork rib noodle soup, which is steamed until soft."
+          },
+          {
+            "name": "榨菜肉絲麵",
+            "why": "A meat-topped wheat noodle soup garnished with pickled mustard greens describes this pork and mustard noodle bowl just as well."
+          },
+          {
+            "name": "豬腳麵線",
+            "why": "Noodles served with slow-stewed, dark, savory meat pieces could also suggest this pork hock vermicelli."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "擔仔麵",
+            "why": "A classic Taiwanese bowl of noodles in a savory meat-based soup with a meaty topping could also be read as this Tainan noodle soup.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "陽春麵",
+            "why": "A plain description of a bowl of wheat noodles in clear, savory soup with scallions and greens also fits this simple noodle soup.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "切仔麵",
+            "why": "A generic everyday Taiwanese noodle soup with sliced meat and savory soup overlaps with this blanched noodle dish.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "爌肉麵",
+      "牛肉湯",
+      "排骨酥麵",
+      "榨菜肉絲麵",
+      "豬腳麵線"
+    ]
+  },
+  "蒸菱角": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "水煮花生",
+            "why": "A description of a plain savory snack of seeds cooked in their hard outer casings, cracked open by hand and eaten warm as a casual nibble, fits boiled peanuts just as well."
+          },
+          {
+            "name": "烤茭白筍",
+            "why": "Mentioning a seasonal crop grown in flooded paddies or ponds, cooked whole and peeled from its outer covering before eating, also points to grilled water bamboo."
+          },
+          {
+            "name": "烤地瓜",
+            "why": "A starchy, chestnut-like, mildly sweet-savory flesh sold hot from street carts in cooler months and peeled before eating also describes roasted sweet potato."
+          },
+          {
+            "name": "水煮玉米",
+            "why": "A simple whole plant food cooked in steam or water and sold hot by roadside vendors as an unseasoned-tasting snack could equally describe boiled corn."
+          },
+          {
+            "name": "滷花生",
+            "why": "A savory legume-like seed snack served in a pile and eaten one by one could be read as braised peanuts."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "烤玉米",
+            "why": "A seasonal produce snack sold whole from street stalls and eaten by hand also overlaps with grilled corn.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "水煮花生",
+      "烤茭白筍",
+      "烤地瓜",
+      "水煮玉米",
+      "滷花生"
+    ]
+  },
+  "涼拌豬耳朵": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "鴨賞",
+            "why": "A smoked, cured meat snack cut into thin strips and served cold, tossed with garlic, scallion and seasoning, fits this dish as well."
+          },
+          {
+            "name": "鯊魚煙",
+            "why": "A smoked savory snack served cold in thin pieces with a soy-based dipping sauce and ginger or garlic matches the same description."
+          },
+          {
+            "name": "燻鵝",
+            "why": "A tea-smoked meat served cold in slices as a savory side snack with a dipping sauce would also fit."
+          },
+          {
+            "name": "燙嘴邊肉",
+            "why": "A cut from the hog's head served thinly cut as a cold side dish at noodle stalls, with ginger and soy paste, points here too."
+          },
+          {
+            "name": "蒜泥白肉",
+            "why": "Thin cold slices of pork dressed in a garlicky soy sauce as an appetizer describes this dish almost identically."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "涼拌海蜇皮",
+            "why": "A cold-dressed appetizer of springy, chewy strips tossed in vinegar, garlic and chili matches the texture and serving style.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "雞腳凍",
+            "why": "A chilled, gelatinous, chewy-textured offal snack served cold as a drinking side dish overlaps strongly.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "燙肝連",
+            "why": "A pork offal side dish cut into slices and served at noodle stalls with a soy-ginger dip would also fit.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "鴨賞",
+      "鯊魚煙",
+      "燻鵝",
+      "燙嘴邊肉",
+      "蒜泥白肉"
+    ]
+  },
+  "鹹湯圓": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "湯圓",
+            "why": "A description of chewy round rice-flour dumplings simmered in a bowl of liquid and eaten at the Winter Solstice or Lantern Festival fits this sweet version too, unless the savory broth is made explicit."
+          },
+          {
+            "name": "貢丸湯",
+            "why": "Round balls floating in a clear savory broth with chopped greens and fried shallots, served as a small soup snack, describes this meatball soup almost as well."
+          },
+          {
+            "name": "魚丸湯",
+            "why": "A savory clear soup of bouncy round balls garnished with herbs and sold as a cheap side bowl also points to fish ball soup."
+          },
+          {
+            "name": "牛汶水",
+            "why": "A Hakka-associated dish of chewy pounded-rice dough boiled and served in liquid overlaps strongly, differing mainly in being sweet."
+          },
+          {
+            "name": "鼎邊銼",
+            "why": "A savory brothy bowl featuring a soft cooked rice-based dough with pork, dried shrimp and fungi toppings could also describe this rice-batter soup."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "香菇肉粥",
+            "why": "A savory boiled rice-based soup with minced meat, dried shiitake, dried shrimp and fried shallots shares much of the same flavor profile.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "餛飩湯",
+            "why": "Soft pork-flavored dumplings bobbing in a light savory broth with scallions would also fit wonton soup.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "湯圓",
+      "貢丸湯",
+      "魚丸湯",
+      "牛汶水",
+      "餛飩湯"
+    ]
+  },
+  "方塊酥": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "肚臍餅",
+            "why": "Both are small baked wheat souvenir biscuits topped with seeds, so a description of a seed-studded, sweet baked gift pastry fits either."
+          },
+          {
+            "name": "牛舌餅",
+            "why": "A thin, sweet baked wheat biscuit that shatters when bitten and is sold in boxes as a regional souvenir describes both."
+          },
+          {
+            "name": "奶油酥條",
+            "why": "Both are bite-sized, lightly sweet baked wheat snacks with a buttery, shattering crunch, sold packaged as gifts."
+          },
+          {
+            "name": "鹹餅",
+            "why": "A small, hard, baked wheat cracker-like biscuit from a traditional bakery, bought as a souvenir, matches both."
+          },
+          {
+            "name": "太陽餅",
+            "why": "Clues about a lard-enriched, multi-sheeted pastry dough that crumbles into shards, baked and sold as a city's signature gift, also fit this pastry."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "奶油酥餅",
+            "why": "Both are sweet baked pastries with fat-laminated dough that crumbles apart, sold as boxed souvenirs.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "蒜頭餅",
+            "why": "Both are small sweet baked wheat biscuits sold as hometown gifts at traditional bakeries.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "鳥仔餅",
+            "why": "Both are simple, crunchy, sweet baked wheat cookies sold as nostalgic souvenir snacks.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "肚臍餅",
+      "牛舌餅",
+      "奶油酥條",
+      "鹹餅",
+      "太陽餅"
+    ]
+  },
+  "綠豆湯": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "紅豆湯",
+            "why": "A description of a boiled legume dessert soup, with small beans simmered soft in sugared water and served hot or cold, fits the red bean version almost exactly."
+          },
+          {
+            "name": "綠豆沙",
+            "why": "It is made from the same legume, sweetened and served cold as a refreshing cooling treat, so a description focused on the ingredient and its heat-relieving role points to the blended slush too."
+          },
+          {
+            "name": "綠豆冰袋",
+            "why": "The same cooked, sweetened legume is frozen in a bag, so any mention of the bean's cooling, heat-relieving reputation could also fit this frozen treat."
+          },
+          {
+            "name": "薏仁湯",
+            "why": "It is another pale, grain-like seed boiled into a sweet, clear dessert soup prized for clearing heat and dampness."
+          },
+          {
+            "name": "花生湯",
+            "why": "It is another boiled legume simmered until soft in a sweet broth and served as a traditional dessert soup."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "紅豆紫米粥",
+            "why": "It is a sweet, boiled bean-based dessert porridge eaten from a bowl, so it overlaps if the description stresses the soft beans and starchy, sugary liquid.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "銀耳蓮子湯",
+            "why": "It is a sweet, boiled dessert soup with seeds, valued in Chinese food tradition as cooling and nourishing.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "八寶冰",
+            "why": "Sweetened cooked beans and legumes are standard toppings on this shaved ice, so a description of a cold bean dessert sold at dessert shops could point here.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "紅豆湯",
+      "綠豆沙",
+      "綠豆冰袋",
+      "薏仁湯",
+      "花生湯"
+    ]
+  },
+  "仙人掌冰": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "芒果冰",
+            "why": "A description of a sweet, fruit-based shaved ice dessert that is cold and colorful in summer would fit this fruit-topped shaved ice too."
+          },
+          {
+            "name": "四果冰",
+            "why": "Saying it is a shaved ice dessert built around fruit, eaten cold and uncooked, also matches this fruit-topped shaved ice."
+          },
+          {
+            "name": "愛玉冰",
+            "why": "A sweet-and-sour, refreshing, icy summer dessert with a tangy fruity tartness could equally describe this lemony jelly ice."
+          },
+          {
+            "name": "洛神花茶",
+            "why": "Mentioning a vivid magenta-red color with a sweet-tart, refreshing flavor served chilled also points to this roselle drink."
+          },
+          {
+            "name": "綠豆沙",
+            "why": "If the description stresses a blended, slushy, sorbet-like icy texture, this blended iced dessert-drink fits as well."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "清冰",
+            "why": "A plain shaved ice doused in a bright, sweet syrup could be confused with this syrup-flavored shaved ice.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "牛奶雪花冰",
+            "why": "A fine, fluffy, flavored ice dessert eaten cold in summer could also suggest this snow ice.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "芒果冰",
+      "四果冰",
+      "愛玉冰",
+      "芋頭冰",
+      "綠豆沙"
+    ]
+  },
+  "古早味紅茶": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "檸檬紅茶",
+            "why": "A description of a sweet iced drink brewed from dark tea leaves, sold cheaply at drink stands, also fits this tea-based drink, unless the description specifies that no lemon is added."
+          },
+          {
+            "name": "冬瓜茶",
+            "why": "Talk of a dark amber, caramel-sweet, boiled retro drink ladled iced from big jugs at traditional stalls fits winter melon tea just as well."
+          },
+          {
+            "name": "奶茶",
+            "why": "A sweet iced drink built on strongly brewed dark tea leaves at a Taiwanese drink shop also describes the tea base of milk tea, unless the description notes there is no milk."
+          },
+          {
+            "name": "青草茶",
+            "why": "A boiled, sweetened, dark brown traditional thirst-quencher sold chilled at old street stalls overlaps with this herbal brew."
+          },
+          {
+            "name": "仙草茶",
+            "why": "A dark, smooth, sweet boiled drink with a roasty edge, served iced as a nostalgic refresher, could equally point to grass jelly tea."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "珍珠奶茶",
+            "why": "Mentioning an iced, sweet, tea-leaf drink in a big sealed cup from a Taiwanese drink shop can drift toward bubble tea's dark tea base.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "苦茶",
+            "why": "A traditional dark brew boiled with roasted plant ingredients and sweetened could be confused with this old-style herbal tea.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "檸檬紅茶",
+      "冬瓜茶",
+      "奶茶",
+      "青草茶",
+      "仙草茶"
+    ]
+  },
+  "竹筒飯": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "筒仔米糕",
+            "why": "A description of sticky rice packed into a cylindrical vessel, cooked until it sets, and pushed out as a molded savory column fits this tube-steamed rice cake almost exactly."
+          },
+          {
+            "name": "糯米腸",
+            "why": "Sticky rice packed into a long cylindrical casing, steamed and then grilled over fire, and served as a dry savory log matches this rice sausage on shape, ingredient, and both cooking methods."
+          },
+          {
+            "name": "肉粽",
+            "why": "Sticky rice sealed inside a natural plant wrapper and cooked so it absorbs a woody, leafy aroma before being unwrapped also describes a pork zongzi."
+          },
+          {
+            "name": "大腸包小腸",
+            "why": "Mentions of grilled sticky rice formed into a cylinder and sold at outdoor street stalls would also point to this rice-sausage snack."
+          },
+          {
+            "name": "菜粽",
+            "why": "Plant-wrapped sticky rice cooked into a dense savory log that you peel open to eat also fits this peanut rice dumpling."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "油飯",
+            "why": "A savory steamed sticky rice meal with a chewy texture and fragrant aroma, served dry, could just as well describe oil rice.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "飯糰",
+            "why": "Steamed sticky rice pressed into a firm handheld cylinder and eaten dry overlaps with the Taiwanese rice roll.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "筒仔米糕",
+      "糯米腸",
+      "肉粽",
+      "油飯",
+      "菜粽"
+    ]
+  },
+  "鼎邊銼": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "湯粄條",
+            "why": "A description of flat, chewy, irregular strips made from a ground grain slurry and served in a savory broth fits these Hakka flat noodle soups almost as well."
+          },
+          {
+            "name": "豆簽羹",
+            "why": "Irregular flat starchy strips in a starch-thickened, savory broth with seafood toppings also describes this bean-noodle potage."
+          },
+          {
+            "name": "米粉羹",
+            "why": "A noodle-like staple made from the same grain, served in a glossy cornstarch-thickened savory soup with meat and vegetables, fits this vermicelli potage."
+          },
+          {
+            "name": "魷魚羹",
+            "why": "Mentioning squid pieces, bamboo shoots and cabbage in a viscous, savory broth sold at night-market stalls would also point to squid potage."
+          },
+          {
+            "name": "肉羹",
+            "why": "Fish-paste-coated meat chunks, a starch-thickened broth, and a bowl eaten as a quick street lunch match the toppings and soup of pork potage."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "蚵仔麵線",
+            "why": "A starchy, gloopy seafood soup with soft noodle-like strands, eaten from a bowl at night markets, could easily read as oyster vermicelli.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "花枝羹",
+            "why": "Cuttlefish-type seafood in a cornstarch-thickened, savory broth with a sprinkle of celery and fried shallots also describes cuttlefish potage.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "大麵羹",
+            "why": "A slightly thick, savory soup filled with soft, starchy noodle pieces and garnished with dried shrimp and shallots also fits Taichung's thick noodle soup.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "湯粄條",
+      "豆簽羹",
+      "米粉羹",
+      "魷魚羹",
+      "肉羹"
+    ]
+  },
+  "烤蚵仔": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "烤魷魚",
+            "why": "A description of seafood cooked over an open flame at a night-market stall, brushed with sauce and served savory, fits grilled squid equally well."
+          },
+          {
+            "name": "蚵仔酥",
+            "why": "Any mention of plump briny bivalves sold as a savory, dry night-market seafood snack also points to these crispy fried oysters."
+          },
+          {
+            "name": "蚵嗲",
+            "why": "Describing small briny mollusks as the star of a savory, handheld night-market snack could also suggest this oyster fritter."
+          },
+          {
+            "name": "蚵仔煎",
+            "why": "A description centered on the famous Taiwanese night-market bivalve could easily be read as the oyster omelet."
+          },
+          {
+            "name": "燒酒螺",
+            "why": "Mentioning savory mollusks eaten straight from their hard casing as a night-market nibble also describes these rice-wine snails."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "炒螺肉",
+            "why": "Savory shellfish cooked with garlic and chili and picked from their casings at seafood stalls fits stir-fried snails too.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "蚵仔湯",
+            "why": "A description emphasizing fresh, briny bivalves with ginger or garlic also points to oyster soup.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "烤魷魚",
+      "蚵仔酥",
+      "蚵嗲",
+      "蚵仔煎",
+      "燒酒螺"
+    ]
+  },
+  "肉粿": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "碗粿",
+            "why": "A steamed savory rice-flour snack with pork, eaten soft from a bowl with savory sauce, fits this dish almost word for word."
+          },
+          {
+            "name": "鹹粿",
+            "why": "Its English name is literally Savory Rice Cake, and it is a steamed rice-flour cake with pork, so a description of a savory steamed rice-flour block topped with pork points straight to it."
+          },
+          {
+            "name": "鼎邊銼",
+            "why": "Pieces of rice batter served in a thickened soup with pork and seafood bits would match a target description of soft rice-flour pieces in a starchy savory broth."
+          },
+          {
+            "name": "肉羹",
+            "why": "A bowl of starch-thickened savory soup with pork and fish paste would also match any description centered on the meaty, seafood-tinged thick broth."
+          },
+          {
+            "name": "肉圓",
+            "why": "A soft, translucent steamed starch casing with a pork filling, served in a bowl under a thick savory sauce, shares the look and texture the target would be described by."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "米粉羹",
+            "why": "A thick soup of rice-based strands with pork could match a description of rice-derived pieces in a gloopy pork broth.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "蘿蔔糕",
+            "why": "A steamed savory rice-flour cake cut into pieces resembles the target's base if the description stresses the steamed rice-flour block.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "筒仔米糕",
+            "why": "A steamed savory rice dish with pork, served with a sweet-savory sauce, overlaps with a description of a steamed rice snack with pork and sauce.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "碗粿",
+      "鹹粿",
+      "鼎邊銼",
+      "肉羹",
+      "肉圓"
+    ]
+  },
+  "鳥鼠仔糖": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "牛軋糖",
+            "why": "A description of a pliable, sticky souvenir candy studded with whole roasted nuts and bound with syrup also fits nougat."
+          },
+          {
+            "name": "貢糖",
+            "why": "A traditional Taiwanese nut-and-sugar confection sold in boxes as a regional souvenir also describes this candy."
+          },
+          {
+            "name": "花生糖",
+            "why": "A sweet bar of roasted nuts held together by cooked sugar syrup and bought as a souvenir also points to brittle."
+          },
+          {
+            "name": "麻粩",
+            "why": "It shares glutinous rice, seeds or nuts and malt syrup in a traditional sweet sold as a souvenir."
+          },
+          {
+            "name": "麻糬",
+            "why": "Mentioning a glutinous-rice-based, stretchy sweet sold as a local souvenir could easily suggest mochi."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "芝麻糖",
+            "why": "A seed-studded sugar candy sold as a traditional souvenir also fits sesame candy.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "麥芽餅",
+            "why": "Clues about sticky, stretchy malt syrup used in a nostalgic sweet also point to the malt-syrup cracker sandwich.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "爆米香",
+            "why": "A traditional rice-and-syrup sweet bound into pieces could also be read as puffed rice candy.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "牛軋糖",
+      "貢糖",
+      "花生糖",
+      "麻粩",
+      "麻糬"
+    ]
+  },
+  "仙草凍": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "燒仙草",
+            "why": "Both are sweet desserts made from the same boiled-and-cooled Chinese herb, with a dark, slightly bitter flavor, so a description of the plant-based dark dessert fits the hot thickened version too."
+          },
+          {
+            "name": "愛玉冰",
+            "why": "Both are set, wobbly, translucent-to-dark plant-derived jellies cut up and served in cold sweet syrup at dessert stands, so 'chilled set plant jelly in sugar syrup' fits both."
+          },
+          {
+            "name": "仙草茶",
+            "why": "Both come from the same herb, are sweet and dark, and are sold side by side as cooling summer refreshments, so mentioning the herb's flavor and cooling effect points to both."
+          },
+          {
+            "name": "仙草凍奶茶",
+            "why": "This drink contains the same dark set herb dessert as an add-in, so describing chewy dark herb pieces in a sweet cold liquid could fit it."
+          },
+          {
+            "name": "杏仁豆腐",
+            "why": "Both are set, cut-into-pieces chilled desserts served in sweet syrup or soup, so a description of a firm set dessert cut into squares in cold syrup matches both."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "豆花",
+            "why": "Both are set, soft, spoonable desserts served in sweet syrup with toppings like taro balls and beans at the same dessert shops.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "菜燕",
+            "why": "Both are sweet set jelly desserts that firm up as they cool and are eaten chilled as a cooling treat.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "青草茶",
+            "why": "Both are cooling, sweetened, slightly bitter herbal preparations believed to reduce body heat in summer.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "燒仙草",
+      "愛玉冰",
+      "仙草茶",
+      "仙草凍奶茶",
+      "杏仁豆腐"
+    ]
+  },
+  "傻瓜乾麵": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "乾意麵",
+            "why": "A bowl of boiled noodles served without broth, tossed in a light savory sauce with a little garnish, describes dry egg noodles just as well."
+          },
+          {
+            "name": "肉燥乾麵",
+            "why": "Boiled noodles drained and tossed with a savory sauce as a cheap simple meal would also fit dry noodles topped with minced braised pork."
+          },
+          {
+            "name": "麻醬麵",
+            "why": "A soupless bowl of boiled wheat noodles mixed with a seasoning sauce is also how sesame paste noodles are served."
+          },
+          {
+            "name": "涼麵",
+            "why": "Noodles dressed in a tangy, savory sauce without soup could easily be read as Taiwanese cold noodles, which also carry a sour note."
+          },
+          {
+            "name": "乾粄條",
+            "why": "Boiled noodles tossed dry with a savory sauce and a few garnishes also matches dry Hakka flat rice noodles."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "陽春麵",
+            "why": "A minimalist, cheap bowl of noodles with little more than seasoning and greens overlaps strongly with yang chun noodles.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "炸醬麵",
+            "why": "Boiled noodles mixed with a savory sauce before eating could also point to zha jiang mian.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "豆菜麵",
+            "why": "A humble bowl of boiled noodles tossed in a light sauce with simple toppings resembles bean sprout noodles.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "乾意麵",
+      "肉燥乾麵",
+      "麻醬麵",
+      "涼麵",
+      "乾粄條"
+    ]
+  },
+  "鹹豬肉": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "烤香腸",
+            "why": "A description of cured, seasoned pork that is grilled until charred, sliced, and eaten with raw garlic cloves fits Taiwanese grilled sausage almost exactly."
+          },
+          {
+            "name": "紅糟肉",
+            "why": "Marinated, cured slab pork that is cooked, sliced into strips, and served as a savory side snack also describes red-yeast pork."
+          },
+          {
+            "name": "培根串",
+            "why": "Fatty cured pork with a smoky, salty flavor, grilled over fire, could easily be read as a grilled bacon skewer."
+          },
+          {
+            "name": "肉乾",
+            "why": "Seasoned pork that is grilled into a dry, chewy, savory snack overlaps strongly with pork jerky."
+          },
+          {
+            "name": "蒜泥白肉",
+            "why": "Thin slices of fatty pork with alternating lean and fat layers, served with a pungent dipping condiment, also suggests sliced pork with garlic sauce."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "蔥肉捲",
+            "why": "Strips of pork cooked over a grill and sold as a savory skewer-style snack could point to the grilled pork roll.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "卜肉",
+            "why": "Marinated strips of pork served as a savory, dry snack with a seasoned crust overlap with fried pork strips.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "客家小炒",
+            "why": "Mention of a traditional Hakka-region dish featuring strips of fatty pork could also lead to the Hakka stir-fry.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "烤香腸",
+      "紅糟肉",
+      "培根串",
+      "肉乾",
+      "蒜泥白肉"
+    ]
+  },
+  "竹筍湯": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "苦瓜排骨湯",
+            "why": "A light, home-style pork bone soup with chunks of a seasonal vegetable simmered in a pale broth matches it on every attribute."
+          },
+          {
+            "name": "菜頭排骨湯",
+            "why": "A description of pork pieces simmered with tender pale vegetable chunks in a light, savory broth fits this radish and pork soup almost exactly."
+          },
+          {
+            "name": "排骨酥湯",
+            "why": "Mentioning bone-in pork pieces in a savory bowl of soup with a vegetable would also point to this fried-pork-rib soup."
+          },
+          {
+            "name": "花生豬腳湯",
+            "why": "A light, unthickened pork soup simmered until tender with one plant ingredient could also describe this peanut and pork hock soup."
+          },
+          {
+            "name": "刈菜雞",
+            "why": "A savory boiled soup built around a single vegetable and meat, often served at home or for seasonal occasions, fits this mustard green chicken soup."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "藥燉排骨",
+            "why": "Pork bone pieces simmered in a soup bowl sold as a snack overlap, unless the description stresses there are no herbs.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "貢丸湯",
+            "why": "A simple, light pork-based soup served as a side snack at noodle and rice stalls also suggests this pork ball soup.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "四神湯",
+            "why": "A savory boiled pork soup with plant ingredients, served as a side bowl, could overlap with this herbal pork soup.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "苦瓜排骨湯",
+      "菜頭排骨湯",
+      "排骨酥湯",
+      "花生豬腳湯",
+      "刈菜雞"
+    ]
+  },
+  "花生糖": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "貢糖",
+            "why": "A description of a sweet souvenir candy made from ground or whole roasted nuts bound with sugar, sold in blocks as a gift, fits the Kinmen peanut candy almost exactly."
+          },
+          {
+            "name": "芝麻糖",
+            "why": "A slab of seeds set in hardened sugar syrup, cut into bars and sold as a traditional souvenir candy, describes sesame brittle just as well."
+          },
+          {
+            "name": "鳥鼠仔糖",
+            "why": "A sticky-sweet sugar candy studded with roasted nuts and bought as a local souvenir would also point to this maltose-and-peanut candy."
+          },
+          {
+            "name": "牛軋糖",
+            "why": "A chewy-to-firm sweet bar packed with nuts and sugar, individually wrapped as a gift box treat, overlaps strongly with nougat."
+          },
+          {
+            "name": "麻粩",
+            "why": "A traditional sugar-bound confection coated with seeds or nuts, cut into pieces and given at festivals or as souvenirs, could also describe this puffed-rice candy."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "爆米香",
+            "why": "A sweet bar of grains or nuts pressed together with hot sugar syrup and sliced into squares also resembles puffed rice candy.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "花生捲冰淇淋",
+            "why": "Mentioning shavings planed off a block of nut-sugar candy would point to the night-market ice cream roll that uses exactly those shavings.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "貢糖",
+      "芝麻糖",
+      "鳥鼠仔糖",
+      "牛軋糖",
+      "麻粩"
+    ]
+  },
+  "油飯": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "筒仔米糕",
+            "why": "Both are steamed glutinous rice seasoned with soy, braised pork, dried mushroom and fried shallots, so a description of savory soy-stained sweet rice with pork bits fits either."
+          },
+          {
+            "name": "肉粽",
+            "why": "Both are festival dishes of glutinous rice stir-fried with pork, mushroom, dried shrimp and shallots and then steamed, so only the bamboo-leaf wrapping tells them apart."
+          },
+          {
+            "name": "糯米腸",
+            "why": "Both are seasoned glutinous rice with shallot and pork-fat flavor served as a chewy savory pork-and-rice item, so a description of chewy savory rice fits both."
+          },
+          {
+            "name": "大腸包小腸",
+            "why": "Its outer roll is the same kind of savory seasoned glutinous rice, so a description focused on chewy savory rice with pork could point to it."
+          },
+          {
+            "name": "竹筒飯",
+            "why": "It is also steamed, savory, dry, seasoned rice often made with glutinous rice and meat, served as a filling meal."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "飯糰",
+            "why": "It is also steamed glutinous rice eaten as a dry savory meal with pork, such as pork floss.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "鹹粿",
+            "why": "It is a steamed savory rice item flavored with pork, dried shrimp, mushroom and fried shallots, matching much of the target's seasoning profile.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "筒仔米糕",
+      "肉粽",
+      "糯米腸",
+      "大腸包小腸",
+      "竹筒飯"
+    ]
+  },
+  "烤七里香": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "烤雞皮",
+            "why": "A description of a fatty, crispy poultry part brushed with sauce and charred over charcoal on a stick at night-market barbecue stalls fits grilled chicken skin almost exactly."
+          },
+          {
+            "name": "炸雞軟骨",
+            "why": "Bite-sized pieces of an odd, fatty-chewy poultry part sold as a night-market snack also suggest fried chicken cartilage."
+          },
+          {
+            "name": "鹹酥雞",
+            "why": "Savory bite-sized poultry pieces bought at night-market stalls and eaten with a stick point toward popcorn chicken."
+          },
+          {
+            "name": "烤香腸",
+            "why": "Glossy, sweet-savory meat charred over charcoal on a stick at night-market grill stands also describes grilled Taiwanese sausage."
+          },
+          {
+            "name": "培根串",
+            "why": "Fatty meat threaded on sticks, brushed with barbecue sauce, and grilled at night-market BBQ stalls could equally be bacon rolls."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "炸雞排",
+            "why": "A savory, dry poultry snack that is a night-market staple could also suggest the fried chicken cutlet.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "蔥肉捲",
+            "why": "Night-market barbecue meat on sticks, basted with sweet soy glaze, overlaps with grilled pork scallion rolls.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "烤鳥蛋",
+            "why": "Small pieces lined up on a stick and grilled with sauce at night-market barbecue stands could also point to grilled quail eggs.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "烤雞皮",
+      "炸雞軟骨",
+      "鹹酥雞",
+      "烤香腸",
+      "培根串"
+    ]
+  },
+  "芋頭餅": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "麥芽餅",
+            "why": "A description of a sweet filling sandwiched between two thin square biscuits also fits this maltose-and-soda-cracker sandwich."
+          },
+          {
+            "name": "炸芋頭球",
+            "why": "Mentioning a sweet, purple root-vegetable filling that is deep-fried until crisp and sold as a street dessert points straight to these fried taro balls."
+          },
+          {
+            "name": "炸年糕",
+            "why": "A sweet item sandwiched, coated in a wet flour mix and deep-fried golden also describes fried New Year cake, which is often sandwiched between root-vegetable slices before frying."
+          },
+          {
+            "name": "芋絲餅",
+            "why": "A crispy deep-fried flat cake built around the same purple tuber would also match this fried taro-shred patty."
+          },
+          {
+            "name": "芋頭酥",
+            "why": "A flaky wheat shell around sweet mashed purple tuber also describes this taro pastry, which differs mainly in being baked rather than fried."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "炸鮮奶",
+            "why": "A soft, sweet, creamy center inside a crunchy deep-fried coating sold at street stalls also fits fried milk.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "營養三明治",
+            "why": "Calling it a deep-fried sandwich snack could also point to this Taiwanese fried sandwich, though that one is savory.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "大餅包小餅",
+            "why": "A crunchy wheat layer wrapped around a soft sweet filling, often a purple tuber spread, sold at night markets also fits this wrapped crispy pancake.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "麥芽餅",
+      "炸芋頭球",
+      "炸年糕",
+      "芋絲餅",
+      "芋頭酥"
+    ]
+  },
+  "肉紙": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "肉乾",
+            "why": "A description of a sweet-savory, dried, meat-based souvenir snack sold in packets at jerky shops would fit this pork jerky almost exactly."
+          },
+          {
+            "name": "魷魚絲",
+            "why": "Calling it a dried, sweet-and-savory, chewy-or-crunchy packaged snack bought as a gift to nibble with drinks also describes dried squid shreds."
+          },
+          {
+            "name": "蝦餅",
+            "why": "Describing a brittle, cracker-like, savory animal-protein snack sold in bags as a souvenir would also point to shrimp crackers."
+          },
+          {
+            "name": "鴨賞",
+            "why": "A description of cured, preserved meat sold as a regional souvenir specialty overlaps with this smoked cured duck."
+          },
+          {
+            "name": "鹹餅",
+            "why": "Mentioning a baked, savory, brittle souvenir snack eaten like a cracker could also suggest these savory crackers."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "地瓜酥",
+            "why": "Describing a shatteringly crunchy, flat, chip-like packaged souvenir snack could also suggest sweet potato crisps.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "肉乾",
+      "魷魚絲",
+      "蝦餅",
+      "鴨賞",
+      "鹹餅"
+    ]
+  },
+  "雙胞胎": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "古早味甜甜圈",
+            "why": "A description of a sweet, deep-fried wheat pastry rolled in granulated coating and sold at old-fashioned stalls fits this sugar doughnut equally well, since it is often sold right alongside the target."
+          },
+          {
+            "name": "白糖粿",
+            "why": "Mentioning a deep-fried, chewy, elongated piece rolled in sweet powdery coating at night markets also describes this fried glutinous rice stick dusted with sugar and peanut powder."
+          },
+          {
+            "name": "麻花捲",
+            "why": "A deep-fried wheat pastry made by shaping and twisting strips, then sweetened, also points to this twisted fried pastry."
+          },
+          {
+            "name": "芝麻球",
+            "why": "A deep-fried sweet street snack with a crisp seed-studded exterior and an airy, chewy interior could also describe these hollow fried balls."
+          },
+          {
+            "name": "炸銀絲卷",
+            "why": "A wheat bun that is deep-fried until golden and eaten sweet could equally describe this fried steamed bread."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "地瓜球",
+            "why": "A puffy, hollow-ish, chewy deep-fried sweet bite sold at night market stalls also matches these sweet potato balls.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "炸湯圓",
+            "why": "A sweet, chewy, deep-fried night-market snack with a crisp shell overlaps with these fried glutinous rice balls.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "古早味甜甜圈",
+      "白糖粿",
+      "麻花捲",
+      "芝麻球",
+      "炸銀絲卷"
+    ]
+  },
+  "烤魷魚": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "炸魷魚",
+            "why": "A description of a chewy cephalopod snack with tentacles, sold at night market stalls, would point to this deep-fried version of the same animal."
+          },
+          {
+            "name": "魷魚絲",
+            "why": "Mentioning the same sea creature with a chewy texture and a savory-sweet seasoning also fits these dried shreds."
+          },
+          {
+            "name": "炸龍珠",
+            "why": "Night-market seafood from the same cephalopod, chewy and savory, also points to these fried beak morsels."
+          },
+          {
+            "name": "烤蚵仔",
+            "why": "Seafood cooked over open flame at a night market stall and brushed with a savory glaze also describes these grilled oysters."
+          },
+          {
+            "name": "烤香腸",
+            "why": "A sweet-savory, glossy, flame-cooked night-market snack eaten on a stick also matches this sausage."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "炸花枝丸",
+            "why": "A chewy savory night-market snack made from a tentacled sea creature, sold on skewers, could also suggest these cuttlefish balls.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "烤七里香",
+            "why": "Skewered meat basted with a sweet soy glaze over a grill at night-market barbecue stands also fits these chicken tails.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "炸魷魚",
+      "魷魚絲",
+      "炸龍珠",
+      "烤蚵仔",
+      "烤香腸"
+    ]
+  },
+  "糖葫蘆": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "仙楂餅",
+            "why": "A description mentioning sweet-and-sour hawthorn fruit eaten as a dry, chewy-tart treat would point straight to this hawthorn candy too."
+          },
+          {
+            "name": "芒果青",
+            "why": "Sweet-and-sour fruit served as an uncooked, sugar-treated dry snack also fits this pickled green mango."
+          },
+          {
+            "name": "蜜地瓜",
+            "why": "A glossy, syrup-coated sweet with a sticky shiny shell could also describe this glazed sweet potato."
+          },
+          {
+            "name": "柿餅",
+            "why": "A sweet, dry, sugar-preserved whole fruit treat could also suggest dried persimmon."
+          },
+          {
+            "name": "雞蛋冰",
+            "why": "A brightly colored sweet held and eaten on a stick, bought from a street vendor, also matches this egg-shaped ice pop."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "花生糖",
+            "why": "Mentioning a hard, crackly boiled-syrup candy coating that shatters when bitten could also point to peanut brittle.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "花生糖",
+      "芒果青",
+      "蜜地瓜",
+      "柿餅",
+      "雞蛋冰"
+    ]
+  },
+  "燻鵝": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "鴨賞",
+            "why": "A description of dark, cured poultry meat served cold in thin pieces as a savory snack would fit this smoked duck just as well."
+          },
+          {
+            "name": "鹽水鵝",
+            "why": "Mentioning the same bird served chilled and cut into pieces at the same stalls, with a ginger soy sauce on the side, would also describe this boiled version."
+          },
+          {
+            "name": "鯊魚煙",
+            "why": "A description of meat cured over smoke from caramelizing sweetener, cut thin and served cold with a wasabi-soy or sweet chili sauce, also points to smoked shark."
+          },
+          {
+            "name": "鵝肉飯",
+            "why": "Any clue about tender, fatty waterfowl meat from a specialty goose shop could lead to this goose-over-rice dish."
+          },
+          {
+            "name": "涼拌豬耳朵",
+            "why": "A smoky-cured cold appetizer cut into thin pieces and served at small-plate stalls also matches smoked pig's ear."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "鴨肉飯",
+            "why": "Hints about waterfowl meat with rich skin served at a goose or duck shop could also suggest duck over rice.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "鴨賞",
+      "鹽水鵝",
+      "鯊魚煙",
+      "鵝肉飯",
+      "涼拌豬耳朵"
+    ]
+  },
+  "涼圓": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "涼糕",
+            "why": "A cold, sweet steamed glutinous dessert with a sweet paste filling, sold at the same traditional stalls, fits this description almost exactly."
+          },
+          {
+            "name": "肉圓",
+            "why": "A round, see-through, chewy starch wrapper that is steamed and holds a filling describes this dish's skin too, and it shares the 圓 name."
+          },
+          {
+            "name": "麻糬",
+            "why": "A soft, chewy, sweet round dumpling stuffed with sweet paste and dusted to stop sticking could easily be read as this mochi."
+          },
+          {
+            "name": "水晶餃",
+            "why": "A glassy, clear starch skin that is steamed and shows the filling through it matches this crystal dumpling's look."
+          },
+          {
+            "name": "紅龜粿",
+            "why": "A steamed, chewy glutinous wrapper around sweet paste, served as a traditional sweet, also fits this festival rice cake."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "粉粿冰",
+            "why": "A clear, jiggly, cool starch-based sweet eaten cold in summer could point to these starch jelly pieces on ice.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "燒麻糬",
+            "why": "A chewy glutinous sweet paired with peanut or sesame and sugar could suggest this mochi dessert.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "菜燕",
+            "why": "A clear, cold, set sweet that is cut and eaten chilled in summer could also describe this agar jelly.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "涼糕",
+      "肉圓",
+      "麻糬",
+      "水晶餃",
+      "紅龜粿"
+    ]
+  },
+  "刈包": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "肉包",
+            "why": "A description of a soft, white, steamed wheat-dough snack holding savory meat could just as easily mean this steamed meat-filled bun."
+          },
+          {
+            "name": "饅頭夾蛋",
+            "why": "Describing a fluffy steamed wheat bread split open and stuffed with a filling, eaten by hand, also fits this steamed bread sandwich."
+          },
+          {
+            "name": "焢肉飯",
+            "why": "Mentioning thick slabs of soy-braised fatty meat with layers of fat and lean points directly to this braised pork belly rice dish."
+          },
+          {
+            "name": "破酥包",
+            "why": "A soft steamed wheat-dough snack wrapped around savory meat also describes this flaky steamed bun."
+          },
+          {
+            "name": "爌肉麵",
+            "why": "A description centered on tender, soy-braised slabs of fatty meat could also suggest these braised pork belly noodles."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "潤餅",
+            "why": "A festival-linked wheat wrapper folded around fillings, sprinkled with sweet ground nut powder and fresh herbs, also matches this fresh spring roll.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "小籠包",
+            "why": "A small steamed wheat-dough snack with savory meat inside could be confused with these soup dumplings.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "水煎包",
+            "why": "A wheat-dough snack filled with savory meat and eaten by hand as street food could also point to these pan-fried buns.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "肉包",
+      "饅頭夾蛋",
+      "焢肉飯",
+      "破酥包",
+      "潤餅"
+    ]
+  },
+  "小籠包": {
+    "rounds": [
+      {
+        "round": 1,
+        "kept": [
+          {
+            "name": "燒賣",
+            "why": "A small dim-sum-style parcel of thin wheat wrapper around minced meat, cooked in a bamboo steamer basket and eaten in a few bites, describes shumai almost as well."
+          },
+          {
+            "name": "肉包",
+            "why": "A wheat-dough parcel twisted shut at the top around a seasoned minced-meat filling and cooked in bamboo baskets also fits a steamed meat bun."
+          },
+          {
+            "name": "水晶餃",
+            "why": "A small dumpling with a delicate translucent wrapper around a meat filling, served straight from the steamer basket, also matches crystal dumplings."
+          },
+          {
+            "name": "破酥包",
+            "why": "A twisted-top filled bun of wheat dough with a juicy meat center, cooked in steam baskets, could equally point to the flaky steamed bun."
+          },
+          {
+            "name": "鍋貼",
+            "why": "Bite-sized wheat-wrapped dumplings with a juicy minced-meat filling, dipped in black vinegar, also describe potstickers."
+          }
+        ],
+        "dropped": [
+          {
+            "name": "餛飩湯",
+            "why": "Thin wheat wrappers enclosing a seasoned meat filling with a savory broth element could also suggest wontons.",
+            "reason": "over the limit of 5"
+          },
+          {
+            "name": "水煎包",
+            "why": "A small wheat bun with a juicy minced-meat filling that bursts when bitten also fits pan-fried buns.",
+            "reason": "over the limit of 5"
+          }
+        ],
+        "invalid_reply": null
+      }
+    ],
+    "current": [
+      "燒賣",
+      "肉包",
+      "水晶餃",
+      "破酥包",
+      "鍋貼"
+    ]
+  }
+}

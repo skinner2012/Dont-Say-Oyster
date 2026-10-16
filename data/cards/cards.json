@@ -1,0 +1,1782 @@
+[
+  {
+    "card_id": "card-753f27f6",
+    "official_name": "筒仔米糕",
+    "aliases": [
+      "米糕"
+    ],
+    "english_names": [
+      "Steamed Sticky Rice Cake",
+      "Tube rice pudding",
+      "tang-a-bi-ko",
+      "Tong Zai Mi Gao"
+    ],
+    "forbidden_words": [
+      "glutinous",
+      "sticky",
+      "tube",
+      "steamed",
+      "rice",
+      "pork"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "油飯",
+      "肉粽",
+      "碗粿",
+      "竹筒飯",
+      "糯米腸"
+    ]
+  },
+  {
+    "card_id": "card-c4431ef9",
+    "official_name": "湯粄條",
+    "aliases": [
+      "湯板條"
+    ],
+    "english_names": [
+      "Hakka Rice Noodle Soup"
+    ],
+    "forbidden_words": [
+      "hakka",
+      "flat",
+      "wide",
+      "rice",
+      "broth"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Noodles"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Soup"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "米粉湯",
+      "切仔麵",
+      "鼎邊銼",
+      "陽春麵",
+      "魚丸米粉"
+    ]
+  },
+  {
+    "card_id": "card-1b8d14cb",
+    "official_name": "滷豆干",
+    "aliases": [
+      "大溪豆干",
+      "滷豆乾",
+      "大溪豆乾"
+    ],
+    "english_names": [
+      "Braised dried tofu"
+    ],
+    "forbidden_words": [
+      "tofu",
+      "dried",
+      "braised",
+      "soy",
+      "daxi",
+      "black"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Soy"
+      ],
+      "cooking_method": [
+        "Braised"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Souvenir"
+      ]
+    },
+    "distractors": [
+      "鐵蛋",
+      "炸豆腐",
+      "滷海帶",
+      "滷蛋",
+      "滷花生"
+    ]
+  },
+  {
+    "card_id": "card-47d7897f",
+    "official_name": "薑絲大腸",
+    "aliases": [
+      "薑絲炒大腸",
+      "客家薑絲大腸"
+    ],
+    "english_names": [
+      "Stir-Fried Pork Intestines with Ginger"
+    ],
+    "forbidden_words": [
+      "ginger",
+      "intestine",
+      "vinegar",
+      "hakka",
+      "shredded"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Pork"
+      ],
+      "cooking_method": [
+        "Stir-Fried"
+      ],
+      "flavor": [
+        "Savory",
+        "Sour"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "滷大腸",
+      "燙粉腸",
+      "客家小炒",
+      "麻油腰子",
+      "大腸麵線"
+    ]
+  },
+  {
+    "card_id": "card-b223994f",
+    "official_name": "肉羹",
+    "aliases": [
+      "肉羹湯",
+      "香菇肉羹"
+    ],
+    "english_names": [
+      "Pork Thick Soup",
+      "Meat paste soup",
+      "bah-kenn",
+      "Rou Geng"
+    ],
+    "forbidden_words": [
+      "pork",
+      "fish",
+      "paste",
+      "thick",
+      "starch",
+      "bamboo"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Pork",
+        "Seafood"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Thick Soup"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "魷魚羹",
+      "花枝羹",
+      "土魠魚羹",
+      "米粉羹",
+      "生炒鴨肉羹"
+    ]
+  },
+  {
+    "card_id": "card-370cd9f4",
+    "official_name": "年糕",
+    "aliases": [
+      "甜年糕"
+    ],
+    "english_names": [
+      "Sweet Sticky Rice Cake"
+    ],
+    "forbidden_words": [
+      "new",
+      "year",
+      "glutinous",
+      "brown",
+      "sugar",
+      "sticky"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Rice"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Festival"
+      ]
+    },
+    "distractors": [
+      "炸年糕",
+      "發粿",
+      "黑糖糕",
+      "紅龜粿",
+      "九層粿"
+    ]
+  },
+  {
+    "card_id": "card-aae840e9",
+    "official_name": "杏仁豆腐",
+    "aliases": [
+      "杏仁凍"
+    ],
+    "english_names": [
+      "Almond Jelly",
+      "Xing Ren Dou Fu"
+    ],
+    "forbidden_words": [
+      "almond",
+      "jelly",
+      "cubes",
+      "syrup",
+      "white"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Beans and Seeds"
+      ],
+      "cooking_method": [
+        "Set"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Soup"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "仙草凍",
+      "愛玉冰",
+      "豆花",
+      "菜燕",
+      "杏仁茶"
+    ]
+  },
+  {
+    "card_id": "card-d19185db",
+    "official_name": "四果冰",
+    "aliases": [],
+    "english_names": [
+      "Four Fruit Shaved Ice"
+    ],
+    "forbidden_words": [
+      "four",
+      "fruits",
+      "candied",
+      "preserved",
+      "syrup"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Fruit"
+      ],
+      "cooking_method": [
+        "No Cooking"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Shaved Ice"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "八寶冰",
+      "粉粿冰",
+      "芒果冰",
+      "黑糖剉冰",
+      "燒冷冰"
+    ]
+  },
+  {
+    "card_id": "card-50096671",
+    "official_name": "杏仁茶",
+    "aliases": [],
+    "english_names": [
+      "Almond Tea",
+      "Xing Ren Cha"
+    ],
+    "forbidden_words": [
+      "almond",
+      "apricot",
+      "kernel",
+      "white",
+      "warm"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Drink"
+      ],
+      "main_ingredients": [
+        "Beans and Seeds"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Smooth Drink"
+      ],
+      "occasion": [
+        "Breakfast"
+      ]
+    },
+    "distractors": [
+      "米漿",
+      "豆漿",
+      "杏仁豆腐",
+      "麵茶",
+      "花生湯"
+    ]
+  },
+  {
+    "card_id": "card-f7ce90e6",
+    "official_name": "百香果汁",
+    "aliases": [],
+    "english_names": [
+      "Passion Fruit Juice"
+    ],
+    "forbidden_words": [
+      "passion",
+      "fruit",
+      "seeds",
+      "sour",
+      "yellow"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Drink"
+      ],
+      "main_ingredients": [
+        "Fruit"
+      ],
+      "cooking_method": [
+        "No Cooking"
+      ],
+      "flavor": [
+        "Sweet",
+        "Sour"
+      ],
+      "physical_form": [
+        "Drink with Add-ins"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "百香綠茶",
+      "金桔檸檬",
+      "四味果汁",
+      "芭樂汁",
+      "楊桃汁"
+    ]
+  },
+  {
+    "card_id": "card-7f362e3c",
+    "official_name": "炒冬粉",
+    "aliases": [],
+    "english_names": [
+      "Stir-Fried Glass Noodles"
+    ],
+    "forbidden_words": [
+      "glass",
+      "mung",
+      "bean",
+      "transparent",
+      "cellophane"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Noodles"
+      ],
+      "cooking_method": [
+        "Stir-Fried"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "炒米粉",
+      "炒麵",
+      "炒米苔目",
+      "炒粄條",
+      "鴨肉冬粉"
+    ]
+  },
+  {
+    "card_id": "card-0a001d83",
+    "official_name": "牛肉麵",
+    "aliases": [
+      "紅燒牛肉麵",
+      "清燉牛肉麵"
+    ],
+    "english_names": [
+      "Beef noodle soup",
+      "gu-bah-mian"
+    ],
+    "forbidden_words": [
+      "beef",
+      "braised",
+      "broth",
+      "shank",
+      "tendon",
+      "soy"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Noodles",
+        "Beef"
+      ],
+      "cooking_method": [
+        "Braised"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Soup"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "爌肉麵",
+      "牛肉湯",
+      "排骨酥麵",
+      "榨菜肉絲麵",
+      "豬腳麵線"
+    ]
+  },
+  {
+    "card_id": "card-11557b0e",
+    "official_name": "蒸菱角",
+    "aliases": [
+      "菱角"
+    ],
+    "english_names": [
+      "Steamed water caltrop"
+    ],
+    "forbidden_words": [
+      "water",
+      "caltrop",
+      "horn",
+      "bat",
+      "shell",
+      "guantian"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Beans and Seeds"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "水煮花生",
+      "烤茭白筍",
+      "烤地瓜",
+      "水煮玉米",
+      "滷花生"
+    ]
+  },
+  {
+    "card_id": "card-ad71cdde",
+    "official_name": "涼拌豬耳朵",
+    "aliases": [
+      "豬耳朵"
+    ],
+    "english_names": [
+      "Smoked pig's ear"
+    ],
+    "forbidden_words": [
+      "pig",
+      "ear",
+      "cartilage",
+      "crunchy",
+      "sliced"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Pork"
+      ],
+      "cooking_method": [
+        "Smoked"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "鴨賞",
+      "鯊魚煙",
+      "燻鵝",
+      "燙嘴邊肉",
+      "蒜泥白肉"
+    ]
+  },
+  {
+    "card_id": "card-79c6bd09",
+    "official_name": "鹹湯圓",
+    "aliases": [
+      "客家鹹湯圓",
+      "鹹粄圓"
+    ],
+    "english_names": [
+      "Savory Glutinous Rice Ball Soup",
+      "Savory tangyuan"
+    ],
+    "forbidden_words": [
+      "glutinous",
+      "balls",
+      "pork",
+      "mushroom",
+      "hakka",
+      "celery"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Soup"
+      ],
+      "occasion": [
+        "Festival"
+      ]
+    },
+    "distractors": [
+      "湯圓",
+      "貢丸湯",
+      "魚丸湯",
+      "牛汶水",
+      "餛飩湯"
+    ]
+  },
+  {
+    "card_id": "card-d3169045",
+    "official_name": "方塊酥",
+    "aliases": [],
+    "english_names": [
+      "Square Crispy Pastry"
+    ],
+    "forbidden_words": [
+      "square",
+      "flaky",
+      "sesame",
+      "crispy",
+      "chiayi",
+      "layers"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Wheat",
+        "Beans and Seeds"
+      ],
+      "cooking_method": [
+        "Baked"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Souvenir"
+      ]
+    },
+    "distractors": [
+      "肚臍餅",
+      "牛舌餅",
+      "奶油酥條",
+      "鹹餅",
+      "太陽餅"
+    ]
+  },
+  {
+    "card_id": "card-e7b0ec41",
+    "official_name": "綠豆湯",
+    "aliases": [],
+    "english_names": [
+      "Sweet Mung Bean Soup",
+      "Mung bean soup"
+    ],
+    "forbidden_words": [
+      "mung",
+      "bean",
+      "green",
+      "sweet",
+      "summer"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Beans and Seeds"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Soup"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "紅豆湯",
+      "綠豆沙",
+      "綠豆冰袋",
+      "薏仁湯",
+      "花生湯"
+    ]
+  },
+  {
+    "card_id": "card-1714e425",
+    "official_name": "仙人掌冰",
+    "aliases": [
+      "澎湖仙人掌冰"
+    ],
+    "english_names": [
+      "Cactus Fruit Ice"
+    ],
+    "forbidden_words": [
+      "cactus",
+      "prickly",
+      "pear",
+      "penghu",
+      "purple"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Fruit"
+      ],
+      "cooking_method": [
+        "No Cooking"
+      ],
+      "flavor": [
+        "Sweet",
+        "Sour"
+      ],
+      "physical_form": [
+        "Shaved Ice"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "芒果冰",
+      "四果冰",
+      "愛玉冰",
+      "芋頭冰",
+      "綠豆沙"
+    ]
+  },
+  {
+    "card_id": "card-58a38acf",
+    "official_name": "古早味紅茶",
+    "aliases": [
+      "決明子紅茶",
+      "古早味冰紅茶",
+      "古早味紅茶冰"
+    ],
+    "english_names": [
+      "Traditional Taiwanese Black Tea"
+    ],
+    "forbidden_words": [
+      "black",
+      "cassia",
+      "seeds",
+      "old",
+      "fashioned",
+      "tea"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Drink"
+      ],
+      "main_ingredients": [
+        "Tea"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Smooth Drink"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "檸檬紅茶",
+      "冬瓜茶",
+      "奶茶",
+      "青草茶",
+      "仙草茶"
+    ]
+  },
+  {
+    "card_id": "card-4af43922",
+    "official_name": "竹筒飯",
+    "aliases": [],
+    "english_names": [
+      "Bamboo tube rice"
+    ],
+    "forbidden_words": [
+      "bamboo",
+      "tube",
+      "glutinous",
+      "indigenous",
+      "roasted"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice"
+      ],
+      "cooking_method": [
+        "Grilled",
+        "Steamed"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "筒仔米糕",
+      "糯米腸",
+      "肉粽",
+      "油飯",
+      "菜粽"
+    ]
+  },
+  {
+    "card_id": "card-50d0039d",
+    "official_name": "鼎邊銼",
+    "aliases": [
+      "鼎邊趖",
+      "鼎邊糊",
+      "鐤邊趖",
+      "基隆鼎邊銼"
+    ],
+    "english_names": [
+      "Ding Bian Cuo Rice Noodle Soup",
+      "Ding-bian-cuo",
+      "tiann-pinn-so"
+    ],
+    "forbidden_words": [
+      "rice",
+      "batter",
+      "wok",
+      "edge",
+      "keelung",
+      "thick"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Seafood"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Thick Soup"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "湯粄條",
+      "豆簽羹",
+      "米粉羹",
+      "魷魚羹",
+      "肉羹"
+    ]
+  },
+  {
+    "card_id": "card-5ed17f8f",
+    "official_name": "烤蚵仔",
+    "aliases": [
+      "烤牡蠣",
+      "烤生蠔"
+    ],
+    "english_names": [
+      "Grilled oyster"
+    ],
+    "forbidden_words": [
+      "oyster",
+      "grilled",
+      "shell",
+      "charcoal",
+      "raw"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Seafood"
+      ],
+      "cooking_method": [
+        "Grilled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Night Market"
+      ]
+    },
+    "distractors": [
+      "烤魷魚",
+      "蚵仔酥",
+      "蚵嗲",
+      "蚵仔煎",
+      "燒酒螺"
+    ]
+  },
+  {
+    "card_id": "card-3347b98d",
+    "official_name": "肉粿",
+    "aliases": [
+      "東港肉粿"
+    ],
+    "english_names": [
+      "Savory Rice Cake with Pork Gravy"
+    ],
+    "forbidden_words": [
+      "rice",
+      "cake",
+      "gravy",
+      "donggang",
+      "fish"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Pork",
+        "Seafood"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Thick Soup"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "碗粿",
+      "鹹粿",
+      "鼎邊銼",
+      "肉羹",
+      "肉圓"
+    ]
+  },
+  {
+    "card_id": "card-bfe88acf",
+    "official_name": "鳥鼠仔糖",
+    "aliases": [
+      "新港飴",
+      "新巷飴",
+      "雙仁潤"
+    ],
+    "english_names": [
+      "Peanut Maltose Candy"
+    ],
+    "forbidden_words": [
+      "peanut",
+      "maltose",
+      "chewy",
+      "soft",
+      "xingang",
+      "mouse"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Beans and Seeds",
+        "Sugar and Sweeteners"
+      ],
+      "cooking_method": [
+        "No Cooking"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Souvenir"
+      ]
+    },
+    "distractors": [
+      "牛軋糖",
+      "貢糖",
+      "花生糖",
+      "麻粩",
+      "麻糬"
+    ]
+  },
+  {
+    "card_id": "card-c3b1aa10",
+    "official_name": "仙草凍",
+    "aliases": [
+      "仙草凍甜湯",
+      "仙草蜜"
+    ],
+    "english_names": [
+      "Grass Jelly Dessert",
+      "Grass jelly"
+    ],
+    "forbidden_words": [
+      "grass",
+      "jelly",
+      "mesona",
+      "black",
+      "cubes",
+      "herbal"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Herbs"
+      ],
+      "cooking_method": [
+        "Set"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Soup"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "燒仙草",
+      "愛玉冰",
+      "仙草茶",
+      "仙草凍奶茶",
+      "杏仁豆腐"
+    ]
+  },
+  {
+    "card_id": "card-b241ea7c",
+    "official_name": "傻瓜乾麵",
+    "aliases": [
+      "福州乾麵"
+    ],
+    "english_names": [
+      "Fool's dry noodles"
+    ],
+    "forbidden_words": [
+      "plain",
+      "vinegar",
+      "soy",
+      "scallion",
+      "fuzhou"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Noodles"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Savory",
+        "Sour"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "乾意麵",
+      "肉燥乾麵",
+      "麻醬麵",
+      "涼麵",
+      "乾粄條"
+    ]
+  },
+  {
+    "card_id": "card-141ac738",
+    "official_name": "鹹豬肉",
+    "aliases": [
+      "客家鹹豬肉"
+    ],
+    "english_names": [
+      "Salted pork"
+    ],
+    "forbidden_words": [
+      "salted",
+      "pork",
+      "belly",
+      "garlic",
+      "pepper",
+      "hakka"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Pork"
+      ],
+      "cooking_method": [
+        "Grilled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "烤香腸",
+      "紅糟肉",
+      "培根串",
+      "肉乾",
+      "蒜泥白肉"
+    ]
+  },
+  {
+    "card_id": "card-73623b49",
+    "official_name": "竹筍湯",
+    "aliases": [
+      "排骨竹筍湯"
+    ],
+    "english_names": [
+      "Bamboo shoot soup"
+    ],
+    "forbidden_words": [
+      "bamboo",
+      "shoots",
+      "ribs",
+      "clear",
+      "summer"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Vegetables",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Soup"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "苦瓜排骨湯",
+      "菜頭排骨湯",
+      "排骨酥湯",
+      "花生豬腳湯",
+      "刈菜雞"
+    ]
+  },
+  {
+    "card_id": "card-dbb61041",
+    "official_name": "花生糖",
+    "aliases": [
+      "土豆糖",
+      "龍潭花生糖"
+    ],
+    "english_names": [
+      "Peanut Brittle"
+    ],
+    "forbidden_words": [
+      "peanut",
+      "brittle",
+      "maltose",
+      "crunchy",
+      "longtan"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Beans and Seeds",
+        "Sugar and Sweeteners"
+      ],
+      "cooking_method": [
+        "No Cooking"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Souvenir"
+      ]
+    },
+    "distractors": [
+      "貢糖",
+      "芝麻糖",
+      "鳥鼠仔糖",
+      "牛軋糖",
+      "麻粩"
+    ]
+  },
+  {
+    "card_id": "card-c514c6bd",
+    "official_name": "油飯",
+    "aliases": [
+      "台灣油飯"
+    ],
+    "english_names": [
+      "Taiwanese Sticky Rice",
+      "Glutinous oil rice",
+      "iu-png",
+      "You Fan"
+    ],
+    "forbidden_words": [
+      "glutinous",
+      "sticky",
+      "mushroom",
+      "shallot",
+      "shrimp",
+      "rice"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Festival"
+      ]
+    },
+    "distractors": [
+      "筒仔米糕",
+      "肉粽",
+      "糯米腸",
+      "大腸包小腸",
+      "竹筒飯"
+    ]
+  },
+  {
+    "card_id": "card-803cb17c",
+    "official_name": "烤七里香",
+    "aliases": [
+      "烤雞屁股"
+    ],
+    "english_names": [
+      "Grilled chicken tail"
+    ],
+    "forbidden_words": [
+      "chicken",
+      "butt",
+      "tail",
+      "skewer",
+      "grilled"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Poultry"
+      ],
+      "cooking_method": [
+        "Grilled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Night Market"
+      ]
+    },
+    "distractors": [
+      "烤雞皮",
+      "炸雞軟骨",
+      "鹹酥雞",
+      "烤香腸",
+      "培根串"
+    ]
+  },
+  {
+    "card_id": "card-5981e019",
+    "official_name": "芋頭餅",
+    "aliases": [],
+    "english_names": [
+      "Taro Sandwich Fritter"
+    ],
+    "forbidden_words": [
+      "taro",
+      "paste",
+      "crackers",
+      "fried",
+      "batter"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Root Vegetables",
+        "Wheat"
+      ],
+      "cooking_method": [
+        "Deep-Fried"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "麥芽餅",
+      "炸芋頭球",
+      "炸年糕",
+      "芋絲餅",
+      "芋頭酥"
+    ]
+  },
+  {
+    "card_id": "card-9dd067f5",
+    "official_name": "肉紙",
+    "aliases": [
+      "豬肉紙"
+    ],
+    "english_names": [
+      "Pork paper"
+    ],
+    "forbidden_words": [
+      "pork",
+      "paper",
+      "thin",
+      "crispy",
+      "sheets"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Pork"
+      ],
+      "cooking_method": [
+        "Baked",
+        "Dried"
+      ],
+      "flavor": [
+        "Savory",
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Souvenir"
+      ]
+    },
+    "distractors": [
+      "肉乾",
+      "魷魚絲",
+      "蝦餅",
+      "鴨賞",
+      "鹹餅"
+    ]
+  },
+  {
+    "card_id": "card-b2143d52",
+    "official_name": "雙胞胎",
+    "aliases": [
+      "兩相好"
+    ],
+    "english_names": [
+      "Taiwanese Fried Twin Buns",
+      "Shuangbaotai"
+    ],
+    "forbidden_words": [
+      "twin",
+      "fried",
+      "dough",
+      "sugar",
+      "sesame",
+      "joined"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Wheat"
+      ],
+      "cooking_method": [
+        "Deep-Fried"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Night Market"
+      ]
+    },
+    "distractors": [
+      "古早味甜甜圈",
+      "白糖粿",
+      "麻花捲",
+      "芝麻球",
+      "炸銀絲卷"
+    ]
+  },
+  {
+    "card_id": "card-67474ef7",
+    "official_name": "烤魷魚",
+    "aliases": [
+      "炭烤魷魚"
+    ],
+    "english_names": [
+      "Grilled Squid",
+      "Kao You Yu"
+    ],
+    "forbidden_words": [
+      "squid",
+      "grilled",
+      "charcoal",
+      "sauce",
+      "whole"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Seafood"
+      ],
+      "cooking_method": [
+        "Grilled"
+      ],
+      "flavor": [
+        "Savory",
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Night Market"
+      ]
+    },
+    "distractors": [
+      "炸魷魚",
+      "魷魚絲",
+      "炸龍珠",
+      "烤蚵仔",
+      "烤香腸"
+    ]
+  },
+  {
+    "card_id": "card-4297719a",
+    "official_name": "糖葫蘆",
+    "aliases": [
+      "冰糖葫蘆"
+    ],
+    "english_names": [
+      "Candied haw on a stick",
+      "Candied fruit skewer"
+    ],
+    "forbidden_words": [
+      "skewer",
+      "candied",
+      "tomato",
+      "strawberry",
+      "sugar",
+      "glaze"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Fruit",
+        "Sugar and Sweeteners"
+      ],
+      "cooking_method": [
+        "No Cooking"
+      ],
+      "flavor": [
+        "Sweet",
+        "Sour"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Night Market"
+      ]
+    },
+    "distractors": [
+      "花生糖",
+      "芒果青",
+      "蜜地瓜",
+      "柿餅",
+      "雞蛋冰"
+    ]
+  },
+  {
+    "card_id": "card-937caa32",
+    "official_name": "燻鵝",
+    "aliases": [],
+    "english_names": [
+      "Smoked goose"
+    ],
+    "forbidden_words": [
+      "goose",
+      "smoked",
+      "sugar",
+      "sliced",
+      "dipping"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Poultry"
+      ],
+      "cooking_method": [
+        "Smoked"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "鴨賞",
+      "鹽水鵝",
+      "鯊魚煙",
+      "鵝肉飯",
+      "涼拌豬耳朵"
+    ]
+  },
+  {
+    "card_id": "card-261a62cc",
+    "official_name": "涼圓",
+    "aliases": [
+      "嘉義涼圓",
+      "涼肉圓"
+    ],
+    "english_names": [
+      "Chilled Translucent Dumpling",
+      "Cool meatball"
+    ],
+    "forbidden_words": [
+      "translucent",
+      "red",
+      "bean",
+      "chilled",
+      "chiayi",
+      "starch"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Starch",
+        "Beans and Seeds"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "涼糕",
+      "肉圓",
+      "麻糬",
+      "水晶餃",
+      "紅龜粿"
+    ]
+  },
+  {
+    "card_id": "card-06a5fb37",
+    "official_name": "刈包",
+    "aliases": [
+      "割包",
+      "虎咬豬"
+    ],
+    "english_names": [
+      "Gua Bao",
+      "Pork Belly Bun"
+    ],
+    "forbidden_words": [
+      "bun",
+      "pork",
+      "belly",
+      "peanut",
+      "cilantro",
+      "pickled"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Wheat",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Steamed",
+        "Braised"
+      ],
+      "flavor": [
+        "Savory",
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Festival"
+      ]
+    },
+    "distractors": [
+      "肉包",
+      "饅頭夾蛋",
+      "焢肉飯",
+      "破酥包",
+      "潤餅"
+    ]
+  },
+  {
+    "card_id": "card-7d1600d2",
+    "official_name": "小籠包",
+    "aliases": [
+      "小籠湯包"
+    ],
+    "english_names": [
+      "Xiao Long Bao",
+      "Soup Dumpling"
+    ],
+    "forbidden_words": [
+      "steamed",
+      "soup",
+      "pork",
+      "pleated",
+      "ginger"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Wheat",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    },
+    "distractors": [
+      "燒賣",
+      "肉包",
+      "水晶餃",
+      "破酥包",
+      "鍋貼"
+    ]
+  }
+]
