@@ -30,6 +30,8 @@ from dont_say_oyster.distractors import DistractorFileError, DistractorRecord, l
 from dont_say_oyster.selection import CARD_COUNT, SelectionError, order
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+SELECTION_PATH = REPO_ROOT / "data" / "cards" / "selection.json"
+DISTRACTORS_PATH = REPO_ROOT / "data" / "cards" / "distractors.json"
 CARDS_PATH = REPO_ROOT / "data" / "cards" / "cards.json"
 BATCHES_DIR = REPO_ROOT / "batches"
 VARIANTS = ("V0", "V1", "V2", "V3")
@@ -295,13 +297,18 @@ def _write_json(path: Path, data: Any) -> None:
     os.replace(tmp, path)
 
 
+def manifest_data(cards_data: list[dict[str, Any]], cards: Path) -> list[dict[str, Any]]:
+    """The four manifests, V0 to V3, for the cards data written to `cards`."""
+    ids = [card["card_id"] for card in cards_data]
+    return [{"variant": v, "cards": _path_ref(cards), "card_ids": ids} for v in VARIANTS]
+
+
 def write_build(cards_data: list[dict[str, Any]], cards: Path, batches: Path) -> None:
     """Write the cards file and the four manifests."""
     _write_json(cards, cards_data)
-    ids = [card["card_id"] for card in cards_data]
-    for variant, path in zip(VARIANTS, manifest_paths(batches), strict=True):
+    for data, path in zip(manifest_data(cards_data, cards), manifest_paths(batches), strict=True):
         path.parent.mkdir(parents=True, exist_ok=True)
-        _write_json(path, {"variant": variant, "cards": _path_ref(cards), "card_ids": ids})
+        _write_json(path, data)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
