@@ -1,8 +1,10 @@
 """The data test: loads the committed corpus, cards file, and manifests, so every commit that
 touches them is checked by the normal test command. The corpus part skips only while the corpus
-file is absent (before T4). The card part loads the cards file, runs the manifest check, and
-rebuilds the cards from the committed corpus, selection, and distractor file, failing when the
-result differs from the committed cards file or manifests (T7 F1). It skips only while the cards
+file is absent (before T4). The card part loads the cards file, runs the manifest check,
+reselects the forty names from the committed corpus, failing when the result differs from the
+committed selection (T8 F5), and rebuilds the cards from the committed corpus, selection, and
+distractor file, failing when the result differs from the committed cards file or manifests
+(T7 F1). It skips only while the cards
 file and all four manifests are absent (before T8), and fails when some card files (those five,
 the selection, and the distractor file) are present and some are not."""
 
@@ -29,6 +31,7 @@ from dont_say_oyster.cards import (
 from dont_say_oyster.corpus import load_corpus
 from dont_say_oyster.distractors import DistractorRecord, load_distractors, write_distractors
 from dont_say_oyster.selection import main as selection_command
+from dont_say_oyster.selection import select
 from tests import card_fixtures as fx
 
 CORPUS_PATH = cards.REPO_ROOT / "data" / "corpus" / "corpus.json"
@@ -67,6 +70,12 @@ def check_cards(files: CardFiles) -> None:
     corpus = load_corpus(files.corpus)
     load_cards(files.cards, corpus)
     check_manifests(files.manifests, files.cards)
+
+    if select(corpus) != read(files.selection):
+        pytest.fail(
+            f"{files.selection} differs from the selection that select draws from the committed "
+            "corpus; rerun select, pick, and build (T8)"
+        )
 
     rebuilt = build_cards(corpus, read(files.selection), load_distractors(files.distractors))
     committed = read(files.cards)
@@ -152,6 +161,25 @@ def test_card_part_fails_on_a_changed_manifest(card_files: CardFiles) -> None:
     data["card_ids"].reverse()
     manifest.write_text(json.dumps(data), encoding="utf-8")
     with pytest.raises(cards.ManifestError):
+        check_cards(card_files)
+
+
+def test_card_part_fails_after_an_uncarded_entry_changes_group_in_the_corpus(
+    card_files: CardFiles,
+) -> None:
+    """Moving any entry between groups changes the pools the draw runs on, so the committed
+    selection is no longer what select produces, even though every card copy still matches."""
+    selected = set(read(card_files.selection))
+    corpus = read(card_files.corpus)
+    entry = next(
+        e
+        for e in corpus
+        if e["official_name"] not in selected and e["attributes"]["dish_type"] == ["Snack"]
+    )
+    entry["attributes"]["dish_type"] = ["Dessert"]
+    entry["attributes"]["flavor"] = ["Sweet"]
+    card_files.corpus.write_text(json.dumps(corpus, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(pytest.fail.Exception, match="differs from the selection"):
         check_cards(card_files)
 
 
