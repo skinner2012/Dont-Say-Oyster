@@ -156,6 +156,11 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 ### 2026-09-25 — Jev (TypeSafe AI) rejected as the Challenger  (no spec change)
 - Why: Jev's documentation says its primary training language is English with lower CJK accuracy, and the card names are Chinese. It also emits no text, so the fail reason fed back to the Describer would have to be program-composed. Do not re-propose English-first cloud classifiers for the Challenger.
 
+### 2026-10-17 — Attempt number defined; model errors stop the game unretried; a schema-rejected tool call is a lookup  (commit 5705e5f)
+- Changed: R26, changed; Recovery, forks, and replay, added: a Model errors bullet.
+- Why: R26 asked every output to carry an attempt number but never said what one attempt was, so a retried description could have been attempt 2 or attempt 7 depending on whether rejects counted; it now counts only the language and name send-backs of R11, R17, R40 and the memory redo, one output at a time, since rejects already have a counter and counting them twice would hide which loop fired. The spec was silent on a connection error or an unparseable reply; the program never retries, so one logged call is one call and its latency is honest (CLAUDE.md, Auditing a ticket), and the game stops, writes no JSONL record (or the batch script would skip it as done), and is rerun as the crash the Recovery section already covers. A tool call with an argument outside its enum is a model slip, not a program failure, so it costs one lookup and the validation message goes back to the Guesser.
+- Rejected: automatic retries in the wrapper (dirty latency and token counts, and a retry count to tune); treating a schema-rejected tool call as a crash (one bad enum value would throw away a whole game); counting rejects in the attempt number (duplicates the reject counter).
+
 ## Memory (V3)
 
 ### 2026-09-20 — Cross-game memory lives in per-role JSON files numbered by game; no LangGraph checkpointer  (spec v0.2; Architecture)
