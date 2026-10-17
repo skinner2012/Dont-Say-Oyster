@@ -159,6 +159,8 @@ T1 and T2 can run in parallel (T2 is the author's `SPEC.md` change). T3 follows 
 
 ## Open questions for the author
 
+All three questions below were answered in `SPEC.md` cfdaa8a (2026-10-17): both sides convert to Simplified, so 面/麵 and 干/乾 fold together; an English item also matches its plural; a guess is in Chinese when it contains at least one Chinese character. Kept as written for the record.
+
 - [R22]: s2tw cannot tell 面 from 麵 outside its phrase table; 面线, 大肠面线, 猪肠面线, 鸭肉面线 all convert to 面線 and miss the Traditional 麵線 names. Raised in T1 F1; decide before M2 tickets (M2.5, M2.20). The same with 干, found in T5 F3: s2tw turns 滷豆干 into 滷豆乾 but 大溪豆干 into 大溪豆幹, so a guess of 大溪豆乾 would miss; the corpus carries both spellings as aliases (2d8029c), which hedges this one entry but not the rule.
 - [R22]: English lists match whole words, and forbidden words are stored singular (oyster, egg, peanut, bean, shrimp, pearl), so "oysters" passes the Describer check [R21]. Decide whether the matcher accepts a trailing s or es, or the corpus stores both forms. Raised in T5 F4; decide before M2.5.
 - [R5]: "in Chinese" is not defined for a guess that mixes Chinese characters and Latin letters; 雪Q餅, QQ蛋, and 地瓜QQ球 are aliases (2d8029c). Decide whether the check is "contains Chinese characters" or "no Latin letters" before the M2 Oracle tickets. Raised in T5 F2.
