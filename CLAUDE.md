@@ -47,7 +47,7 @@ Progress lives in the repo: each ticket carries a `Status` line (`todo`, `done <
 
 ## Rules of engagement
 
-- Dependencies named in `SPEC.md` (LangChain, LangGraph, Phoenix) and the dev toolchain chosen in M1 (test runner, linter, type checker, Simplified-to-Traditional converter) are pre-approved. Ask before adding any other.
+- Dependencies named in `SPEC.md` (LangChain, LangGraph, Phoenix) and the dev toolchain chosen in M1 (test runner, linter, type checker, Chinese script converter) are pre-approved. Ask before adding any other.
 - Never commit secrets. Endpoints and keys come from `.env`.
 - Pin everything that affects reproducibility: model tags and quantization, `num_ctx`, temperature, library versions. The ablation comparison depends on it.
 - Prefer surgical edits over rewrites. Write a test for each new behaviour.
