@@ -189,7 +189,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 - **R42** Can see: the description or answer the Describer gives (all variants), and the corpus (V1). And cross-game memory (V3).
 - **R43** (V1) Uses the search tool for the corpus; it can look up by itself at most five times per round, and on the sixth time the program blocks tool lookups and forces a question or guess directly. One lookup is one search-tool call; when one reply carries several, they count one each in order, and calls beyond the fifth are not run.
 - Search tool (V1), the Guesser's only tool:
-    - **R44** Input: filled by the Guesser: attribute filters (the fields and values in Corpus and Cards, Attributes) and an optional keyword list; keywords are matched against English names. An entry passes the filters when, for every field filtered on, it has at least one of the given values; an entry with no value in a field never passes a filter on that field.
+    - **R44** Input: filled by the Guesser: attribute filters (the fields and values in Corpus and Cards, Attributes) and an optional keyword list; keywords are matched against English names by the English rule of [R22]. An entry passes the filters when, for every field filtered on, it has at least one of the given values; an entry with no value in a field never passes a filter on that field. When keywords are given, an entry must also match at least one keyword in at least one of its English names. A call with no filter and no keyword is treated as a call the schema rejects (Recovery, forks, and replay).
     - **R45** Output: matching entries, each with official name, aliases, English names, and attributes.
     - **R46** Limit: at most ten results; if there are more, the output will say there are more.
 - **R47** The structured output for the question or guess is a separate call, and does not happen at the same time as a tool call.
@@ -215,7 +215,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 | Answer to the Guesser's question | JSON, including: answer, latency, token count, and attempt number. | Describer. | Program. |
 | Guess or question based on the description | JSON, including: guess and confidence score, or question. Latency. Token count. And attempt number. | Guesser. | Program, Describer. |
 | Earlier descriptions and answers | JSON (this game only) | Program. | Describer, Guesser. |
-| Earlier rejected descriptions | JSON (this game only) | Program. | Describer. |
+| Earlier rejected descriptions | JSON (this game only; each with its fail reason) | Program. | Describer. |
 | Verdict on the Describer's description | JSON, including the verdict and the reason for a fail, latency, token count, and attempt number. | Challenger. | Program, Describer. |
 | Earlier guesses and questions | JSON (this game only; guesses and valid questions, not the invalid questions of [R17]) | Program. | Describer, Guesser. |
 | Corpus lookup results | JSON (this game only) | Guesser. | Guesser. |
@@ -237,7 +237,7 @@ The program can read every row. The row "Description based on the card, or answe
     - The official name and accepted aliases, English names, and forbidden words on the card.
     - Earlier descriptions and answers.
     - The Guesser's latest guess or question, and earlier guesses and questions.
-    - The Challenger's verdict and the rejected description (if the verdict is fail).
+    - The Challenger's latest verdict with its reason, and every rejected description of this game with its reason (the Earlier rejected descriptions row).
     - Cross-game memory.
     - Round counter.
 - Challenger:
