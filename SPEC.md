@@ -69,7 +69,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 - **R10** The Describer draws a card (given by the program), then gives a description, and after that, based on the Guesser's response, gives a different description or answers the Guesser's question. The program checks the description or answer for a Describer violation [R21].
 - **R11** If the description or answer contains Chinese characters but none of the names in [R21], it is not a violation, and the program sends it back to the Describer to rewrite, without using a round, at most two times for each description or answer asked for; if the third try still contains Chinese characters, the program determines it is a Describer violation and the Describer loses.
 - **R12** If there is no violation, but what was given is the Describer's answer to the Guesser's question, the Challenger is skipped; if what was given is a description, the Challenger judges it [R35].
-- **R13** If it is reasonable, the Guesser guesses from the description; if not, the Challenger has the Describer describe again, with at most two rejects; if it is still not reasonable after that, it is a forced pass to the Guesser to guess.
+- **R13** If it is reasonable, the Guesser guesses from the description; if not, the Challenger has the Describer describe again, with at most two rejects (a fail verdict that sends the description back); the third fail is a forced pass: the description goes to the Guesser, counted as a forced pass and not as a reject.
 - **R14** A description or an answer that reaches the Guesser counts as one round; a rejected description does not.
 - **R15** Each game (one card) can have ten rounds. The program does the counting [R25].
 - **R16** In these ten rounds, the Guesser can guess or ask a question in the first nine, with a limit: at most three questions per game, and the tenth can only be a guess, not a question.
@@ -181,7 +181,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 - **R37** Has no memory.
 - **R38** Does not use any tools.
 - **R39** Output: the verdict [R26].
-- **R40** The verdict is pass or fail; a fail comes with an English reason. If the reason contains Chinese characters, it is asked again once; if it still contains Chinese, the reason is replaced with a fixed message, and the verdict is kept.
+- **R40** The verdict is pass or fail; a fail comes with an English reason, and any reason given with a pass is dropped unchecked. If a fail's reason contains Chinese characters, the Challenger is asked once more for an English reason for that same verdict; if the reason still contains Chinese characters, it is replaced with a fixed message. The verdict from the first call is kept in every case.
 - **R41** Does not need to remember anything across rounds or games.
 
 ### Guesser
@@ -429,7 +429,7 @@ No LangGraph checkpoints are used; recovery works from files.
 ### M5 Decide models and confirm temperature
 
 - Run one V1 game and personally check how the Describer and the Guesser interact, and decide whether to change models (one or both).
-- Run V2 games until ten reject verdicts have accumulated, check them, analyze whether these ten rejects are reasonable, and based on that decide whether to change the Challenger model.
+- Run V2 games until ten fail verdicts have accumulated (rejects and forced passes), check them, analyze whether these ten fails are reasonable, and based on that decide whether to change the Challenger model.
 - At the same time, check whether the output can be parsed, and whether descriptions repeat or get worse, to adjust the temperature as needed.
 - Decide whether the Describer and the Guesser each have thinking on or off.
 - If the models, temperature, or thinking on/off change, M5 is rerun until all of them are settled.
@@ -478,6 +478,7 @@ Terms whose meaning in this spec is narrower than everyday use.
 | game | One card is one game; not "match", to avoid confusion with string matching |
 | batch | One batch is one variant running all forty games |
 | reject | The Challenger rejects a description |
+| forced pass | The third fail verdict in a round: the description goes to the Guesser; not a reject [R13] |
 | send back | The program sends it back because of a language or name check |
 | verdict | The Challenger's output: pass / fail |
 | name check | String check on questions and descriptions, including the Chinese character check |
