@@ -73,7 +73,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 - **R14** A description or an answer that reaches the Guesser counts as one round; a rejected description does not.
 - **R15** Each game (one card) can have ten rounds. The program does the counting [R25].
 - **R16** In these ten rounds, the Guesser can guess or ask a question in the first nine, with a limit: at most three questions per game, and the tenth can only be a guess, not a question.
-- **R17** A question cannot contain any Chinese characters, and cannot contain the English names of the current card or its distractors, matched by [R22] (the program looks up the distractors' English names in the corpus); if it does, it is an invalid question, and the program sends it back with a fixed message (questions can only be in English and cannot contain English names) to ask again, without using up a question; it can ask again at most two times, and if the third try still contains a name or Chinese characters, the program determines it is a Guesser violation and the Guesser loses.
+- **R17** A question cannot contain any Chinese characters, and cannot contain the English names of the current card or its distractors, matched by [R22] (the program looks up the distractors' English names in the corpus); if it does, it is an invalid question, and the program sends it back with a fixed message (questions can only be in English and cannot contain English names) to ask again (the structured call [R47] is repeated with the fixed message; the tool loop is not), without using up a question; it can ask again at most two times, and if the third try still contains a name or Chinese characters, the program determines it is a Guesser violation and the Guesser loses.
 - **R18** The Describer can give descriptions based on the official name, accepted aliases, English names, and forbidden words.
 - The Challenger judges only from what it can see [R34].
 - **R19** If the guess is wrong, the Describer should adjust by itself based on the Guesser's guess and the history of earlier descriptions, and give a different description.
@@ -187,7 +187,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 ### Guesser
 
 - **R42** Can see: the description or answer the Describer gives (all variants), and the corpus (V1). And cross-game memory (V3).
-- **R43** (V1) Uses the search tool for the corpus; it can look up by itself at most five times per round, and on the sixth time the program blocks tool lookups and forces a question or guess directly.
+- **R43** (V1) Uses the search tool for the corpus; it can look up by itself at most five times per round, and on the sixth time the program blocks tool lookups and forces a question or guess directly. One lookup is one search-tool call; when one reply carries several, they count one each in order, and calls beyond the fifth are not run.
 - Search tool (V1), the Guesser's only tool:
     - **R44** Input: filled by the Guesser: attribute filters (the fields and values in Corpus and Cards, Attributes) and an optional keyword list; keywords are matched against English names. An entry passes the filters when, for every field filtered on, it has at least one of the given values; an entry with no value in a field never passes a filter on that field.
     - **R45** Output: matching entries, each with official name, aliases, English names, and attributes.
@@ -195,7 +195,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 - **R47** The structured output for the question or guess is a separate call, and does not happen at the same time as a tool call.
 - **R48** Output: a question (limits in [R16] and [R17]), or a noun, meaning the guess itself (language in [R5]), plus a confidence score (0 to 1) [R26].
 - **R49** (V1) Each time, based on the description given, the Guesser uses the existing corpus and decides whether to look it up, look up more, or guess directly; the lookup limit is in [R43].
-- **R50** Across rounds, remembers each of its guesses and the descriptions the Describer gives, questions and answers.
+- **R50** Across rounds, remembers each of its guesses and valid questions, and the descriptions the Describer gives, questions and answers.
 - (V3) Across games: uses cross-game memory to give more accurate guesses; see Cross-game memory definition.
 
 
@@ -217,7 +217,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 | Earlier descriptions and answers | JSON (this game only) | Program. | Describer, Guesser. |
 | Earlier rejected descriptions | JSON (this game only) | Program. | Describer. |
 | Verdict on the Describer's description | JSON, including the verdict and the reason for a fail, latency, token count, and attempt number. | Challenger. | Program, Describer. |
-| Earlier guesses and questions | JSON (this game only) | Program. | Describer, Guesser. |
+| Earlier guesses and questions | JSON (this game only; guesses and valid questions, not the invalid questions of [R17]) | Program. | Describer, Guesser. |
 | Corpus lookup results | JSON (this game only) | Guesser. | Guesser. |
 | Describer cross-game memory | JSON | Program (loads from the memory file at game start, writes back to the file at game end) | Describer. |
 | Guesser cross-game memory | JSON | Program (loads from the memory file at game start, writes back to the file at game end) | Guesser. |
@@ -271,7 +271,7 @@ One game. "Program" nodes are Oracle code; "model" nodes are LLM calls.
 | B — Describe | Model | Describer gives a description or answers a question. V3: prompt includes cross-game memory | → C | V0–V3 (memory branch V3 only) |
 | C — Check for violations | Program | Name-check on the Describer's output [R21]; Chinese-character send-back, max 2 [R11] | Chinese characters but no name → B to rewrite, max 2 [R11]. Violation (incl. 3rd Chinese retry) → F. Answer to a question → E, skipping the Challenger [R12]. Otherwise: → D (V2–V3), → E (V0–V1) | V0–V3; D-branch V2–V3 only |
 | D — Challenge | Model | Challenger verdict pass/fail; Chinese reason retried once then fixed message [R40] | Pass → E. Fail → B (with reason). 3rd fail → E (forced pass [R13]) | V2–V3 only |
-| E — Guess | Model | Guesser asks or guesses. V0: no corpus, no memory. V1–V3: tool loop (≤5 lookups [R43]) then structured output [R47]. V3: with cross-game memory | Question passes name/Chinese check → G (new round). Invalid question → E retry, max 2; 3rd → violation → F [R17]. Guess → F | V0–V3; tool loop V1–V3; memory V3 |
+| E — Guess | Model | Guesser asks or guesses. V0: no corpus, no memory. V1–V3: tool loop (≤5 lookups [R43]) then structured output [R47]. V3: with cross-game memory | Question passes name/Chinese check → G (new round). Invalid question → E structured call again, max 2; 3rd → violation → F [R17]. Guess → F | V0–V3; tool loop V1–V3; memory V3 |
 | F — Resolve | Program | Determines the outcome | Guess right → Guesser wins. Wrong guess in round 10 → Guesser loses. Guesser violation → Guesser loses. Describer violation → Guesser wins. These four: end (V0–V2) / → H (V3). Everything else → G (new round) | V0–V3; →H branch V3 only |
 | H — Memory summary | Model | Describer (full transcript + result) and Guesser (its own transcript + result) each make one call that returns its new memory entry and, from game six on, the updated rolling summary of the older entries. The program checks both (see check rule) and writes the memory files. End | → end | V3 only |
 
@@ -290,7 +290,7 @@ flowchart TD
     D -->|"pass"| E
     D -->|"fail, with reason, max 2"| B
     D -->|"3rd fail: forced pass"| E
-    E -->|"invalid question: retry, max 2"| E
+    E -->|"invalid question: structured call again, max 2"| E
     E -->|"valid question: new round"| G
     E ---->|"guess, or 3rd invalid question (violation)"| F
     F -->|"no outcome yet: new round"| G
