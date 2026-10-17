@@ -159,7 +159,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 
 ## Agent Roles
 
-- **R26** Every role's output from a model call also carries latency, token count, and the attempt number.
+- **R26** Every role's output from a model call also carries latency, token count, and the attempt number: 1 for the first call made for that output, one more for each send-back or re-ask of [R11], [R17], or [R40], or each redo under the memory Check rule (Cross-game memory definition); a new description after a reject [R13] starts at 1 again, since rejects have their own counter.
 
 ### Describer
 
@@ -313,6 +313,7 @@ Transitions that differ between variants, explicitly:
 No LangGraph checkpoints are used; recovery works from files.
 
 - Crash recovery: continue from the last memory file written; the game that crashed is rerun, and it does not resume inside a game. For V0–V2, which have no memory file, the batch script skips cards that already have a JSONL record.
+- Model errors: a connection error or a reply the program cannot parse is not retried; the game stops with an error, writes no JSONL record, and is rerun as a crash. A search-tool call whose arguments the tool's schema rejects is not an error: it counts as one lookup [R43] and returns the validation message to the Guesser as its result.
 - Fork and rerun: not needed, because the same command only needs a different variant as its argument.
 - Replay: decided not to do it.
 
