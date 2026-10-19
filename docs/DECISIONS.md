@@ -171,6 +171,12 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 - Why: R44 sent keyword matching to the R22 English rule, which is written for a corpus list item found inside a text; it did not say which side the keyword took. Read literally, the English name would be the item and the Guesser's keyword the text, so "noodle" could never find "Rice Noodles". The keyword is the item sought and the English name the text searched, which is what the 4948881 entry already assumed ("noodle" still hits "Noodles"); the plural rule therefore applies to the keyword.
 - Rejected: leaving the direction to the ticket (the M2 ticket writer had to state it as a reading, and a rule the ticket must restate is a rule the spec should carry).
 
+### 2026-10-18 — Challenger changed to Gemma 4:12B  (commit 01a12df)
+- Changed: Implementation (Models), the Challenger; Batch time estimate, the Challenger row's size. Its thinking stays off.
+- Why: T1's residency check (3939238) ran with glm4:9b-chat-q4_K_M, and `ollama show` listed no thinking capability for it, so the "off" in the batch table could never be revisited in M5. The author wanted a Challenger whose thinking can be switched on later and chose the Guesser's family over the Describer's: the Challenger's judgment [R35] predicts what a Guesser would read into the description, so sharing the Guesser's priors helps it, while sharing the Describer's would give the two the same blind spots and understate the Challenger's effect in V1→V2. Gemma 4 12B is the smallest Gemma 4 with a thinking switch; its MMMLU is 83.4 against the 26B's 86.3, and its Chinese is read-only in this role (names and distractors; the reason must be English [R40]). The size anomaly in Q16 and flash attention in Q17 are rechecked in the T1 rerun.
+- Rejected: qwen3.5:9b (same family as the Describer); keeping GLM-4 (no thinking switch); turning the Challenger's thinking on now (the batch table keeps "off", so M5's thinking items stay the Describer's and the Guesser's; turning it on later is a spec change).
+- Also: the T1 record is redone with the new tag; the first record stays in the ticket as superseded; T2 and T3 run against the new Challenger from the start.
+
 ## Memory (V3)
 
 ### 2026-09-20 — Cross-game memory lives in per-role JSON files numbered by game; no LangGraph checkpointer  (spec v0.2; Architecture)
