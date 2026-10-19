@@ -147,7 +147,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Depends on:** T1
 
 ### T3 — Tool-calling check on the Guesser's model
-- **Status:** todo
+- **Status:** done 7178f4d
 - **Produces:** a `tools` subcommand of `check-models` that binds a stand-in search tool to the Guesser's model, runs the tool call the model makes, then makes a separate structured-output call for a guess [R47]; its tests; and the record of one run, written into this Detail.
 - **Consumes:** the check command and `langchain-ollama` from T2; the Guesser tag from T1; the attribute value lists in `data/corpus/schema.json` (M1).
 - **Detail:**
@@ -427,3 +427,9 @@ Q16, Q17, and Q18 are open; none blocks T2 (author, 2026-10-18). Q19 is open and
 - T2 F6: the live run never produced a Challenger fail with a reason, a reason dropped on a pass, or a Guesser question (the 12B returned `{"verdict": "pass"}` under both settings); those branches are tested with scripted replies only and meet a live model in T10 and T12. Accepted (author, 2026-10-19).
 - T2 F7: call 1 of each thinking-off check includes the model load (2–5 s); the record keeps the calls apart and says so. No change (author, 2026-10-19).
 - T2 F8: the dispatch said `langchain-ollama` was already pinned; it was not, and the implementer added langchain-ollama 1.1.0 and ollama 0.6.3 (pre-approved). No change.
+- T3 F1: the Record said the decorated guess `黑糖珍珠鮮奶 (Brown Sugar Boba Milk)` was a matter for the [R5] checks; under [R20]/[R22] it equals no name and counts wrong; fixed 24273f5, raised as Q20 for T12's prompt.
+- T3 F2: of the values with spaces, "Sugar and Sweeteners" and "Drink with Add-ins" were sent nine times each and "No Cooking" never, cooking_method was never filtered on; the Record says so. Deferred (author, 2026-10-19).
+- T3 F3: the `ollama` client drops `anyOf` (so an Optional list field loses its enum), `additionalProperties`, `uniqueItems`, and `minItems` from tool schemas, and tool results carry no `tool_call_id`; T11 and T12 need this; fixed 83bdad2 (T11 Detail), T12's dispatch carries the ordering point.
+- T3 F4: `httpx` is imported but not a declared dependency (transitive via `ollama`, pinned 0.28.1); `_Tap` opens a transport per call and never closes it; `zip(strict=True)` would stop the command if LangChain returned a different number of tool calls than the raw response. Deferred (author, 2026-10-19): a check command, not game code.
+- T3 F5: the Record's start time is the implementer's capture, not in the log (as T1 F1). Deferred (author, 2026-10-19).
+- T3 F6: Q19's "unloaded after each call" is inferred from `/api/ps` 35 ms after each call, a fresh fit check, and a load on every call; the log has no unload line; the sentences say it is one run. No change (author, 2026-10-19).
