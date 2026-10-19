@@ -156,6 +156,82 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
   - The prompt gives a short English description whose natural filters include values with spaces (for example a sweet drink with chewy add-ins).
   - One run: a call with the tool bound; if the model makes a tool call, the program runs the stand-in and sends the result back; then a second, separate call with no tool bound and a guess schema (guess and confidence [R48]). Repeats and thinking settings as in T2, Guesser model only.
   - The record, written into this Detail: for each thinking setting, how many runs made a tool call, the arguments verbatim as the model sent them, whether each enum value equals a listed value exactly, and how many separate guess calls parsed. Enum values that come back altered (case, spacing, a value not in the list) are the T2 F7 answer and go under Open questions for the author to decide the tool-schema shape before T11.
+  - **Record** (2026-10-19), code at 7178f4d:
+    - Server: the T1 setup, started again the same way: from a shell, `OLLAMA_MAX_LOADED_MODELS=3 ollama serve`, with the menu-bar app not running; its config line reads `OLLAMA_MAX_LOADED_MODELS:3` and `OLLAMA_NUM_PARALLEL:1`; `ollama version is 0.40.6`; no model loaded at the start. The endpoint came from `.env` (`OLLAMA_BASE_URL`).
+    - Command: `uv run check-models tools` from the repo root (`--repeat` at its default 5), 15:51:13 to 15:52:27 PDT, exit 0. The server log shows one load of `gemma4:26b-a4b-it-q4_K_M` at context 16384 and 20 `/api/chat` requests, all 200.
+    - How the calls were made: langchain-ollama 1.1.0 (ollama 0.6.3), `ChatOllama(model=gemma4:26b-a4b-it-q4_K_M, num_ctx=16384, temperature=0.7, reasoning=<think>)`, thinking off `think: false` and on `think: true`, as in T2. The tool call: `.bind_tools([SEARCH_TOOL])`, no `format`. The guess call: `.with_structured_output(GUESS_SCHEMA, method="json_schema", include_raw=True)`, whose request carries no tool and the schema as `format` (asserted in the tests on the HTTP request body, where `tools` is absent or empty; a probe saw `"tools": []`; not captured from the live requests); its messages are the prompt, the model's tool-call message as LangChain returned it, and one `tool` message with the fixed result per tool call. No prompt asks for JSON.
+    - The arguments below are read from Ollama's raw response, not from LangChain's `tool_calls`: LangChain rewrites a string argument that parses as a JSON list or object (`'["boba"]'` becomes `["boba"]`), and the command prints a `LangChain args` line when the two differ. No such line appeared.
+    - The ollama client's `Tool` type drops keys it does not name: each property keeps only `type`, `items`, `description`, and `enum`, and a probe saw `additionalProperties` (on the parameters) and `uniqueItems` (on a property) dropped from the request. The stand-in uses neither; this bears on T11's schema.
+    - Output, verbatim:
+      ```
+      guesser gemma4:26b-a4b-it-q4_K_M think=False
+        run 1: tool call 3.6 s, 1 call(s)
+          search {"main_ingredients": ["Milk", "Sugar and Sweeteners"], "physical_form": ["Drink with Add-ins"]}
+            main_ingredients "Milk": listed
+            main_ingredients "Sugar and Sweeteners": listed
+            physical_form "Drink with Add-ins": listed
+          guess call 1.1 s, parsed: {"guess": "黑糖珍珠鮮奶", "confidence": 1.0}
+        run 2: tool call 0.7 s, 1 call(s)
+          search {"main_ingredients": ["Milk", "Sugar and Sweeteners"], "physical_form": ["Drink with Add-ins"]}
+            main_ingredients "Milk": listed
+            main_ingredients "Sugar and Sweeteners": listed
+            physical_form "Drink with Add-ins": listed
+          guess call 0.5 s, parsed: {"guess": "黑糖珍珠鮮奶", "confidence": 1.0}
+        run 3: tool call 0.7 s, 1 call(s)
+          search {"main_ingredients": ["Milk", "Sugar and Sweeteners"], "physical_form": ["Drink with Add-ins"]}
+            main_ingredients "Milk": listed
+            main_ingredients "Sugar and Sweeteners": listed
+            physical_form "Drink with Add-ins": listed
+          guess call 0.5 s, parsed: {"guess": "黑糖珍珠鮮奶", "confidence": 1.0}
+        run 4: tool call 0.7 s, 1 call(s)
+          search {"main_ingredients": ["Milk", "Sugar and Sweeteners"], "physical_form": ["Drink with Add-ins"]}
+            main_ingredients "Milk": listed
+            main_ingredients "Sugar and Sweeteners": listed
+            physical_form "Drink with Add-ins": listed
+          guess call 0.6 s, parsed: {"guess": "黑糖珍珠鮮奶 (Brown Sugar Boba Milk)", "confidence": 1.0}
+        run 5: tool call 0.7 s, 1 call(s)
+          search {"main_ingredients": ["Milk", "Sugar and Sweeteners"], "physical_form": ["Drink with Add-ins"]}
+            main_ingredients "Milk": listed
+            main_ingredients "Sugar and Sweeteners": listed
+            physical_form "Drink with Add-ins": listed
+          guess call 0.5 s, parsed: {"guess": "黑糖珍珠鮮奶", "confidence": 1.0}
+      guesser gemma4:26b-a4b-it-q4_K_M think=False: 5/5 runs made a tool call, 5/5 guess calls parsed, 5 after a tool call; 0 enum values or arguments not listed
+      guesser gemma4:26b-a4b-it-q4_K_M think=True
+        run 1: tool call 9.0 s, 1 call(s)
+          search {"main_ingredients": ["Milk", "Sugar and Sweeteners"]}
+            main_ingredients "Milk": listed
+            main_ingredients "Sugar and Sweeteners": listed
+          guess call 9.2 s, parsed: {"guess": "黑糖珍珠鮮奶", "confidence": 1.0}
+        run 2: tool call 5.1 s, 1 call(s)
+          search {"main_ingredients": ["Milk", "Sugar and Sweeteners", "Starch"], "physical_form": ["Drink with Add-ins"]}
+            main_ingredients "Milk": listed
+            main_ingredients "Sugar and Sweeteners": listed
+            main_ingredients "Starch": listed
+            physical_form "Drink with Add-ins": listed
+          guess call 6.6 s, parsed: {"guess": "黑糖珍珠鮮奶", "confidence": 1.0}
+        run 3: tool call 5.9 s, 1 call(s)
+          search {"main_ingredients": ["Milk", "Sugar and Sweeteners", "Starch"], "physical_form": ["Drink with Add-ins"]}
+            main_ingredients "Milk": listed
+            main_ingredients "Sugar and Sweeteners": listed
+            main_ingredients "Starch": listed
+            physical_form "Drink with Add-ins": listed
+          guess call 9.3 s, parsed: {"guess": "黑糖珍珠鮮奶", "confidence": 1.0}
+        run 4: tool call 4.8 s, 1 call(s)
+          search {"main_ingredients": ["Milk"], "physical_form": ["Drink with Add-ins"]}
+            main_ingredients "Milk": listed
+            physical_form "Drink with Add-ins": listed
+          guess call 7.2 s, parsed: {"guess": "黑糖珍珠鮮奶", "confidence": 1.0}
+        run 5: tool call 1.7 s, 1 call(s)
+          search {"keywords": ["milk", "brown sugar", "tapioca"], "main_ingredients": ["Milk", "Sugar and Sweeteners"], "physical_form": ["Drink with Add-ins"]}
+            main_ingredients "Milk": listed
+            main_ingredients "Sugar and Sweeteners": listed
+            physical_form "Drink with Add-ins": listed
+          guess call 4.8 s, parsed: {"guess": "黑糖珍珠鮮奶", "confidence": 1.0}
+      guesser gemma4:26b-a4b-it-q4_K_M think=True: 5/5 runs made a tool call, 5/5 guess calls parsed, 5 after a tool call; 0 enum values or arguments not listed
+      ```
+    - Tool calls: 5/5 runs under each setting, one call per reply. Every enum value equals a listed value exactly; none came back altered, so this run raises no Open question. Values with spaces sent: "Sugar and Sweeteners" 9 times and "Drink with Add-ins" 9 times; "No Cooking" never, because no run filtered on cooking_method, so it is untested. Thinking-on run 5 also sent keywords.
+    - Guess calls: 5/5 parsed under each setting, all after a tool call. Thinking-off run 4 guessed `黑糖珍珠鮮奶 (Brown Sugar Boba Milk)`, which fits the schema but adds an English name; the name and language checks [R5] are T7's and T12's.
+    - Latency: call 1 under thinking off includes the model load.
 - **Acceptance:** the test command passes with scripted replies: a scripted tool call is run and its result sent back; the guess call is made with no tool bound (asserted on the request); an argument value not in its enum is reported. This Detail holds the record of one live run, and in it the Guesser's model made at least one tool call and at least one following separate guess call parsed under each thinking setting (otherwise escalate, How to use these tickets).
 - **Out of scope:** the real search tool and its filter and keyword rules (T11); the lookup limit and the tool loop (T12); the wrapper (T4); the Describer and Challenger models, which use no tools [R31], [R38].
 - **Depends on:** T2
