@@ -366,7 +366,7 @@ No LangGraph checkpoints are used; recovery works from files.
 ## Implementation
 
 - **Language and runtime**: plan to use Python 3.13 or later. Package management and virtual environments will use uv.
-- **Models**: Gemma 4:26B (Guesser), Qwen 3.8:27B (Describer), and Gemma 4:12B (Challenger), all three local models; Ollama will run all three at the same time (to be confirmed in M2) on a Mac mini M4 Pro + 64 GB, but tests in M5 will settle the three models. As for num_ctx, the current defaults are: Guesser 16K, Describer 8K, Challenger 4K. When a role's Prompt tokens on a call start to go over 90% of num_ctx, the program will log a warning. In M4 and M6 the log will be checked and adjusted as needed.
+- **Models**: Gemma 4:26B (Guesser), Qwen 3.8:27B (Describer), and Gemma 4:12B (Challenger), all three local models; on a Mac mini M4 Pro + 64 GB, with Ollama serving all three; M2 found that the three do not reliably stay resident together (Q19 in docs/tasks/M2-one-game.md: it depends on load order and on free memory at that moment), so the Describer and the Guesser stay resident and the Challenger is loaded for each call and unloaded after it (keep_alive 0 on its requests), and every call sets its role's keep_alive explicitly rather than relying on Ollama's default; tests in M5 will settle the three models. As for num_ctx, the current defaults are: Guesser 16K, Describer 8K, Challenger 4K. When a role's Prompt tokens on a call start to go over 90% of num_ctx, the program will log a warning. In M4 and M6 the log will be checked and adjusted as needed.
 - **Temperature policy**: Temperature is set to 0.7 for now (same value for all three roles, same value for all four variants). We pick >0 because we need variation in the output. In M5 the temperature may change depending on what we see.
 - **Batch time estimate**:
     | Role | Calls per round V0 / V1 / V2–V3 | Each call, thinking off | Each call, thinking on |
@@ -407,7 +407,7 @@ No LangGraph checkpoints are used; recovery works from files.
 ### M2 Build the code needed to run one game, based on the V2 spec
 
 - Start with the three models named in Implementation, access models through Ollama.
-- Also check that `OLLAMA_MAX_LOADED_MODELS=3`→ keeping three models in memory at once is enough.
+- Also check whether `OLLAMA_MAX_LOADED_MODELS=3` keeps three models in memory at once. Checked: it is necessary (with 2 the Challenger's load would evict a resident model) but not sufficient (Q19); the arrangement in Implementation (Models) follows.
 - Use LangChain + LangGraph to build the basic shape: nodes A–G for V2 (including the Guesser's search tool and tool loop [R43]–[R47]), the four retry loops [R11], [R13], [R17], [R40], and the Oracle checks [R5], [R11], [R16]–[R17], [R20]–[R23], [R43].
 - Build the one-game command with the parameters listed in Implementation.
 - Check that structured output works for all three models on Ollama, and also check that tool calling works for the Guesser's model and that the separate structured output call [R47] works on Ollama.
