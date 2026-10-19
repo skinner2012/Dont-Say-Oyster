@@ -1,4 +1,6 @@
-"""Model checks on Ollama. Run as `uv run check-models structured [--repeat N]`: each role's
+"""Model checks on Ollama.
+
+`uv run check-models structured [--repeat N]`: each role's
 model gets the same structured-output request `--repeat` times with thinking off and then on,
 and the command prints each call's latency, how many replies parsed, one parsed object, and the
 raw text of every reply that did not parse. It then sends one prompt twice to the Guesser's
@@ -8,18 +10,30 @@ has no parsed reply under some thinking setting.
 The reply's shape is enforced by Ollama's structured output: the request carries the role's
 JSON schema as `format` (LangChain's `with_structured_output`, method `json_schema`); no prompt
 asks for JSON. A reply counts as parsed when its text is JSON that validates against the
-schema. These are check schemas; the game nodes define their own."""
+schema. These are check schemas; the game nodes define their own.
+
+`uv run check-models tools [--repeat N]`: the Guesser's model gets a request with a stand-in
+search tool bound [R44], `--repeat` times with thinking off and then on. The program runs each
+tool call the model makes (the stand-in returns a fixed two-entry result and does not search)
+and sends the results back in a separate structured-output call with no tool bound, for a guess
+and a confidence [R47], [R48]. For each tool call it prints the arguments as Ollama returned
+them and whether each filter value equals a listed value exactly. It exits 1 when, under some
+thinking setting, no run made a tool call whose following guess call parsed."""
 
 import argparse
 import json
 import os
 import sys
 import time
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+import httpx
 from jsonschema import Draft202012Validator
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
+
+from dont_say_oyster.corpus import SCHEMA_PATH
 
 if TYPE_CHECKING:
     from langchain_core.language_models import LanguageModelInput
@@ -263,6 +277,324 @@ def model_ask() -> Ask:
     return ask
 
 
+# The tools check [R44], [R47], [R48].
+
+FILTER_FIELDS = ("main_ingredients", "cooking_method", "physical_form")
+
+
+def _listed_values() -> dict[str, list[str]]:
+    """Each filter field's values, as `data/corpus/schema.json` lists them."""
+    entry = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))["items"]
+    attributes = entry["properties"]["attributes"]["properties"]
+    return {field: attributes[field]["items"]["enum"] for field in FILTER_FIELDS}
+
+
+LISTED = _listed_values()
+
+# A stand-in with the input shape of [R44]: optional enum filters and an optional keyword list.
+# The real tool and its schema are T11's.
+SEARCH_TOOL: dict[str, Any] = {
+    "type": "function",
+    "function": {
+        "name": "search",
+        "description": (
+            "Search the corpus of Taiwanese snacks. Filter on attribute values, match keywords "
+            "against the English names, or both. Returns the matching entries."
+        ),
+        "parameters": {
+            "type": "object",
+            "required": [],
+            "properties": {
+                **{
+                    field: {
+                        "type": "array",
+                        "items": {"type": "string", "enum": values},
+                        "description": f"Entries with at least one of these {field} values.",
+                    }
+                    for field, values in LISTED.items()
+                },
+                "keywords": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Entries with an English name that matches one of these.",
+                },
+            },
+        },
+    },
+}
+
+# The stand-in's fixed result: two corpus entries with the fields of [R45].
+SEARCH_RESULT = json.dumps(
+    [
+        {
+            "official_name": "黑糖珍珠鮮奶",
+            "aliases": ["黑糖波霸鮮奶", "青蛙撞奶"],
+            "english_names": ["Brown Sugar Boba Milk"],
+            "attributes": {
+                "dish_type": ["Drink"],
+                "main_ingredients": ["Starch", "Sugar and Sweeteners", "Milk"],
+                "cooking_method": ["No Cooking"],
+                "flavor": ["Sweet"],
+                "physical_form": ["Drink with Add-ins"],
+                "occasion": [],
+            },
+        },
+        {
+            "official_name": "珍珠奶茶",
+            "aliases": ["珍奶", "波霸奶茶", "珍珠鮮奶茶", "波霸鮮奶茶"],
+            "english_names": [
+                "Bubble Milk Tea",
+                "Bubble tea",
+                "Pearl milk tea",
+                "Zhen Zhu Nai Cha",
+                "Bubble Fresh Milk Tea",
+            ],
+            "attributes": {
+                "dish_type": ["Drink"],
+                "main_ingredients": ["Tea", "Milk", "Starch"],
+                "cooking_method": ["No Cooking"],
+                "flavor": ["Sweet"],
+                "physical_form": ["Drink with Add-ins"],
+                "occasion": [],
+            },
+        },
+    ],
+    ensure_ascii=False,
+)
+
+# [R48], the guess half: a guess and a confidence.
+GUESS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["guess", "confidence"],
+    "additionalProperties": False,
+    "properties": {
+        "guess": {"type": "string"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    },
+}
+
+# Its natural filters include values with spaces: Sugar and Sweeteners, Drink with Add-ins,
+# No Cooking.
+TOOL_PROMPT = (
+    "You are guessing a Taiwanese snack from a description. First search the corpus with the "
+    "search tool, filtering on what the description tells you. When the search result comes "
+    "back, guess the snack's Chinese name and give your confidence from 0 to 1.\n\n"
+    "Description: A cold drink of fresh milk with brown sugar syrup streaked down the inside of "
+    "the cup. Chewy tapioca balls, simmered in the syrup, sit at the bottom. The stall assembles "
+    "it from prepared parts, and you drink it through a wide straw."
+)
+
+
+@dataclass(frozen=True)
+class ChatRequest:
+    """One chat call: with `tools` bound and no schema, or with no tool and `schema` sent as
+    Ollama's `format`."""
+
+    tag: str
+    num_ctx: int
+    think: Think
+    messages: tuple[BaseMessage, ...]
+    tools: tuple[dict[str, Any], ...]
+    schema: dict[str, Any] | None
+
+
+@dataclass(frozen=True)
+class ChatReply:
+    """The model's message as LangChain returns it, and each of its tool calls' arguments as
+    Ollama returned them, in order (LangChain rewrites a string argument that parses as a JSON
+    list or object)."""
+
+    message: AIMessage
+    sent_arguments: tuple[dict[str, Any], ...]
+
+
+Chat = Callable[[ChatRequest], ChatReply]
+"""Sends one chat request to the model and returns its reply."""
+
+
+def parse_guess(text: str) -> dict[str, Any] | None:
+    """The guess call's reply as an object when it is JSON that validates against GUESS_SCHEMA,
+    otherwise None."""
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return None
+    if not Draft202012Validator(GUESS_SCHEMA).is_valid(data):
+        return None
+    parsed: dict[str, Any] = data
+    return parsed
+
+
+def enum_check(arguments: Mapping[str, Any]) -> list[str]:
+    """One line per filter value, saying whether it equals a listed value exactly, and one per
+    argument the tool does not take. Keywords have no list and get no line."""
+    lines = []
+    for name, value in arguments.items():
+        if name == "keywords":
+            continue
+        if name not in LISTED:
+            lines.append(f"{name}: not a tool argument")
+            continue
+        for item in value if isinstance(value, list) else [value]:
+            shown = json.dumps(item, ensure_ascii=False)
+            listed = "listed" if item in LISTED[name] else "not listed"
+            lines.append(f"{name} {shown}: {listed}")
+    return lines
+
+
+def run_tools_check(think: Think, repeat: int, chat: Chat) -> bool:
+    """Run the tool call and the guess call `repeat` times with `think` and print each; return
+    whether some run made a tool call and then a guess call that parsed."""
+    label = f"{GUESSER.role} {GUESSER.tag} think={think}"
+    print(label, flush=True)
+    called = parsed = both = not_listed = 0
+    for n in range(1, repeat + 1):
+        messages: list[BaseMessage] = [HumanMessage(TOOL_PROMPT)]
+        request = ChatRequest(
+            GUESSER.tag, GUESSER.num_ctx, think, tuple(messages), (SEARCH_TOOL,), None
+        )
+        start = time.perf_counter()
+        reply = chat(request)
+        seconds = time.perf_counter() - start
+        calls = reply.message.tool_calls
+        messages.append(reply.message)
+        if calls:
+            called += 1
+            print(f"  run {n}: tool call {seconds:.1f} s, {len(calls)} call(s)", flush=True)
+        else:
+            print(
+                f"  run {n}: tool call {seconds:.1f} s, no tool call, raw reply: "
+                f"{reply.message.text}",
+                flush=True,
+            )
+        for call, sent in zip(calls, reply.sent_arguments, strict=True):
+            print(f"    {call['name']} {json.dumps(sent, ensure_ascii=False)}")
+            if call["args"] != sent:
+                print(f"    LangChain args: {json.dumps(call['args'], ensure_ascii=False)}")
+            for line in enum_check(sent):
+                print(f"      {line}")
+                not_listed += not line.endswith(": listed")
+            messages.append(ToolMessage(SEARCH_RESULT, tool_call_id=call["id"]))
+
+        request = ChatRequest(
+            GUESSER.tag, GUESSER.num_ctx, think, tuple(messages), (), GUESS_SCHEMA
+        )
+        start = time.perf_counter()
+        text = chat(request).message.text
+        seconds = time.perf_counter() - start
+        guess = parse_guess(text)
+        if guess is None:
+            print(f"    guess call {seconds:.1f} s, not parsed, raw reply: {text}", flush=True)
+        else:
+            parsed += 1
+            both += bool(calls)
+            shown = json.dumps(guess, ensure_ascii=False)
+            print(f"    guess call {seconds:.1f} s, parsed: {shown}", flush=True)
+    print(
+        f"{label}: {called}/{repeat} runs made a tool call, {parsed}/{repeat} guess calls "
+        f"parsed, {both} after a tool call; {not_listed} enum values or arguments not listed"
+    )
+    return both > 0
+
+
+def run_tools(repeat: int, chat: Chat) -> int:
+    """Run the tools check with thinking off and on; return the exit code."""
+    failed = [
+        f"think={think}"
+        for think in (GUESSER.think_off, GUESSER.think_on)
+        if not run_tools_check(think, repeat, chat)
+    ]
+    if failed:
+        print(f"no tool call followed by a parsed guess call: {'; '.join(failed)}")
+        return 1
+    return 0
+
+
+class _Tee(httpx.SyncByteStream):
+    """A response stream that keeps each chunk it passes on."""
+
+    def __init__(self, stream: httpx.SyncByteStream, chunks: list[bytes]) -> None:
+        self.stream = stream
+        self.chunks = chunks
+
+    def __iter__(self) -> Iterator[bytes]:
+        for chunk in self.stream:
+            self.chunks.append(chunk)
+            yield chunk
+
+    def close(self) -> None:
+        self.stream.close()
+
+
+class _Tap(httpx.BaseTransport):
+    """Passes requests to `inner` and keeps the response bodies, so the tool-call arguments can
+    be read as Ollama returned them."""
+
+    def __init__(self, inner: httpx.BaseTransport) -> None:
+        self.inner = inner
+        self.chunks: list[bytes] = []
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        response = self.inner.handle_request(request)
+        assert isinstance(response.stream, httpx.SyncByteStream)
+        response.stream = _Tee(response.stream, self.chunks)
+        return response
+
+    def tool_call_arguments(self) -> tuple[dict[str, Any], ...]:
+        """Each tool call's arguments in the response lines (Ollama streams NDJSON), in order."""
+        lines = b"".join(self.chunks).decode("utf-8").splitlines()
+        return tuple(
+            call["function"]["arguments"]
+            for line in lines
+            if line.strip()
+            for call in json.loads(line).get("message", {}).get("tool_calls") or []
+        )
+
+
+def chat_runnable(
+    request: ChatRequest, url: str, transport: httpx.BaseTransport
+) -> "Runnable[LanguageModelInput, Any]":
+    """The request as a LangChain runnable: ChatOllama as in `chat_model`, over `transport`,
+    with the tools bound or, when the request has a schema, the schema sent as Ollama's
+    `format` and no tool."""
+    from langchain_ollama import ChatOllama
+
+    llm = ChatOllama(
+        model=request.tag,
+        base_url=url,
+        num_ctx=request.num_ctx,
+        temperature=TEMPERATURE,
+        reasoning=request.think,
+        client_kwargs={"transport": transport},
+    )
+    if request.schema is not None:
+        return llm.with_structured_output(request.schema, method="json_schema", include_raw=True)
+    return llm.bind_tools(list(request.tools))
+
+
+def model_chat(transport: httpx.BaseTransport | None = None) -> Chat:
+    """The real chat call through langchain-ollama, over `transport` (httpx's default when None).
+    The endpoint is OLLAMA_BASE_URL, read from `.env` when it is not already in the environment.
+    A failed call becomes a one-line ModelError."""
+    import ollama
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    url = base_url(os.environ)
+
+    def chat(request: ChatRequest) -> ChatReply:
+        tap = _Tap(transport or httpx.HTTPTransport())
+        try:
+            result = chat_runnable(request, url, tap).invoke(list(request.messages))
+        except (ollama.ResponseError, ConnectionError, httpx.HTTPError) as e:
+            message = " ".join(str(e).split())
+            raise ModelError(f"model call failed: {type(e).__name__}: {message}") from e
+        reply = result["raw"] if request.schema is not None else result
+        return ChatReply(reply, tap.tool_call_arguments())
+
+    return chat
+
+
 def _repeat(value: str) -> int:
     n = int(value)
     if n < 1:
@@ -270,7 +602,9 @@ def _repeat(value: str) -> int:
     return n
 
 
-def main(argv: Sequence[str] | None = None, ask: Ask | None = None) -> int:
+def main(
+    argv: Sequence[str] | None = None, ask: Ask | None = None, chat: Chat | None = None
+) -> int:
     parser = argparse.ArgumentParser(
         prog="check-models", description="Check the three role models on Ollama."
     )
@@ -284,8 +618,19 @@ def main(argv: Sequence[str] | None = None, ask: Ask | None = None) -> int:
         default=DEFAULT_REPEAT,
         help=f"requests per model and thinking setting (default {DEFAULT_REPEAT})",
     )
+    tools = commands.add_parser(
+        "tools", help="check tool calling and the separate guess call on the Guesser's model"
+    )
+    tools.add_argument(
+        "--repeat",
+        type=_repeat,
+        default=DEFAULT_REPEAT,
+        help=f"runs per thinking setting (default {DEFAULT_REPEAT})",
+    )
     args = parser.parse_args(argv)
     try:
+        if args.command == "tools":
+            return run_tools(args.repeat, chat or model_chat())
         return run_structured(args.repeat, ask or model_ask())
     except ModelError as e:
         print(e, file=sys.stderr)
