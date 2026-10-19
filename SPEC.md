@@ -366,13 +366,13 @@ No LangGraph checkpoints are used; recovery works from files.
 ## Implementation
 
 - **Language and runtime**: plan to use Python 3.13 or later. Package management and virtual environments will use uv.
-- **Models**: Gemma 4:26B (Guesser), Qwen 3.8:27B (Describer), and GLM-4:9B (Challenger), all three local models; Ollama will run all three at the same time (to be confirmed in M2) on a Mac mini M4 Pro + 64 GB, but tests in M5 will settle the three models. As for num_ctx, the current defaults are: Guesser 16K, Describer 8K, Challenger 4K. When a role's Prompt tokens on a call start to go over 90% of num_ctx, the program will log a warning. In M4 and M6 the log will be checked and adjusted as needed.
+- **Models**: Gemma 4:26B (Guesser), Qwen 3.8:27B (Describer), and Gemma 4:12B (Challenger), all three local models; Ollama will run all three at the same time (to be confirmed in M2) on a Mac mini M4 Pro + 64 GB, but tests in M5 will settle the three models. As for num_ctx, the current defaults are: Guesser 16K, Describer 8K, Challenger 4K. When a role's Prompt tokens on a call start to go over 90% of num_ctx, the program will log a warning. In M4 and M6 the log will be checked and adjusted as needed.
 - **Temperature policy**: Temperature is set to 0.7 for now (same value for all three roles, same value for all four variants). We pick >0 because we need variation in the output. In M5 the temperature may change depending on what we see.
 - **Batch time estimate**:
     | Role | Calls per round V0 / V1 / V2–V3 | Each call, thinking off | Each call, thinking on |
     | --- | --- | --- | --- |
     | Describer (27B)| 1 / 1 / 1–3 | 15–40 sec | 60–180 sec |
-    | Challenger (9B)| 0 / 0 / 1–3 | 8–20 sec | off |
+    | Challenger (12B)| 0 / 0 / 1–3 | 8–20 sec | off |
     | Guesser (26B)| 1 / 1–6 / 1–6 | 15–40 sec | 60–180 sec |
 
     - Assumptions: a 27B-class Q4 model on the M4 Pro, decode about 10–15 tok/s, prefill about 150–300 tok/s; a typical game has 5–6 rounds.
