@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "jsonschema>=4.26.0",
     "langchain-anthropic>=1.7.6",
+    "langchain-ollama>=1.1.0",
     "opencc-python-reimplemented>=0.1.7",
     "python-dotenv>=1.2.4",
 ]
@@ -15,6 +16,7 @@ load-corpus = "dont_say_oyster.corpus:main"
 pick-distractors = "dont_say_oyster.distractors:main"
 select-cards = "dont_say_oyster.selection:main"
 build-cards = "dont_say_oyster.cards:main"
+check-models = "dont_say_oyster.model_checks:main"
 
 [build-system]
 requires = ["hatchling"]
