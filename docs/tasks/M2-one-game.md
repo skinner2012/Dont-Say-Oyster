@@ -16,7 +16,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 ## Tickets
 
 ### T1 — Three models resident in Ollama at once
-- **Status:** todo
+- **Status:** done f24c549
 - **Produces:** the Ollama tags for the three roles, written into this Detail, and the record of a residency check: the three models loaded together at their num_ctx with `OLLAMA_MAX_LOADED_MODELS=3`.
 - **Consumes:** —
 - **Detail:**
@@ -268,3 +268,16 @@ Q16, Q17, and Q18 are open; none blocks T2 (author, 2026-10-18).
 
 ## Audit findings
 
+- T1 F1: the Record's `keep_alive 30m` and empty prompt are not in the server log (request bodies are not logged); inferred from the UNTIL column and the implementer's capture. Deferred (author, 2026-10-18).
+- T1 F2: the +17.9 GiB wired-memory figure in Q16 comes from the implementer's capture and could not be re-measured read-only. Deferred (author, 2026-10-18).
+- T1 F3: Q16 omitted that the Gemma under-count feeds Ollama's own scheduler fit decisions; fixed e9c587f.
+- T1 F4: the log records no unloads, so "all three loaded at once" rests on the recorded `ollama ps` plus the runner start times. Deferred (author, 2026-10-18): the `ollama ps` output is the evidence the ticket asks for.
+- T1 F5: the Record mixes three definitions of free memory (`memory_pressure`, raw `vm_stat` pages, Ollama's `system_free`), unconverted. Deferred (author, 2026-10-18).
+- T1 F6: "How to use these tickets" still said T1 carried "author fills in" decisions; fixed 6d26405.
+- T1 F7: model labels: Gemma 4 26B is a 26B.A4B MoE with about 4B active parameters and `SPEC.md` calls it "26B"; Qwen 3.8 27B loads a 460M vision projector (about 1 GB) the Describer never uses; GLM-4 9B had no thinking capability. Reported; the GLM point led to the Challenger change (01a12df, 9e2a32c), the other two are left for M5 (author, 2026-10-18).
+- T1 F8: Q18 said "one request each" where the log shows one request per snack; fixed 166a156.
+- T1 F9: Record 2 omitted that the 12B tag loads a 465 MB draft model for speculative decoding, invisible to `ollama ps`; fixed f349214.
+- T1 F10: `ollama show` gives the 12B's thinking default `true`, so T2 must switch it off explicitly and its record must say how. Carried into T2's dispatch (author, 2026-10-18).
+- T1 F11: Acceptance's "the record above" now sits above two records, readable through the superseded marker. Deferred (author, 2026-10-18).
+- T1 F12: Q18's invented-error examples named no model; fixed 166a156 (with F8).
+- T1 F13: the title of f24c549 is 85 characters. Deferred (author, 2026-10-18).
