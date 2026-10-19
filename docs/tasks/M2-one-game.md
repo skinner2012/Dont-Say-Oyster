@@ -82,6 +82,66 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
   - The subcommand also sends one prompt twice to the Guesser's model and prints the prompt token count Ollama reports each time. A lower second count means Ollama reports only the tokens it did not reuse from its cache; T4 needs to know this for the token count and the num_ctx warning.
   - The model call sits behind one callable the command takes as an argument (M1's `Ask` pattern in `distractors.py`), so tests feed scripted replies.
   - The record, written into this Detail: the date, the command line, and for each model and thinking setting the parsed count out of the repeats, the latency of each call, one parsed object, and the raw text of every reply that did not parse; the two prompt token counts.
+  - **Record** (2026-10-19), code at 21430d7:
+    - Server: the T1 setup, started again the same way: from a shell, `OLLAMA_MAX_LOADED_MODELS=3 ollama serve`, with the menu-bar app not running; its config line reads `OLLAMA_MAX_LOADED_MODELS:3` and `OLLAMA_NUM_PARALLEL:1`; `ollama version is 0.40.6`; no model loaded at the start. The endpoint came from `.env` (`OLLAMA_BASE_URL`).
+    - Command: `uv run check-models structured` from the repo root (`--repeat` at its default 5), 15:09:01 to 15:14:17 PDT, exit 0.
+    - How the settings were passed: langchain-ollama 1.1.0 (ollama 0.6.3), `ChatOllama(model=<tag>, num_ctx=<T1 num_ctx>, temperature=0.7, reasoning=<think>).with_structured_output(<schema>, method="json_schema", include_raw=True)`. ChatOllama sends `reasoning` as the `think` field of the `/api/chat` request, `num_ctx` and `temperature` in `options`, and the schema as `format`; no prompt asks for JSON. Thinking off is `think: false` for all three, set explicitly (both Gemma tags default to on: `ollama show` lists levels false, true, default true). Thinking on is `think: true` for both Gemma tags and `think: "medium"` for Qwen 3.8 (levels false, low, medium, xhigh; medium is its default).
+    - A reply counts as parsed when its text is JSON that validates against the check schema; a Challenger reason given with a pass is dropped. Latency is wall-clock time around one call. Each model was loaded by its first call, so call 1 of each thinking-off check includes the load.
+    - Output, verbatim:
+      ```
+      describer qwen3.8:27b-q4_K_M think=False
+        call 1: 11.4 s, parsed
+        call 2: 6.1 s, parsed
+        call 3: 5.9 s, parsed
+        call 4: 7.9 s, parsed
+        call 5: 7.2 s, parsed
+      describer qwen3.8:27b-q4_K_M think=False: 5/5 parsed
+        parsed object: {"text": "This iconic drink features a creamy, sweet tea base mixed with fresh milk, creating a smooth and comforting beverage. Suspended at the bottom are soft, chewy tapioca pearls that provide a unique, bouncy texture to each sip. It is typically served over ice and enjoyed through a thick straw that allows you to suck up the solid spheres along with the liquid. The combination of cool, milky sweetness and satisfying chewiness has made it a global phenomenon."}
+      describer qwen3.8:27b-q4_K_M think=medium
+        call 1: 31.5 s, parsed
+        call 2: 47.2 s, parsed
+        call 3: 30.0 s, parsed
+        call 4: 28.8 s, parsed
+        call 5: 34.6 s, parsed
+      describer qwen3.8:27b-q4_K_M think=medium: 5/5 parsed
+        parsed object: {"text": "It's a milky, tea-scented drink served in a tall cup, usually over ice, that you sip through an extra-wide straw. At the bottom of the cup sit small, glossy black spheres that are surprisingly chewy and a little sweet. You can slurp those little balls up along with the drink or just pop them between sips for a fun, gummy texture. It's become such a cultural staple that people often grab a cup for a quick, comforting treat on a warm afternoon."}
+      challenger gemma4:12b-it-q4_K_M think=False
+        call 1: 3.5 s, parsed
+        call 2: 0.4 s, parsed
+        call 3: 0.4 s, parsed
+        call 4: 0.5 s, parsed
+        call 5: 0.4 s, parsed
+      challenger gemma4:12b-it-q4_K_M think=False: 5/5 parsed
+        parsed object: {"verdict": "pass"}
+      challenger gemma4:12b-it-q4_K_M think=True
+        call 1: 11.9 s, parsed
+        call 2: 11.0 s, parsed
+        call 3: 13.6 s, parsed
+        call 4: 12.3 s, parsed
+        call 5: 11.2 s, parsed
+      challenger gemma4:12b-it-q4_K_M think=True: 5/5 parsed
+        parsed object: {"verdict": "pass"}
+      guesser gemma4:26b-a4b-it-q4_K_M think=False
+        call 1: 6.2 s, parsed
+        call 2: 0.5 s, parsed
+        call 3: 0.5 s, parsed
+        call 4: 0.5 s, parsed
+        call 5: 0.5 s, parsed
+      guesser gemma4:26b-a4b-it-q4_K_M think=False: 5/5 parsed
+        parsed object: {"kind": "guess", "text": "珍珠奶茶", "confidence": 1.0}
+      guesser gemma4:26b-a4b-it-q4_K_M think=True
+        call 1: 7.1 s, parsed
+        call 2: 6.2 s, parsed
+        call 3: 5.8 s, parsed
+        call 4: 5.4 s, parsed
+        call 5: 5.7 s, parsed
+      guesser gemma4:26b-a4b-it-q4_K_M think=True: 5/5 parsed
+        parsed object: {"kind": "guess", "text": "珍珠奶茶", "confidence": 1.0}
+      prompt tokens, same prompt twice to gemma4:26b-a4b-it-q4_K_M: 111, 111
+      ```
+    - Replies that did not parse: none.
+    - Prompt token counts: 111 and 111. The second request did reuse the cache: the server log shows the first request evaluating the whole prompt (`prompt eval time = 301.19 ms / 111 tokens`) and the second taking 106 to 107 tokens from the cache (`cached n_tokens = 106`, then `107`) and evaluating 5 (`prompt eval time = 73.55 ms / 5 tokens`). So the prompt token count Ollama reports is the whole prompt, cached tokens included.
+    - During the run the Guesser's load evicted the Challenger's model: Q19.
 - **Acceptance:** the test command passes: with scripted replies, a reply that fits the schema counts as parsed; a malformed one counts as not parsed and its raw text is printed; the command exits non-zero when some check has no parsed reply. This Detail holds the record of one live run with the T1 tags, and every model has at least one parsed reply under every thinking setting it was run with (otherwise escalate, How to use these tickets).
 - **Out of scope:** the model-call wrapper the nodes use (T4); tool calling (T3); the role prompts (T9, T10, T12); changing models or choosing thinking on/off (M5); Phoenix (M3).
 - **Depends on:** T1
