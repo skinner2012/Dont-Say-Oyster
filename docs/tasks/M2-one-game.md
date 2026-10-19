@@ -21,11 +21,11 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Consumes:** —
 - **Detail:**
   - From BACKLOG M2.1. `SPEC.md` Implementation (Models); Milestones, M2.
-  - **Tags** (author, 2026-10-18; the tag fixes the quantization, which `CLAUDE.md` Rules of engagement requires pinned): Guesser (Gemma 4 26B) `gemma4:26b-a4b-it-q4_K_M`; Describer (Qwen 3.8 27B) `qwen3.8:27b-q4_K_M`; Challenger (GLM-4 9B) `glm4:9b-chat-q4_K_M`. num_ctx 16K / 8K / 4K are read as 16384 / 8192 / 4096 (author, 2026-10-18).
+  - **Tags** (author, 2026-10-18; the tag fixes the quantization, which `CLAUDE.md` Rules of engagement requires pinned): Guesser (Gemma 4 26B) `gemma4:26b-a4b-it-q4_K_M`; Describer (Qwen 3.8 27B) `qwen3.8:27b-q4_K_M`; Challenger (Gemma 4 12B) `gemma4:12b-it-q4_K_M` (author, 2026-10-18; was `glm4:9b-chat-q4_K_M`). num_ctx 16K / 8K / 4K are read as 16384 / 8192 / 4096 (author, 2026-10-18).
   - No code. An agent pulls the three tags, runs the Ollama server with `OLLAMA_MAX_LOADED_MODELS=3` (from a shell, or with `launchctl setenv` for the menu-bar app; the record says which), loads each model with one request to the Ollama API that sets `options.num_ctx` and a `keep_alive` long enough for the check, then runs `ollama ps` while all three are loaded.
   - The record, written into this Detail: the date; `ollama --version`; the `ollama list` lines for the three tags (their IDs pin the weights); the full `ollama ps` output (name, size, processor, until, and the context each was loaded with: the CONTEXT column, or `/api/ps` if this version prints none); the memory macOS reports as free at that moment.
   - If `ollama ps` does not list all three at once, or a context differs from the requested num_ctx, stop and escalate (How to use these tickets). A processor column other than 100% GPU is recorded and raised under Open questions; it does not fail the check by itself.
-  - **Record** (2026-10-18):
+  - **Record** (2026-10-18; superseded on 2026-10-18 by Record 2, because the Challenger changed):
     - Server: from a shell, `OLLAMA_MAX_LOADED_MODELS=3 ollama serve`, with the menu-bar app quit; the server config line in its log reads `OLLAMA_MAX_LOADED_MODELS:3` and `OLLAMA_NUM_PARALLEL:1`.
     - Loads: one `/api/generate` request per model with an empty prompt, `keep_alive` `30m`, and `options.num_ctx` 16384, 8192, 4096, in the order Guesser, Describer, Challenger.
     - `ollama --version`: `ollama version is 0.40.6`
@@ -45,6 +45,26 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
       ```
     - Free memory at that moment: `memory_pressure` reports "System-wide memory free percentage: 31%"; `vm_stat` (16384-byte pages) reports 6127 free, 636327 inactive, 12884 speculative, 2790551 wired.
     - The 1.5 GB for the Guesser's model is not its loaded size: Q16.
+  - **Record 2** (2026-10-18), with the Challenger `gemma4:12b-it-q4_K_M`:
+    - Server: the same shell server as the first Record, still running: `OLLAMA_MAX_LOADED_MODELS=3 ollama serve`, with the menu-bar app quit; its config line reads `OLLAMA_MAX_LOADED_MODELS:3` and `OLLAMA_NUM_PARALLEL:1`.
+    - Loads: from nothing loaded, one `/api/generate` request per model with an empty prompt, `keep_alive` `30m`, and `options.num_ctx` 16384, 8192, 4096, in the order Guesser, Describer, Challenger.
+    - `ollama --version`: `ollama version is 0.40.6`
+    - `ollama list`, the three tags:
+      ```
+      NAME                        ID              SIZE      MODIFIED
+      gemma4:12b-it-q4_K_M        6114515d63c1    8.0 GB    24 seconds ago
+      qwen3.8:27b-q4_K_M          25b843619e94    17 GB     About an hour ago
+      gemma4:26b-a4b-it-q4_K_M    5571076f3d70    17 GB     About an hour ago
+      ```
+    - `ollama ps` at 18:20:06 PDT, with all three loaded:
+      ```
+      NAME                        ID              SIZE      PROCESSOR    CONTEXT    RUNNER      UNTIL
+      gemma4:12b-it-q4_K_M        6114515d63c1    678 MB    100% GPU     4096       llamacpp    29 minutes from now
+      qwen3.8:27b-q4_K_M          25b843619e94    16 GB     100% GPU     8192       llamacpp    29 minutes from now
+      gemma4:26b-a4b-it-q4_K_M    5571076f3d70    1.5 GB    100% GPU     16384      llamacpp    29 minutes from now
+      ```
+    - Free memory at that moment: `memory_pressure` reports "System-wide memory free percentage: 26%"; `vm_stat` (16384-byte pages) reports 7065 free, 551012 inactive, 5150 speculative, 2958754 wired.
+    - The 678 MB and 1.5 GB for the two Gemma models are not their loaded sizes: Q16.
 - **Acceptance:** this Detail holds the three tags (filled in by the author) and the record above, and the recorded `ollama ps` output lists all three tags loaded at the same time with contexts 16384, 8192, and 4096.
 - **Out of scope:** any Python code or dependency (T2); structured output and tool calling (T2, T3); trying other models or settling them (M5); writing the tags into the manifests (M5).
 - **Depends on:** —
@@ -239,10 +259,11 @@ Q1–Q10 and Q12–Q15 were answered on 2026-10-17: Q9 by the author in chat (th
 
 Q11 (the 滷豆干 aliases 滷豆乾 and 大溪豆乾, equal to other names of the entry under `t2s`) was answered by the author on 2026-10-17 and fixed in 5ba08c6, recorded in T6.
 
-Q16 and Q17 are open; neither blocks T2 (author, 2026-10-18).
+Q16, Q17, and Q18 are open; none blocks T2 (author, 2026-10-18).
 
-- **Q16** (T1, 2026-10-18): Ollama 0.40.6 reports `gemma4:26b-a4b-it-q4_K_M` at 1.5 GB in `ollama ps` (1540850973 bytes for `size` and `size_vram` in `/api/ps`), loaded alone or with the other two. The model is fully loaded: before loading, llama.cpp projects 17043 MiB on the GPU in the server log (model 16001, context 720, compute 322); 31/31 layers are offloaded; and wired memory rose by about 17.9 GiB when it was loaded alone. The weights are the tag's: the blob re-hashed on disk gives `7121486771cb…`, the model digest in the manifest, and the ID `5571076f3d70…` equals the sha256 of the registry's manifest for the tag. The fit checks for the two loads after it were limited by system free memory (`system_limited=true`, 30.0 and 12.3 GiB available), not by the GPU figure. Only the Gemma load logs "detected Ollama-format gemma4 GGUF; applying compatibility fixes"; the cause is not confirmed. The under-count also feeds Ollama's own scheduler: the server log shows its GPU-available figure falling from 51.8 to 50.4 GiB when this model loaded, so the fit decisions for the two later loads rested on system free memory (`system_limited=true`, 30.0 and 12.3 GiB), not on the GPU figure; where that limit is not binding (M5 and M7 batch runs), a fourth model could be admitted on the wrong figure. For the author: whether to recheck this when the Gemma tag or the Ollama version changes (M5).
-- **Q17** (T1, 2026-10-18): the server config reads `OLLAMA_FLASH_ATTENTION:false`, yet Ollama started each llama-server with `--flash-attn auto` and all three logged "Flash Attention enabled". Flash attention changes memory use and can change outputs slightly. For the author: whether M5 pins it.
+- **Q16** (T1, 2026-10-18): Ollama 0.40.6 reports `gemma4:26b-a4b-it-q4_K_M` at 1.5 GB in `ollama ps` (1540850973 bytes for `size` and `size_vram` in `/api/ps`), loaded alone or with the other two. The model is fully loaded: before loading, llama.cpp projects 17043 MiB on the GPU in the server log (model 16001, context 720, compute 322); 31/31 layers are offloaded; and wired memory rose by about 17.9 GiB when it was loaded alone. The weights are the tag's: the blob re-hashed on disk gives `7121486771cb…`, the model digest in the manifest, and the ID `5571076f3d70…` equals the sha256 of the registry's manifest for the tag. The fit checks for the two loads after it were limited by system free memory (`system_limited=true`, 30.0 and 12.3 GiB available), not by the GPU figure. Only the Gemma load logs "detected Ollama-format gemma4 GGUF; applying compatibility fixes"; the cause is not confirmed. The under-count also feeds Ollama's own scheduler: the server log shows its GPU-available figure falling from 51.8 to 50.4 GiB when this model loaded, so the fit decisions for the two later loads rested on system free memory (`system_limited=true`, 30.0 and 12.3 GiB), not on the GPU figure; where that limit is not binding (M5 and M7 batch runs), a fourth model could be admitted on the wrong figure. For the author: whether to recheck this when the Gemma tag or the Ollama version changes (M5). On the rerun with the Challenger `gemma4:12b-it-q4_K_M` (Record 2), the 12B shows the same anomaly, 678 MB in `ollama ps` (678869072 bytes in `/api/ps`) against the 7693 MiB llama.cpp projects, without logging the compatibility-fixes line.
+- **Q17** (T1, 2026-10-18): the server config reads `OLLAMA_FLASH_ATTENTION:false`, yet Ollama started each llama-server with `--flash-attn auto` and all three logged "Flash Attention enabled". Flash attention changes memory use and can change outputs slightly. For the author: whether M5 pins it. On the rerun (Record 2), the 12B's runner also started with `--flash-attn auto` and logged "Flash Attention enabled".
+- **Q18** (T1, 2026-10-18; for the author to decide in M5): four informal checks, outside T1's record, asked Gemma 4 12B, Gemma 4 26B, Qwen 3.5 9B, and Qwen 3.8 27B in Chinese what ten Taiwanese snacks are, one request each with thinking off. The author's rough grading put the first three at about 52%, 55%, and 43% correct and Qwen 3.8 at about 43% (its worst misses: 烤蚵仔 described as battered and pan-fried, as 蚵仔煎 is, and 阿給 placed in 台南), with errors that are specific and invented rather than vague (阿給 as fried octopus pizza, 棺材板 traced to 高雄的阿宗麵線, 杏仁茶 with no almond). This matters because knowledge of the dishes, not Chinese, is what the Challenger [R35] and the Describer need, and no model tested in the 9B–27B class knows them well; a Describer that states a wrong cooking method or region sends the Guesser's filters [R44] after the wrong entries, which the V1 recall split (`SPEC.md` Experiment plan) records as "not found". The check of ten fail verdicts in M5 (`SPEC.md` Milestones, M5) is where this is judged on real games.
 
 ## Audit findings
 
