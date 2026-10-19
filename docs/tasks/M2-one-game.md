@@ -71,7 +71,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Depends on:** —
 
 ### T2 — Structured-output check on the three models
-- **Status:** todo
+- **Status:** done 21430d7
 - **Produces:** a check command `check-models` (`src/dont_say_oyster/model_checks.py`, a console script like M1's) whose `structured` subcommand sends each role's model structured-output requests through LangChain's Ollama integration and prints, per model and thinking setting, how many replies parsed; its tests; and the record of one run with the T1 tags, written into this Detail.
 - **Consumes:** the tags and num_ctx from T1; `python-dotenv` and the `.env` convention from M1.
 - **Detail:**
@@ -342,3 +342,11 @@ Q16, Q17, and Q18 are open; none blocks T2 (author, 2026-10-18). Q19 is open and
 - T1 F11: Acceptance's "the record above" now sits above two records, readable through the superseded marker. Deferred (author, 2026-10-18).
 - T1 F12: Q18's invented-error examples named no model; fixed 166a156 (with F8).
 - T1 F13: the title of f24c549 is 85 characters. Deferred (author, 2026-10-18).
+- T2 F1: Q19 quoted predicted 17.4 GiB against available 20.6 GiB without saying the comparison does not explain the eviction, nor the margins seen so far, nor that the 12B's reload may itself evict the 27B; fixed 7c1587c.
+- T2 F2: Q19 attributed T1's fit to Q16's under-count; T1's fit decisions were `system_limited` too and differ from T2's run only in load order; fixed 7c1587c.
+- T2 F3: Q19 asked whether it blocks T4 where "How to use these tickets" already says it does, and the Open questions paragraph said only "Q19 is open"; fixed 7c1587c. keep_alive or load order in T4's arguments, T13's parameters, and T14's Settings wait for the author's answer and the `SPEC.md` change (deferred, author, 2026-10-19).
+- T2 F4: the check schema accepts a fail without a reason, which [R40] does not; fine for a check command, but T10's schema must not copy it. Carried into T10's dispatch (author, 2026-10-19).
+- T2 F5: `model_ask`'s mapping of the LangChain result to a Reply has no scripted test, and the settings test reads LangChain internals (version-fragile, pinned). Deferred (author, 2026-10-19).
+- T2 F6: the live run never produced a Challenger fail with a reason, a reason dropped on a pass, or a Guesser question (the 12B returned `{"verdict": "pass"}` under both settings); those branches are tested with scripted replies only and meet a live model in T10 and T12. Accepted (author, 2026-10-19).
+- T2 F7: call 1 of each thinking-off check includes the model load (2–5 s); the record keeps the calls apart and says so. No change (author, 2026-10-19).
+- T2 F8: the dispatch said `langchain-ollama` was already pinned; it was not, and the implementer added langchain-ollama 1.1.0 and ollama 0.6.3 (pre-approved). No change.
