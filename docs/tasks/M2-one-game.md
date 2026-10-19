@@ -65,6 +65,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
       ```
     - Free memory at that moment: `memory_pressure` reports "System-wide memory free percentage: 26%"; `vm_stat` (16384-byte pages) reports 7065 free, 551012 inactive, 5150 speculative, 2958754 wired.
     - The 678 MB and 1.5 GB for the two Gemma models are not their loaded sizes: Q16.
+    - The 12B tag also carries a 465 MB draft model (its `application/vnd.ollama.image.draft` layer, manifest parameter `draft_num_predict 3`): Ollama started its runner with `--spec-type draft-mtp` and loaded the draft model with it, which `ollama ps` does not show. It is pinned by the tag's ID, and it changes memory use and latency against a plain load (T2, T4, M5).
 - **Acceptance:** this Detail holds the three tags (filled in by the author) and the record above, and the recorded `ollama ps` output lists all three tags loaded at the same time with contexts 16384, 8192, and 4096.
 - **Out of scope:** any Python code or dependency (T2); structured output and tool calling (T2, T3); trying other models or settling them (M5); writing the tags into the manifests (M5).
 - **Depends on:** —
