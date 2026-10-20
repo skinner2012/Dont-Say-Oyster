@@ -265,7 +265,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Depends on:** M1
 
 ### T6 — Normalized name check in the corpus loader
-- **Status:** todo
+- **Status:** done 5cb47ae
 - **Produces:** the corpus loader's name check compares names after the T5 normalization and rejects a name that is empty after it; fixtures; the schema's description text updated by the author.
 - **Consumes:** the normalization from T5; `load_corpus` and its exact-string name check in `src/dont_say_oyster/corpus.py` (M1).
 - **Detail:**
@@ -450,3 +450,9 @@ Q16, Q17, and Q18 are open; none blocks T2 (author, 2026-10-18). Q19 was answere
 - T5 F5: the detector follows the Detail's block list and excludes 々, 〇, and the CJK radicals; only one of them alone, with no other Han character, could change an outcome. Accepted (author, 2026-10-19). The byte-token text `<0xE8><0xB6><0x96>` a model once emitted for 趖 is ASCII and not Chinese; a T7/T12 matter.
 - T5 F6: under the T5 normalization the committed corpus has no cross-entry name collision, no alias equal to its official name, no name that normalizes to empty, and no regex metacharacter in an English name; phrase-level t2s equals character-level t2s on every committed name. No finding; T6 should find nothing.
 - T5 F7: module-level `OpenCC("t2s")` costs 3 ms at import and is thread-safe in an 8-thread probe. No change.
+- T6 F1: two aliases of one entry that are equal only after normalization still load (no `SPEC.md` rule asks otherwise; the committed corpus has none); under T7 a guess would then match two names at once. Accepted (author, 2026-10-20); T7's dispatch says to report the first match.
+- T6 F2: an English name or forbidden word that is empty after normalization still loads; the ticket's "name" is a Chinese official name or alias, and T5 F2 stands deferred. No change.
+- T6 F3: `distractors.py` `sort_picks` compares picks to official names as exact strings; reached only by `pick-distractors` (M1 T8), which no M2 path reruns. Out of scope, no change.
+- T6 F4: `docs/tasks/M1-corpus.md` line 51 still says names are compared as exact strings; true at M1, historical. No change.
+- T6 F5: the author's schema-description commit 79a0d20 has no `DECISIONS.md` entry; `CLAUDE.md` asks for entries on `SPEC.md` changes only, and the text records no new decision. No entry (author, 2026-10-20).
+- T6 F6: the empty-name error line prints the raw name with `repr`, so U+3000 and the like are visible. No change.
