@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from langchain_core.messages import ToolMessage
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from ollama._types import Tool
+from ollama import Tool
 
 from dont_say_oyster.corpus import SCHEMA_PATH, CorpusEntry, load_corpus
 from dont_say_oyster.search import (
