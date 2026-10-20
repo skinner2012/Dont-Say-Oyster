@@ -57,6 +57,12 @@ def test_english_item_inside_a_longer_word_does_not_match() -> None:
     assert english_contains("Is it eggplant?", ["egg"]) == []
 
 
+def test_chinese_character_next_to_an_english_item_is_a_word_boundary() -> None:
+    assert english_contains("很好吃oyster", ["oyster"]) == ["oyster"]
+    assert english_contains("oyster蚵", ["oyster"]) == ["oyster"]
+    assert english_contains("drawn", ["raw"]) == []
+
+
 def test_hyphenated_item_matches_spaced_and_upper_case_text() -> None:
     assert english_contains("is it tang a bi ko", ["tang-a-bi-ko"]) == ["tang-a-bi-ko"]
     assert english_contains("TANG-A-BI-KO", ["tang-a-bi-ko"]) == ["tang-a-bi-ko"]

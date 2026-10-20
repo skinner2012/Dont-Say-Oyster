@@ -54,12 +54,16 @@ def chinese_equals(text: str, items: Iterable[str]) -> list[str]:
 
 def english_contains(text: str, items: Iterable[str]) -> list[str]:
     """Items found in text as a whole word or phrase, or as the item followed by s or es, after
-    the English normalization [R22]."""
+    the English normalization [R22]. A word boundary is anything that is not a Latin letter or a
+    digit, so a Chinese character next to an item is one; after NFKC and lowercase, [a-z0-9] is
+    enough for this corpus's English names."""
     normalized = _english_form(text)
     return [
         item
         for item in items
-        if re.search(rf"(?<!\w){re.escape(_english_form(item))}(?:e?s)?(?!\w)", normalized)
+        if re.search(
+            rf"(?<![a-z0-9]){re.escape(_english_form(item))}(?:e?s)?(?![a-z0-9])", normalized
+        )
     ]
 
 
