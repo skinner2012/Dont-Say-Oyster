@@ -1,0 +1,567 @@
+[
+  {
+    "official_name": "蚵仔煎",
+    "aliases": [
+      "蚵煎"
+    ],
+    "english_names": [
+      "oyster omelette",
+      "o-a-jian"
+    ],
+    "forbidden_words": [
+      "oyster",
+      "omelette"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Seafood",
+        "Egg",
+        "Starch"
+      ],
+      "cooking_method": [
+        "Pan-Fried"
+      ],
+      "flavor": [
+        "Savory",
+        "Sweet"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": [
+        "Night Market"
+      ]
+    }
+  },
+  {
+    "official_name": "珍珠奶茶",
+    "aliases": [
+      "波霸奶茶"
+    ],
+    "english_names": [
+      "bubble tea",
+      "pearl milk tea"
+    ],
+    "forbidden_words": [
+      "bubble",
+      "pearl",
+      "tea"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Drink"
+      ],
+      "main_ingredients": [
+        "Tea",
+        "Milk",
+        "Starch"
+      ],
+      "cooking_method": [
+        "No Cooking"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Drink with Add-ins"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "炒米粉",
+    "aliases": [],
+    "english_names": [
+      "fried rice noodles",
+      "Rice Noodles"
+    ],
+    "forbidden_words": [
+      "noodle"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Noodles"
+      ],
+      "cooking_method": [
+        "Stir-Fried"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "新竹米粉",
+    "aliases": [],
+    "english_names": [
+      "Hsinchu Rice Noodle"
+    ],
+    "forbidden_words": [
+      "Hsinchu"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Noodles"
+      ],
+      "cooking_method": [
+        "Dried"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Souvenir"
+      ]
+    }
+  },
+  {
+    "official_name": "平價餅",
+    "aliases": [],
+    "english_names": [
+      "Fair Price Cake"
+    ],
+    "forbidden_words": [
+      "price"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Wheat"
+      ],
+      "cooking_method": [
+        "Baked"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Souvenir"
+      ]
+    }
+  },
+  {
+    "official_name": "鳳梨酥",
+    "aliases": [
+      "土鳳梨酥"
+    ],
+    "english_names": [
+      "pineapple cake"
+    ],
+    "forbidden_words": [
+      "pineapple"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Wheat",
+        "Fruit"
+      ],
+      "cooking_method": [
+        "Baked"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Souvenir",
+        "Festival"
+      ]
+    }
+  },
+  {
+    "official_name": "滷肉飯",
+    "aliases": [
+      "魯肉飯"
+    ],
+    "english_names": [
+      "braised pork rice"
+    ],
+    "forbidden_words": [
+      "pork",
+      "rice"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Braised"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "臭豆腐",
+    "aliases": [],
+    "english_names": [
+      "stinky tofu"
+    ],
+    "forbidden_words": [
+      "stinky",
+      "tofu"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Soy"
+      ],
+      "cooking_method": [
+        "Deep-Fried"
+      ],
+      "flavor": [
+        "Savory",
+        "Fermented"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Night Market"
+      ]
+    }
+  },
+  {
+    "official_name": "蛋餅",
+    "aliases": [],
+    "english_names": [
+      "egg crepe",
+      "dan bing"
+    ],
+    "forbidden_words": [
+      "egg"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Wheat",
+        "Egg"
+      ],
+      "cooking_method": [
+        "Pan-Fried"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Breakfast"
+      ]
+    }
+  },
+  {
+    "official_name": "豆漿",
+    "aliases": [],
+    "english_names": [
+      "soy milk"
+    ],
+    "forbidden_words": [
+      "soy"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Drink"
+      ],
+      "main_ingredients": [
+        "Soy"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Smooth Drink"
+      ],
+      "occasion": [
+        "Breakfast"
+      ]
+    }
+  },
+  {
+    "official_name": "牛肉麵",
+    "aliases": [],
+    "english_names": [
+      "beef noodle soup"
+    ],
+    "forbidden_words": [
+      "beef"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Meal"
+      ],
+      "main_ingredients": [
+        "Noodles",
+        "Beef"
+      ],
+      "cooking_method": [
+        "Braised"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Soup"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "大腸包小腸",
+    "aliases": [],
+    "english_names": [
+      "big sausage wrapping small sausage"
+    ],
+    "forbidden_words": [
+      "sausage"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Pork",
+        "Rice"
+      ],
+      "cooking_method": [
+        "Grilled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Night Market"
+      ]
+    }
+  },
+  {
+    "official_name": "鹽酥雞",
+    "aliases": [],
+    "english_names": [
+      "popcorn chicken"
+    ],
+    "forbidden_words": [
+      "chicken"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Poultry"
+      ],
+      "cooking_method": [
+        "Deep-Fried"
+      ],
+      "flavor": [
+        "Savory",
+        "Spicy"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Night Market"
+      ]
+    }
+  },
+  {
+    "official_name": "肉圓",
+    "aliases": [],
+    "english_names": [
+      "ba-wan",
+      "meatball"
+    ],
+    "forbidden_words": [
+      "meatball"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Starch",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Sauced"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "刈包",
+    "aliases": [
+      "虎咬豬"
+    ],
+    "english_names": [
+      "gua bao",
+      "pork belly bun"
+    ],
+    "forbidden_words": [
+      "bun"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Wheat",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "擔仔麵",
+    "aliases": [],
+    "english_names": [
+      "danzai noodles"
+    ],
+    "forbidden_words": [
+      "danzai"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Noodles",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Boiled"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Soup"
+      ],
+      "occasion": []
+    }
+  },
+  {
+    "official_name": "粽子",
+    "aliases": [
+      "肉粽"
+    ],
+    "english_names": [
+      "zongzi",
+      "rice dumpling"
+    ],
+    "forbidden_words": [
+      "dumpling"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Snack"
+      ],
+      "main_ingredients": [
+        "Rice",
+        "Pork"
+      ],
+      "cooking_method": [
+        "Steamed"
+      ],
+      "flavor": [
+        "Savory"
+      ],
+      "physical_form": [
+        "Dry"
+      ],
+      "occasion": [
+        "Festival"
+      ]
+    }
+  },
+  {
+    "official_name": "芒果冰",
+    "aliases": [],
+    "english_names": [
+      "mango shaved ice"
+    ],
+    "forbidden_words": [
+      "mango"
+    ],
+    "attributes": {
+      "dish_type": [
+        "Dessert"
+      ],
+      "main_ingredients": [
+        "Fruit"
+      ],
+      "cooking_method": [
+        "No Cooking"
+      ],
+      "flavor": [
+        "Sweet"
+      ],
+      "physical_form": [
+        "Shaved Ice"
+      ],
+      "occasion": []
+    }
+  }
+]
