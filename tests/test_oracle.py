@@ -171,6 +171,19 @@ def test_valid_question(card: Card, corpus: list[CorpusEntry], question: str) ->
     assert not result.invalid
 
 
+def test_question_with_a_non_distractors_english_name_is_valid(
+    card: Card, corpus: list[CorpusEntry]
+) -> None:
+    """Only the card's distractors are looked up, by official name [R17]; another corpus entry's
+    English name leaves the question valid (T7 F1)."""
+    (entry,) = [e for e in corpus if e.official_name == "豬血糕"]
+    assert "Pig's blood cake" in entry.english_names
+    assert entry.official_name not in card.distractors
+    result = check_question("Is it a pig's blood cake?", card, corpus)
+    assert result.distractor_names == ()
+    assert not result.invalid
+
+
 def test_question_distractor_missing_from_corpus(card: Card, corpus: list[CorpusEntry]) -> None:
     others = [e for e in corpus if e.official_name != "蚵仔煎"]
     with pytest.raises(ValueError, match="蚵仔煎"):
