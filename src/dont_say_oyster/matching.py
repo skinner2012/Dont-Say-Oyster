@@ -57,12 +57,12 @@ def english_contains(text: str, items: Iterable[str]) -> list[str]:
     the English normalization [R22]. A word boundary is anything that is not a Latin letter or a
     digit, so a Chinese character next to an item is one; after NFKC and lowercase, [a-z0-9] is
     enough for this corpus's English names."""
-    normalized = _english_form(text)
+    normalized = english_normalize(text)
     return [
         item
         for item in items
         if re.search(
-            rf"(?<![a-z0-9]){re.escape(_english_form(item))}(?:e?s)?(?![a-z0-9])", normalized
+            rf"(?<![a-z0-9]){re.escape(english_normalize(item))}(?:e?s)?(?![a-z0-9])", normalized
         )
     ]
 
@@ -72,9 +72,9 @@ def has_chinese_characters(text: str) -> bool:
     return any(low <= ord(ch) <= high for ch in text for low, high in _HAN_BLOCKS)
 
 
-def _english_form(text: str) -> str:
-    """NFKC, lowercase, apostrophes removed, every other category P character to a space, and
-    runs of spaces collapsed to one [R22]."""
+def english_normalize(text: str) -> str:
+    """The [R22] English-side normalization: NFKC, lowercase, apostrophes removed, every other
+    category P character to a space, and runs of spaces collapsed to one."""
     text = unicodedata.normalize("NFKC", text).lower()
     text = "".join(
         "" if ch in _APOSTROPHES else " " if unicodedata.category(ch)[0] == "P" else ch

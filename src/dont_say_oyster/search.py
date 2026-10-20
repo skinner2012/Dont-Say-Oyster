@@ -49,7 +49,7 @@ from pydantic import (
 from pydantic_core import PydanticCustomError
 
 from dont_say_oyster.corpus import SCHEMA_PATH, Attributes, CorpusEntry
-from dont_say_oyster.matching import _english_form, english_contains
+from dont_say_oyster.matching import english_contains, english_normalize
 
 PROMPT_PATH = Path(__file__).resolve().parents[2] / "prompts" / "search_tool.json"
 
@@ -74,7 +74,7 @@ def _dedupe(values: list[str]) -> list[str]:
 
 def _not_empty(keyword: str) -> str:
     """Reject a keyword that T5's English normalization [R22] leaves empty."""
-    if not _english_form(keyword):
+    if not english_normalize(keyword):
         raise PydanticCustomError("empty_keyword", TEXTS["messages"]["empty_keyword"])
     return keyword
 
