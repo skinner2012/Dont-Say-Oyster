@@ -237,7 +237,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Depends on:** T2
 
 ### T4 — Model-call wrapper
-- **Status:** todo
+- **Status:** done d1b4053
 - **Produces:** `src/dont_say_oyster/llm.py`: one call path every role uses for a plain-text, a structured-output, or a tool-bound call, with model, num_ctx, temperature, thinking on/off, and keep_alive given as arguments, returning the output with latency, token count, and attempt number [R26]; the num_ctx warning; tests.
 - **Consumes:** `langchain-ollama` from T2 and T2's record of the reported prompt token count; the tool-binding pattern checked in T3.
 - **Detail:**
@@ -252,7 +252,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Depends on:** T3
 
 ### T5 — Name-check helpers
-- **Status:** todo
+- **Status:** done 3208053
 - **Produces:** `src/dont_say_oyster/matching.py` (named after `SPEC.md` [R22], Matching rules; author, 2026-10-17): the normalization [R22], Chinese contains and equals, English whole-word-or-phrase contains, and a Chinese-character detector; their tests; the converter smoke test moved to the conversion [R22] names.
 - **Consumes:** the converter (`opencc-python-reimplemented`) and `tests/test_converter.py` from M1.
 - **Detail:**
@@ -435,3 +435,18 @@ Q16, Q17, and Q18 are open; none blocks T2 (author, 2026-10-18). Q19 was answere
 - T3 F4: `httpx` is imported but not a declared dependency (transitive via `ollama`, pinned 0.28.1); `_Tap` opens a transport per call and never closes it; `zip(strict=True)` would stop the command if LangChain returned a different number of tool calls than the raw response. Deferred (author, 2026-10-19): a check command, not game code.
 - T3 F5: the Record's start time is the implementer's capture, not in the log (as T1 F1). Deferred (author, 2026-10-19).
 - T3 F6: Q19's "unloaded after each call" is inferred from `/api/ps` 35 ms after each call, a fresh fit check, and a load on every call; the log has no unload line; the sentences say it is one run. No change (author, 2026-10-19).
+- T4 F1: a reply without usage metadata gave token counts of None silently, so [R26]'s token count and the num_ctx warning were lost without a trace; fixed a1413f8 (one WARNING naming the role; the counts stay None).
+- T4 F2: ValueError subclasses raised by `invoke` (a bad stream line, an empty stream, string tool arguments, OutputParserException) propagated raw, so T13's LLMError handler would miss "a reply the program cannot parse"; fixed 7a69150 (wrapped as LLMError with the cause kept, one request).
+- T4 F3: the `ollama` client has no request timeout, so a hung server hangs the game forever and never becomes a model error. Raised as Q21 for M4 (author, 2026-10-19).
+- T4 F4: the `ollama.ResponseError` wrapping has no test. Deferred (author, 2026-10-19).
+- T4 F5: a new ChatOllama (two httpx clients, never closed) and `load_dotenv()` on every request; sub-millisecond, a small fd leak GC reclaims. Deferred to M7's batches (author, 2026-10-19).
+- T4 F6: structured calls use `bind(format=schema)`, the same `format` on the wire as `with_structured_output`; only the `ls_structured_output_format` run metadata is missing, so M3's Phoenix spans will not carry the schema. Accepted; M3's dispatch notes it (author, 2026-10-19).
+- T4 F7: the tool-bound call returns LangChain's AIMessage and drops the raw tool arguments T3 saw rewritten; the rewrite only turns a stringified list into a list, `AIMessage.tool_calls` is ordered with ids, so T11 and T12 need nothing else. No change.
+- T4 F8: the title of d1b4053 is 89 characters. Deferred (author, 2026-10-19).
+- T5 F1: the English word boundary used `\w`, which counts CJK characters, so `很好吃oyster` escaped the forbidden word and a Describer violation became a send-back under [R11]; fixed d464954 (a boundary is anything not a Latin letter or digit; so a non-ASCII letter is a boundary too and `caféoyster` matches oyster, which [R22] does not speak to).
+- T5 F2: an item that normalizes to empty matches every text; no committed name, English name, or forbidden word does, and T6 guards Chinese names only. Deferred (author, 2026-10-19); T7's dispatch carries it.
+- T5 F3: the plural rule `(?:e?s)?` also accepts "oysteres" and "peachs"; literal [R22], stricter only. No change.
+- T5 F4: Unicode category S symbols (＋, ~) survive normalization, so `蚵仔煎＋` equals no name; within the Detail's definition of punctuation. No change (author, 2026-10-19).
+- T5 F5: the detector follows the Detail's block list and excludes 々, 〇, and the CJK radicals; only one of them alone, with no other Han character, could change an outcome. Accepted (author, 2026-10-19). The byte-token text `<0xE8><0xB6><0x96>` a model once emitted for 趖 is ASCII and not Chinese; a T7/T12 matter.
+- T5 F6: under the T5 normalization the committed corpus has no cross-entry name collision, no alias equal to its official name, no name that normalizes to empty, and no regex metacharacter in an English name; phrase-level t2s equals character-level t2s on every committed name. No finding; T6 should find nothing.
+- T5 F7: module-level `OpenCC("t2s")` costs 3 ms at import and is thread-safe in an 8-thread probe. No change.
