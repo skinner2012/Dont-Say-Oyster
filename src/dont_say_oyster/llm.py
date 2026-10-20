@@ -14,8 +14,8 @@ when it is over 90% of num_ctx, a WARNING naming the role, the prompt tokens, an
 through `logging` (`SPEC.md` Implementation, Models).
 
 Nothing is retried (`SPEC.md` Recovery, forks, and replay, Model errors): a connection error,
-an error response from Ollama, or a structured reply that is not JSON valid against its schema
-raises LLMError after the one request."""
+an error response from Ollama, a reply langchain-ollama cannot read, or a structured reply that
+is not JSON valid against its schema raises LLMError after the one request."""
 
 import json
 import logging
@@ -109,6 +109,15 @@ def _request(
         detail = " ".join(str(e).split())
         raise LLMError(
             f"{settings.role}: model call failed: {type(e).__name__}: {detail}"
+        ) from e
+    except ValueError as e:
+        # A reply that cannot be read: a stream line that is not JSON (JSONDecodeError), one the
+        # ollama client's response model rejects (pydantic's ValidationError, e.g. tool
+        # arguments sent as a string), an empty stream (ChatOllama's ValueError), or tool
+        # arguments LangChain cannot parse (OutputParserException).
+        detail = " ".join(str(e).split())
+        raise LLMError(
+            f"{settings.role}: reply did not parse: {type(e).__name__}: {detail}"
         ) from e
     latency = time.perf_counter() - start
     usage = message.usage_metadata

@@ -10,6 +10,7 @@ from typing import Any
 import httpx
 import pytest
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -249,3 +250,70 @@ def test_a_connection_error_raises_after_one_request(error: Exception, kind: str
             call_tools(SETTINGS, MESSAGES, [TOOL], attempt=1, client_for=clients)
     assert raised.value.__cause__ is error
     assert len(model.requests) == 1
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        OutputParserException("Function search arguments are not valid JSON"),
+        ValueError("No data received from Ollama stream."),
+        json.JSONDecodeError("Expecting value", "not json", 0),
+    ],
+    ids=["output-parser", "empty-stream", "bad-line"],
+)
+@pytest.mark.parametrize("kind", ["text", "structured", "tools"])
+def test_a_reply_the_client_cannot_read_raises_after_one_request(
+    error: Exception, kind: str
+) -> None:
+    model = raising(error)
+    clients = Clients(model)
+    with pytest.raises(LLMError, match="guesser: reply did not parse") as raised:
+        if kind == "text":
+            call_text(SETTINGS, MESSAGES, attempt=1, client_for=clients)
+        elif kind == "structured":
+            call_structured(SETTINGS, MESSAGES, SCHEMA, attempt=1, client_for=clients)
+        else:
+            call_tools(SETTINGS, MESSAGES, [TOOL], attempt=1, client_for=clients)
+    assert raised.value.__cause__ is error
+    assert len(model.requests) == 1
+
+
+DONE = {
+    "model": "m",
+    "created_at": "2026-10-19T00:00:00Z",
+    "done": True,
+    "done_reason": "stop",
+    "prompt_eval_count": 5,
+    "eval_count": 1,
+}
+STRING_ARGUMENTS = {
+    **DONE,
+    "message": {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"function": {"name": "search", "arguments": "{bad"}}],
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "body",
+    [b"not json\n", b"", (json.dumps(STRING_ARGUMENTS) + "\n").encode()],
+    ids=["bad-line", "empty-stream", "string-arguments"],
+)
+def test_a_bad_stream_through_chatollama_raises_after_one_http_request(body: bytes) -> None:
+    sent: list[httpx.Request] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        sent.append(request)
+        return httpx.Response(200, content=body)
+
+    def client_for(settings: ModelSettings) -> ChatOllama:
+        return ChatOllama(
+            model=settings.model, client_kwargs={"transport": httpx.MockTransport(respond)}
+        )
+
+    with pytest.raises(LLMError, match="guesser: reply did not parse") as raised:
+        call_tools(SETTINGS, MESSAGES, [TOOL], attempt=1, client_for=client_for)
+    assert isinstance(raised.value.__cause__, ValueError)
+    assert len(sent) == 1
