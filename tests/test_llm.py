@@ -168,6 +168,28 @@ def test_prompt_tokens_at_90_percent_of_num_ctx_log_no_warning(
     assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []
 
 
+def test_a_reply_without_token_counts_logs_one_warning_and_returns_none(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    settings = ModelSettings("describer", "qwen3.8:27b-q4_K_M", 1000, 0.7, False, "30m")
+    model = scripted(AIMessage(content="x"))
+    with caplog.at_level(logging.DEBUG, logger=llm.__name__):
+        result = call_text(settings, MESSAGES, attempt=1, client_for=Clients(model))
+    assert (result.input_tokens, result.output_tokens) == (None, None)
+    warnings = [r for r in caplog.records if r.levelno >= logging.WARNING]
+    assert [(r.name, r.getMessage()) for r in warnings] == [
+        (llm.__name__, "describer: Ollama reported no token counts")
+    ]
+
+
+def test_a_reply_with_token_counts_under_90_percent_logs_nothing(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with caplog.at_level(logging.DEBUG, logger=llm.__name__):
+        call_text(SETTINGS, MESSAGES, attempt=1, client_for=Clients(scripted(reply("x"))))
+    assert [r for r in caplog.records if r.name == llm.__name__] == []
+
+
 @pytest.mark.parametrize(
     ("thinking", "keep_alive"), [(False, 0), (True, "30m"), ("medium", 1800)]
 )

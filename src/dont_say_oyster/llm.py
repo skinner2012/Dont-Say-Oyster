@@ -114,7 +114,9 @@ def _request(
     usage = message.usage_metadata
     input_tokens = usage["input_tokens"] if usage else None
     output_tokens = usage["output_tokens"] if usage else None
-    if input_tokens is not None and input_tokens * 10 > settings.num_ctx * 9:
+    if input_tokens is None:
+        logger.warning("%s: Ollama reported no token counts", settings.role)
+    elif input_tokens * 10 > settings.num_ctx * 9:
         logger.warning(
             "%s: prompt tokens %d are over 90%% of num_ctx %d",
             settings.role,
