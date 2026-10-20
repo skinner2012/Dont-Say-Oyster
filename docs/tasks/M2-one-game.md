@@ -278,7 +278,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Depends on:** T5
 
 ### T7 — Oracle checks on guesses, Describer output, and questions
-- **Status:** todo
+- **Status:** done e2d33c4
 - **Produces:** `src/dont_say_oyster/oracle.py`: a guess check (right or not, which name it matched, and whether it is in Chinese) [R20], [R5]; a Describer check that returns what it found [R21]; a question check that returns why a question is invalid [R17]; tests on a committed card.
 - **Consumes:** the helpers from T5; `Card`, `load_cards`, and `load_corpus` from M1; the committed cards and corpus.
 - **Detail:**
@@ -456,3 +456,9 @@ Q16, Q17, and Q18 are open; none blocks T2 (author, 2026-10-18). Q19 was answere
 - T6 F4: `docs/tasks/M1-corpus.md` line 51 still says names are compared as exact strings; true at M1, historical. No change.
 - T6 F5: the author's schema-description commit 79a0d20 has no `DECISIONS.md` entry; `CLAUDE.md` asks for entries on `SPEC.md` changes only, and the text records no new decision. No entry (author, 2026-10-20).
 - T6 F6: the empty-name error line prints the raw name with `repr`, so U+3000 and the like are visible. No change.
+- T7 F1: the tests did not pin that the question check looks only at the card's distractors, by official name [R17]; a mutant scanning every corpus entry's English names passed them all; fixed 9e141b1 (a question carrying a non-distractor entry's English name is valid).
+- T7 F2: a distractor missing from the corpus raises ValueError; unreachable through `load_cards`, which already rejects it, and absent on all forty committed cards. Kept as a guard against a hand-built card (author, 2026-10-20).
+- T7 F3: `correct` requires `in_chinese` and a match, but every committed name keeps a Han character through normalization, so the conjunct never changes a result; it documents [R5] with [R20]. No change.
+- T7 F4: the Describer check carries no Chinese flag; node C calls T5's detector itself after the name check, which is the [R11] order. No change.
+- T7 F5: the test module docstring says every test runs on the committed card and corpus; three use a hand-built card or a trimmed corpus (twin aliases, Q20, missing distractor). Wording only, deferred (author, 2026-10-20).
+- T7 F6: `CORPUS_PATH` is defined in tests/test_oracle.py and tests/test_data.py alike; no shared constant exists in src. No change.
