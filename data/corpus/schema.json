@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Corpus",
-  "description": "The corpus file: an array of entries, one per Taiwanese snack. Field and attribute definitions: SPEC.md, Corpus and Cards. Checked by the loader, comparing exact strings: no name is the official name or an alias of more than one entry; an alias never equals its own entry's official name. SPEC.md, Corpus and Cards, states this rule after normalization; the loader adds that comparison in M2.",
+  "description": "The corpus file: an array of entries, one per Taiwanese snack. Field and attribute definitions: SPEC.md, Corpus and Cards. Checked by the loader after the normalization of SPEC.md [R22] (NFKC, spaces and punctuation removed, lowercase, Traditional to Simplified): no name is the official name or an alias of more than one entry; an alias never equals its own entry's official name; no name is empty after normalization. SPEC.md, Corpus and Cards, states this rule.",
   "type": "array",
   "items": {
     "type": "object",
