@@ -335,7 +335,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Depends on:** T4, T5, T8
 
 ### T11 — Search tool
-- **Status:** todo
+- **Status:** done 02cbc4b
 - **Produces:** `src/dont_say_oyster/search.py`: the search tool with its typed input schema [R44] and output [R45], [R46], as a plain function and its LangChain tool; the model-facing field and value descriptions; tests.
 - **Consumes:** `load_corpus` and `CorpusEntry` from M1; the value lists in `data/corpus/schema.json`; T3's record on enum values with spaces; T5's English matching.
 - **Detail:**
@@ -462,3 +462,11 @@ Q16, Q17, and Q18 are open; none blocks T2 (author, 2026-10-18). Q19 was answere
 - T7 F4: the Describer check carries no Chinese flag; node C calls T5's detector itself after the name check, which is the [R11] order. No change.
 - T7 F5: the test module docstring says every test runs on the committed card and corpus; three use a hand-built card or a trimmed corpus (twin aliases, Q20, missing distractor). Wording only, deferred (author, 2026-10-20).
 - T7 F6: `CORPUS_PATH` is defined in tests/test_oracle.py and tests/test_data.py alike; no shared constant exists in src. No change.
+- T11 F1: the six field descriptions in `prompts/search_tool.json` opened with the corpus entry's cardinality ("Dish type (required, one)"), which a Guesser could read as the filter's rule; fixed 87b77a4 (the cardinality dropped, the definitions and their parenthetical examples kept).
+- T11 F2: keyword dedupe is case-sensitive ("tea" and "Tea" both kept); the match itself is case-insensitive, so the result is the same. No change.
+- T11 F3: search.py imported T5's private `_english_form` for the empty-keyword check; fixed e29c2ce (`matching.english_normalize`, public, same behaviour).
+- T11 F4: tests imported `ollama._types.Tool`; fixed c3e3fe2 (`from ollama import Tool`). `pydantic` and `pydantic_core` are imported in src without a pyproject entry (transitive through langchain-core, pinned in uv.lock); deferred as T4 F4's httpx was (author, 2026-10-20).
+- T11 F5: the keyword description paraphrases [R22] correctly on direction and the one-way plural; "ignoring punctuation" is loose (hyphens become spaces, so "o-a-tsian" matches "o a tsian" and not "oatsian"). No change.
+- T11 F6: the title of 02cbc4b is 97 characters. Deferred (author, 2026-10-20).
+- T11 F7: `model_checks.py`'s stand-in search tool duplicates the tool's shape; T3 is done, and the check command is not game code. No change.
+- T11 F8 (measured by the implementer, not rechecked by the auditor): the tool schema as sent to Ollama is 6591 characters and cost about 1618 prompt tokens on gemma4:26b-a4b-it-q4_K_M (prompt_eval_count with and without the tool), about 10% of the Guesser's num_ctx on every tool-bound call; for M4's num_ctx check.
