@@ -263,6 +263,14 @@ def test_descriptions_come_from_the_prompt_file() -> None:
     assert tool["parameters"]["properties"]["keywords"]["description"] == texts["keywords"]
 
 
+def test_field_descriptions_carry_no_entry_cardinality() -> None:
+    # "(required, one)" describes corpus entries; in a filter it could read as the filter's rule.
+    fields = json.loads(PROMPT_PATH.read_text(encoding="utf-8"))["fields"]
+    for text in fields.values():
+        assert "(required" not in text
+        assert "(optional" not in text
+
+
 @pytest.mark.parametrize("field", FIELDS)
 def test_every_listed_value_can_be_searched(field: str) -> None:
     for value in schema_values()[field]:

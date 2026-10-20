@@ -23,7 +23,12 @@ Ticket-level readings (T11, answered for the author by the M2 orchestrator, 2026
   under [R44] it has one meaning, so it is not a wrong call.
 - A keyword that is empty after the English normalization [R22] (spaces, apostrophes, and
   punctuation only) is rejected: it would match every English name, the corpus dump [R44]'s
-  empty-call rule prevents. A keyword with no Latin letters is searched and matches nothing."""
+  empty-call rule prevents. A keyword with no Latin letters is searched and matches nothing.
+- The field descriptions are SPEC.md Corpus and Cards (Attributes) verbatim, except that each
+  heading drops its value list (the enum carries it) and its cardinality ("required, one"), and
+  the authoring bullets are left out: the cardinality and those bullets describe corpus entries,
+  and in a filter, where every field is an optional list, the Guesser could read them as the
+  filter's rule (T11 F1)."""
 
 import json
 from collections.abc import Sequence
