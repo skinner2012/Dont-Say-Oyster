@@ -1,10 +1,9 @@
-"""Smoke test for the Simplified-to-Traditional converter [R22]; first used in M2."""
+"""Smoke test for the Traditional-to-Simplified converter the normalization uses [R22]."""
 
 from opencc import OpenCC
 
 
-def test_converts_simplified_to_traditional() -> None:
-    converter = OpenCC("s2tw")
-    assert converter.convert("牡蛎煎") == "牡蠣煎"
-    # Taiwan form 麵, not 麪 as plain s2t gives.
-    assert converter.convert("炒面") == "炒麵"
+def test_converts_traditional_to_simplified() -> None:
+    converter = OpenCC("t2s")
+    assert converter.convert("牡蠣煎") == "牡蛎煎"
+    assert converter.convert("炒麵") == "炒面"
