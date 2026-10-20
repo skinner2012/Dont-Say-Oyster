@@ -90,6 +90,32 @@ BAD = [
         "entry 2 (波霸奶茶), field official_name:",
         "alias of entry 1 (珍珠奶茶)",
     ),
+    # Names are compared after the [R22] normalization; each pair differs as an exact string.
+    (
+        "bad_name_shared_after_fullwidth",
+        "entry 2 (鳳梨酥), field aliases: 'ＱＱ奶茶'",
+        "alias of entry 1 (珍珠奶茶)",
+    ),
+    (
+        "bad_name_shared_after_space_removal",
+        "entry 2 (鳳梨酥), field aliases: '珍珠 奶茶'",
+        "official name of entry 1 (珍珠奶茶)",
+    ),
+    (
+        "bad_name_shared_after_t2s",
+        "entry 3 (凤梨酥), field official_name: '凤梨酥'",
+        "official name of entry 2 (鳳梨酥)",
+    ),
+    (
+        "bad_alias_equals_official_name_after_normalization",
+        "entry 2 (鳳梨酥), field aliases:",
+        "'凤梨酥' equals the official name",
+    ),
+    (
+        "bad_name_empty_after_normalization",
+        "entry 2 (鳳梨酥), field aliases:",
+        "empty after normalization",
+    ),
 ]
 
 
@@ -140,6 +166,32 @@ def test_name_checks_run_only_after_the_schema_passes(tmp_path: Path) -> None:
     with pytest.raises(CorpusError) as info:
         load_corpus(_write_good_with(tmp_path, mutate))
     assert info.value.problems == ["entry 1 (珍珠奶茶), field region: unknown field"]
+
+
+def test_names_empty_after_normalization_are_not_also_shared(tmp_path: Path) -> None:
+    # Two empty names normalize alike; each is reported once, as empty, and not as shared.
+    def mutate(corpus: list[dict[str, Any]]) -> None:
+        corpus[0]["official_name"] = "！！"
+        corpus[2]["aliases"] = ["？"]
+
+    with pytest.raises(CorpusError) as info:
+        load_corpus(_write_good_with(tmp_path, mutate))
+    assert info.value.problems == [
+        "entry 0 (！！), field official_name: '！！' is empty after normalization",
+        "entry 2 (鳳梨酥), field aliases: '？' is empty after normalization",
+    ]
+
+
+def test_every_alias_equal_to_the_official_name_is_reported(tmp_path: Path) -> None:
+    def mutate(corpus: list[dict[str, Any]]) -> None:
+        corpus[2]["aliases"] = ["鳳梨酥", "凤梨 酥"]
+
+    with pytest.raises(CorpusError) as info:
+        load_corpus(_write_good_with(tmp_path, mutate))
+    assert info.value.problems == [
+        "entry 2 (鳳梨酥), field aliases: alias '鳳梨酥' equals the official name",
+        "entry 2 (鳳梨酥), field aliases: alias '凤梨 酥' equals the official name",
+    ]
 
 
 def test_corpus_that_is_not_an_array_fails() -> None:

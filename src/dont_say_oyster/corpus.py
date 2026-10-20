@@ -11,6 +11,8 @@ from typing import Any
 
 from jsonschema import Draft202012Validator, ValidationError
 
+from dont_say_oyster.matching import normalize
+
 # The package is installed editable from the repo, so the schema is found next to it.
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "data" / "corpus" / "schema.json"
 
@@ -142,26 +144,30 @@ def _name_problems(data: list[dict[str, Any]]) -> list[str]:
     """The checks the schema cannot express: no alias equals its entry's official name; no name
     (official name or alias) belongs to two entries, since distractors are looked up by official
     name [R17] and a guess of one entry must not count as correct for another [R20]. A shared
-    name is reported at the later entry. Names are compared as exact strings; normalization
-    [R22] is M2's."""
+    name is reported at the later entry. Names are compared after the normalization [R22]; a
+    name empty after it is reported as such and left out of the other checks."""
     problems = []
-    # name -> (the first entry holding it, "the official name" or "an alias")
+    # normalized name -> (the first entry holding it, "the official name" or "an alias")
     first_seen: dict[str, tuple[int, str]] = {}
     for index, item in enumerate(data):
         label = _entry_label(data, index)
-        if item["official_name"] in item["aliases"]:
-            problems.append(f"{label}, field aliases: alias equals the official name")
-        names = [("official_name", item["official_name"], "the official name")]
-        names += [("aliases", alias, "an alias") for alias in item["aliases"]]
-        for field, name, _ in names:
-            if name in first_seen:
-                other, role = first_seen[name]
+        official = normalize(item["official_name"])
+        names = [("official_name", item["official_name"], official, "the official name")]
+        names += [("aliases", alias, normalize(alias), "an alias") for alias in item["aliases"]]
+        for field, name, key, _ in names:
+            if not key:
+                problems.append(f"{label}, field {field}: {name!r} is empty after normalization")
+            elif field == "aliases" and key == official:
+                problems.append(f"{label}, field aliases: alias {name!r} equals the official name")
+            elif key in first_seen:
+                other, role = first_seen[key]
                 problems.append(
                     f"{label}, field {field}: {name!r} is also {role} of "
                     f"{_entry_label(data, other)}"
                 )
-        for _, name, role in names:
-            first_seen.setdefault(name, (index, role))
+        for _, _, key, role in names:
+            if key:
+                first_seen.setdefault(key, (index, role))
     return problems
 
 
