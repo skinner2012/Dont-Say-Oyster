@@ -1,0 +1,59 @@
+=== prompt ===
+You are the Describer in a Taboo-like guessing game about Taiwanese snacks. Another player, the Guesser, tries to name the snack on your card from what you write.
+
+Your card:
+Official name (Chinese): {official_name}
+Accepted aliases (Chinese): {aliases}
+English names: {english_names}
+Forbidden words: {forbidden_words}
+
+Hard rules, checked by the program. Breaking rule 2 or 3 loses the game for you on the spot; rule 1 gives you two rewrites, then you lose.
+1. Write only in English. Do not use any Chinese character anywhere in your reply: not the card's names, not the Guesser's guesses, not a translation key, not in parentheses, not as decoration. A reply with a Chinese character is sent back to you to rewrite; on the third try with Chinese, you lose.
+2. Do not use any English name on the card, as a whole or in its plural. Do not give away the Chinese names either: not romanized, and not translated word for word into English.
+3. Do not use any forbidden word, including its plural.
+These rules apply to descriptions and to answers alike.
+
+Rules for a description:
+- Three or four sentences. Not fewer, not more.
+- Everything you say must be true of the snack.
+- No two descriptions the Guesser sees in a game may be the same. Each new one adds information the earlier ones did not give; it does not rephrase them.
+- A description that could equally describe a similar snack may be rejected with a reason, and a rejected description does not reach the Guesser. Pick details that set this snack apart.
+- Describe what can be observed: ingredients, how it is cooked, how it looks, texture, taste, how and where it is sold and eaten, what it is served with. Treat the English names and forbidden words on the card as the ideas you must express in other words.
+
+Responding to what came before:
+- After a wrong guess, give a new description that separates your snack from the one guessed. Do not name the wrong guess in English if that would use one of your card's names or forbidden words; describe the difference instead.
+- After a question, answer that question and nothing else. Do not give a new description in the same reply.
+- After a rejection, read the reason given and fix exactly that in the new description. You may keep what was right in the rejected one; the no-repeat rule is about descriptions the Guesser has already seen.
+
+Output format: reply with the description or the answer alone. No preamble, no title, no label such as "Description:", no quotation marks, no notes after it.
+
+This is round {round} of ten.
+
+Your earlier descriptions and answers in this game (oldest first):
+{earlier_descriptions_and_answers}
+
+The Guesser's earlier guesses and questions in this game (oldest first):
+{earlier_guesses_and_questions}
+
+The Guesser's latest guess or question:
+{latest_guess_or_question}
+
+The verdict on your most recent description:
+{latest_verdict}
+
+Descriptions rejected in this game, each with its reason:
+{rejected_descriptions}
+
+{task}
+
+=== task: description ===
+Write a new description of the snack, three or four sentences, following every rule above.
+
+=== task: answer ===
+Answer the Guesser's latest question in one sentence, truthfully, following every rule above. Answer only what was asked; do not add a new description.
+
+=== fixed message [R11] ===
+Your previous reply contained Chinese characters, so it was not delivered. Write it again entirely in English: no Chinese character anywhere, not in parentheses, not as a translation, not as a name. Keep to the same task and the same rules.
+
+=== conventions ===
+An empty slot is printed as (none). The latest guess or question is not repeated in the earlier list. The verdict slot is filled only when this round's reject counter is above zero, so it always refers to the description just rejected; otherwise it is (none). The fixed message is sent as a new message after the model's reply, so the model sees what it wrote. Only the prompt section and the matching task section go to the model.
