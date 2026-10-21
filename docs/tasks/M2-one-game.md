@@ -290,7 +290,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Depends on:** T5
 
 ### T8 — Game State and the program nodes A, G, and F
-- **Status:** todo
+- **Status:** done 649bf67
 - **Produces:** `src/dont_say_oyster/state.py` (the LangGraph State with every non-memory row of the State schema) and `src/dont_say_oyster/program_nodes.py` with node A (draw the given card into State), node G, and node F; tests.
 - **Consumes:** `Card` and `load_cards` from M1; the guess check from T7.
 - **Detail:**
@@ -470,3 +470,9 @@ Q16, Q17, and Q18 are open; none blocks T2 (author, 2026-10-18). Q19 was answere
 - T11 F6: the title of 02cbc4b is 97 characters. Deferred (author, 2026-10-20).
 - T11 F7: `model_checks.py`'s stand-in search tool duplicates the tool's shape; T3 is done, and the check command is not game code. No change.
 - T11 F8 (measured by the implementer, not rechecked by the auditor): the tool schema as sent to Ollama is 6591 characters and cost about 1618 prompt tokens on gemma4:26b-a4b-it-q4_K_M (prompt_eval_count with and without the tool), about 10% of the Guesser's num_ctx on every tool-bound call; for M4's num_ctx check.
+- T8 F1: State holds the 21 non-memory rows of the State table with their types and seven program-only fields, all marked and listed in `PROGRAM_ONLY` (the auditor's inventory; the test checks `initial_state` against State's own hints, so a row missing from State would not fail it). No change.
+- T8 F2: the program-only field `owes` (whether the Describer owes a description or an answer) had no owner outside a docstring, and T9 and T12 did not name it; fixed in the next commit (T8, T9, T12 Detail name the writer and the reader).
+- T8 F3: `node_a(card_id, cards) -> State` is not a LangGraph node signature; T13 starts the graph at G with A's State as input or wraps A as a closure; fixed in the next commit (T13 Detail).
+- T8 F4: G clears only the round-scoped counters; `verdict`, `guesser_output`, `guesser_input`, `description`, `answer`, and `lookups` carry over, so after a forced pass the next round's "latest verdict" is the previous round's; the Information isolation list gives no round scope, so the reading is T9's. Carried into T9's dispatch (author, 2026-10-20).
+- T8 F5: a stale `matched_name` would survive a wrong guess; unreachable, since only a right guess writes it and ends the game. No change.
+- T8 F6: uv.lock moves websockets from 17.2 to 16.1.1 (langgraph-sdk 0.4.8 needs <17); nothing in src or tests imports it, and it is pinned. No change.
