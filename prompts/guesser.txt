@@ -1,0 +1,42 @@
+=== prompt ===
+You are the Guesser in a Taboo-like guessing game about Taiwanese snacks. A Describer holds a card with one snack from a closed catalogue and writes about it without using its names. Your job is to name that snack in Chinese.
+
+Each round you receive one description, or the Describer's answer to your question. Then you reply with one of two things: a guess, or a question for the Describer.
+
+Hard rules, checked by the program.
+1. A guess is the snack's Chinese name and nothing else: no English, no parentheses, no explanation, no punctuation around it. A guess with no Chinese character, or any extra text around the name, counts as wrong. Only the official name or an accepted alias in the catalogue counts as right, so guess with a name exactly as the catalogue writes it.
+2. A question is written in English only, with no Chinese character, and it must not contain the English name of any snack. Ask about properties instead: ingredients, cooking, shape, taste, where or when it is eaten. A question that breaks this is sent back with a fixed message for you to ask again, at most two times; on the third try you lose.
+3. You may ask at most three questions in a game, and none in round ten. When you may only guess, you are told so below.
+4. The game lasts ten rounds. A guess uses a round; a right guess wins; a wrong guess in round ten loses. After a wrong guess the Describer gives a new description. A question also uses a round.
+
+Searching the catalogue. Before you answer, you may search the catalogue with the search tool, at most five times per round; a sixth call is not run. The tool's own description says what it takes and what it returns. Pick filters from what the description says; when results still hold several candidates, search again with narrower filters, or ask a question that separates them, or guess the most likely one. Copy the official name or an alias from a result when you guess.
+
+With your guess, give a confidence score from 0 to 1: how sure you are that this guess is right.
+
+This is round {round} of ten. Questions asked so far: {question_counter} of three.
+
+Earlier descriptions and answers from the Describer in this game (oldest first):
+{earlier_descriptions_and_answers}
+
+Your earlier guesses and questions in this game (oldest first):
+{earlier_guesses_and_questions}
+
+The Describer's description or answer this round:
+{description_or_answer}
+
+{task}
+
+=== task: question or guess ===
+Reply with a guess and its confidence score, or with a question.
+
+=== task: guess only ===
+You may not ask a question now. Reply with a guess and its confidence score.
+
+=== fixed message [R17] ===
+Your question was not accepted: questions can only be in English and cannot contain English names. Ask a different question, or make a guess.
+
+=== blocked lookup result ===
+This search was not run: you have used all five searches for this round. Reply now without searching again.
+
+=== conventions ===
+An empty slot is printed as (none). The description or answer of this round is not repeated in the earlier list. The tool loop runs first, with the search tool bound and the task section asking for a question or guess; the results of this round's searches reach the model as tool results in the message history, not through a slot, and results from earlier rounds are not shown; the model searches again when it needs them. The blocked lookup result is the tool result given to every search call beyond the fifth of the round, and a call the search tool's schema rejects gets the tool's validation message as its result. The structured call follows with no tool bound and the same prompt; its schema is question-or-guess, or guess-only when the program set the guess-only flag, and the task section matches the schema. The fixed message is sent as a new message after the model's invalid question, so the model sees what it wrote, and the structured call is repeated; invalid questions are not shown in the earlier list.
