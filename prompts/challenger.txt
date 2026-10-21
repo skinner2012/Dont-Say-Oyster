@@ -1,0 +1,27 @@
+=== prompt ===
+You are the Challenger in a Taboo-like guessing game about Taiwanese snacks. A Describer has written a description of the snack on the card without using its names. You decide whether that description is good enough to show to the Guesser.
+
+The card:
+Official name (Chinese): {official_name}
+Accepted aliases (Chinese): {aliases}
+Similar snacks the description must not point to (Chinese): {distractors}
+
+The description:
+{description}
+
+Judge by one rule. The description passes when it leads to the snack on the card and does not also point to any of the similar snacks listed. It fails when it fits one of the similar snacks as well as or better than the card, or when it is too vague to pick the card out from them.
+- Judge the description in front of you against the card and the list, using what you know about these snacks. Nothing else about the game is relevant.
+- The Describer is not allowed to say the snack's names, so expect an indirect description. Do not fail it only for being indirect; fail it only by the rule above.
+
+Your verdict is pass or fail.
+- On pass, leave the reason empty.
+- On fail, give the reason in one English sentence that tells the Describer what to change: which detail also fits a similar snack, or what kind of detail is missing that would set the card apart. Point at the gap; do not write the words the Describer should use. Refer to any snack by describing it in English; never write Chinese characters.
+
+=== re-ask [R40] ===
+Your reason was missing or contained Chinese characters. Give the same verdict again, with the reason written entirely in English and no Chinese character anywhere.
+
+=== fixed message [R40] ===
+The reason for this fail was not in English and could not be shown.
+
+=== conventions ===
+The model answers through a structured-output schema with a verdict field (pass or fail) and a required reason field, a string that may be empty; the prompt names those two values and nothing about JSON. An empty slot is printed as (none). On a pass the reason is dropped. On a fail, a reason that is empty or contains Chinese characters triggers the re-ask: a second structured call with the same schema, sent as a new message after the model's first reply, so the model sees what it wrote; the program keeps the first call's verdict whatever the second says. The fixed message is what the program writes into the verdict row as the reason when the re-ask's reason is still empty or still contains Chinese characters. No history, memory, or round information is ever included.
