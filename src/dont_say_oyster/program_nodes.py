@@ -10,7 +10,6 @@ from collections.abc import Sequence
 from typing import Literal
 
 from dont_say_oyster.cards import Card
-from dont_say_oyster.describer import describer_output
 from dont_say_oyster.matching import has_chinese_characters
 from dont_say_oyster.oracle import check_describer, check_guess
 from dont_say_oyster.state import (
@@ -18,6 +17,7 @@ from dont_say_oyster.state import (
     ROUNDS,
     State,
     card_from_state,
+    describer_output,
     initial_state,
 )
 

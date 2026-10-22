@@ -166,6 +166,20 @@ def card_from_state(state: State) -> Card:
     )
 
 
+def describer_output(state: State) -> str:
+    """The Describer's last reply for the output `owes` names. Raises ValueError when its row
+    is empty."""
+    if state["owes"] == "answer":
+        answer = state["answer"]
+        if answer is not None:
+            return answer["answer"]
+    else:
+        description = state["description"]
+        if description is not None:
+            return description["description"]
+    raise ValueError(f"no {state['owes']} from the Describer in round {state['round']}")
+
+
 def initial_state(card: Card) -> State:
     """The State at game start: the card rows from `card`, no outputs, counters at zero."""
     return {
