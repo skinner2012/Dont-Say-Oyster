@@ -7,6 +7,7 @@ loop, JSON text for the structured calls); the wrapper functions E calls are wra
 that keeps each call's messages, what was bound, its attempt number, and its Reply."""
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal, get_type_hints
 
@@ -25,11 +26,11 @@ from dont_say_oyster.guesser import (
     node_e,
     route_after_e,
 )
-from dont_say_oyster.llm import ModelSettings, Reply, call_structured, call_tools
+from dont_say_oyster.llm import LLMError, ModelSettings, Reply, call_structured, call_tools
 from dont_say_oyster.program_nodes import node_a, node_g
 from dont_say_oyster.prompt_sections import sections
 from dont_say_oyster.state import PROGRAM_ONLY, Lookup, State
-from tests.test_llm import Clients, reply, scripted
+from tests.test_llm import Clients, Scripted, raising, reply, scripted
 
 CORPUS_PATH = REPO_ROOT / "data" / "corpus" / "corpus.json"
 CARD_ID = "card-5ed17f8f"
@@ -661,6 +662,34 @@ def test_every_call_carries_latency_tokens_and_the_attempt_number(
     assert lookup["call"] == 1
     assert lookup["name"] == "search"
     assert set(lookup) == set(get_type_hints(Lookup))
+
+
+# Model errors are not retried and not caught (SPEC.md Recovery, forks, and replay).
+
+
+def test_an_error_on_the_structured_call_propagates_out_of_e_unchanged(
+    start: State, corpus: list[CorpusEntry], spy: Spy
+) -> None:
+    def replies() -> Iterator[AIMessage]:
+        yield tool_reply({"keywords": ["oyster"]})
+        yield tool_reply()
+        raise ValueError("No data received from Ollama stream.")
+
+    model = Scripted(messages=replies(), requests=[])
+    with pytest.raises(LLMError, match="Guesser: reply did not parse") as raised:
+        node_e(start, SETTINGS, corpus, Clients(model))
+    assert spy.kinds == ["tools", "tools", "structured"]
+    assert len(model.requests) == 3
+    assert isinstance(raised.value.__cause__, ValueError)
+
+
+def test_an_error_on_the_tool_loop_call_propagates_out_of_e_unchanged(
+    start: State, corpus: list[CorpusEntry], spy: Spy
+) -> None:
+    model = raising(ConnectionError("Failed to connect to Ollama"))
+    with pytest.raises(LLMError, match="Guesser: model call failed"):
+        node_e(start, SETTINGS, corpus, Clients(model))
+    assert spy.kinds == ["tools"] and len(model.requests) == 1
 
 
 def test_no_tool_call_at_all_goes_straight_to_the_structured_call(
