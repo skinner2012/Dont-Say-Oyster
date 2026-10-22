@@ -33,7 +33,6 @@ Before this, I brainstormed with different AIs. In the end I thought of an episo
 
 - Make it a product-based PoC or MVP.
 - Make it a boring, textbook-style Demo.
-- From starting to write code to finishing all four variants with results, the real time takes more than two weeks.
 - Add extra, unneeded features, like a Sandbox, Human-in-the-loop, or an Audit Trail.
 
 ## Definition of Done
@@ -332,7 +331,7 @@ No LangGraph checkpoints are used; recovery works from files.
     - Why not totals: the hit rate over forty games has an error of about ±8 percentage points by itself, so if two variants differ by three or four correct guesses, we cannot tell whether it is the variant or luck. So we do not compare totals; we compare card by card in pairs.
     - Per-card pairing: for each pair of neighboring variants (V0→V1, V1→V2, V2→V3), we only look at the cards where the two variants got different results. If the new variant guessed right and the old one did not, the new variant wins; the other way around, the old variant wins. Cards where both are right or both are wrong do not count.
     - Credibility: if the two variants are really equally good, who wins each discordant card is like a coin flip, half and half. We use the binomial distribution (one-sided) to get "the chance that a coin would lean at least this far", and credibility = 1 minus this chance. Higher means more credible, and the threshold is the usual 0.95.
-    - Why credibility is only for reference: with forty cards there are usually only eight to twelve discordant cards, and reaching 0.95 needs something as one-sided as 8 to 1 (6 to 3 is about 0.75). A gap big enough to cross the threshold needs about one hundred twenty cards, but this project stays at forty (because of time limits).
+    - Why credibility is only for reference: with forty cards there are usually only eight to twelve discordant cards, and reaching 0.95 needs something as one-sided as 8 to 1 (6 to 3 is about 0.75). A gap big enough to cross the threshold needs about one hundred twenty cards, but this project stays at forty.
     - How we read the result: the focus is on "who wins more". The number of discordant cards between two runs of V2 itself (see Optional below) is the ruler for "how many cards pure luck can flip"; only when the winning margin is bigger than that ruler do we say the variant deserves the credit.
     - If there is no second V2 run: we only list who wins and its credibility, do no luck comparison, and do not conclude that the improvement comes from the variant.
 - Each game (each card) can run at most ten rounds. Running V0 → V3 once each gives at most 160 games.
