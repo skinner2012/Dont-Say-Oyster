@@ -216,6 +216,7 @@ def test_isolation_the_prompt_holds_the_describer_items_and_no_others() -> None:
         "reason_reasks": 0,
         "owes": "description",
         "guess_only": False,
+        "d_route": "B",
     }
     messages = build_messages(state, SECTIONS)
     assert len(messages) == 1

@@ -15,9 +15,8 @@ Implementer's readings (T10, for the audit):
 - A reason of only whitespace counts as empty.
 - The re-ask shows the model its first reply as the parsed object written back as JSON; the
   wrapper does not return the raw text.
-- `route_after_d` routes to E when a text has already reached the Guesser in this round (only
-  D's pass or forced pass appends one before E), since State has no route key and a second
-  reject leaves the same verdict and reject counter as a forced pass."""
+- D writes its route into the program-only `d_route` (T10 F1), since a second reject leaves the
+  same verdict and reject counter as a forced pass."""
 
 import json
 from pathlib import Path
@@ -131,6 +130,7 @@ def node_d(
                 },
             ],
             "describer_send_backs": 0,
+            "d_route": "B",
         }
     return {
         **state,
@@ -147,11 +147,14 @@ def node_d(
             *state["earlier_texts"],
             {"round": state["round"], "kind": "description", "text": description["description"]},
         ],
+        "d_route": "E",
     }
 
 
 def route_after_d(state: State) -> Literal["B", "E"]:
-    """D's route: E when D's pass or forced pass has put this round's text in front of the
-    Guesser, otherwise B for a new description."""
-    texts = state["earlier_texts"]
-    return "E" if texts and texts[-1]["round"] == state["round"] else "B"
+    """D's route, as D wrote it: E on a pass or a forced pass, B on a reject. Raises ValueError
+    when D has not run."""
+    route = state["d_route"]
+    if route is None:
+        raise ValueError("route_after_d reached before D wrote a route")
+    return route

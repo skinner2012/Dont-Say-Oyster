@@ -273,6 +273,26 @@ def test_rejects_restart_with_the_next_round(
     assert state["rejected"][-1] == {"round": 2, "description": FIRST, "reason": ENGLISH}
 
 
+def test_a_reject_routes_to_b_whatever_earlier_texts_holds(
+    round_one: State, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    stale: State = {
+        **described(round_one, SECOND),
+        "earlier_texts": [{"round": 1, "kind": "answer", "text": "A stale entry of this round."}],
+    }
+    model = Challenger(monkeypatch, ("fail", ENGLISH))
+    after = model.d(stale)
+
+    assert after["d_route"] == "B"
+    assert route_after_d(after) == "B"
+
+
+def test_the_route_before_d_has_run_raises(round_one: State) -> None:
+    assert round_one["d_route"] is None
+    with pytest.raises(ValueError, match="before D wrote a route"):
+        route_after_d(round_one)
+
+
 def assert_one_reask(model: Challenger, after: State) -> None:
     """Two calls: the re-ask follows the first reply and carries attempt 2 [R26]; the verdict
     row keeps the first call's latency, tokens, and attempt."""

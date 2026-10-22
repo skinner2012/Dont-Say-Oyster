@@ -139,11 +139,12 @@ class State(TypedDict):
     reason_reasks: int  # [R40], for the verdict being asked for
     owes: Literal["description", "answer"]  # what the Describer is asked for [R10]
     guess_only: bool  # set by G [R16]
+    d_route: Literal["B", "E"] | None  # D's route, written by D on every verdict [R13]
 
 
 PROGRAM_ONLY = frozenset({
     "violation", "matched_name", "describer_send_backs", "invalid_questions", "reason_reasks",
-    "owes", "guess_only",
+    "owes", "guess_only", "d_route",
 })
 
 
@@ -211,4 +212,5 @@ def initial_state(card: Card) -> State:
         "reason_reasks": 0,
         "owes": "description",
         "guess_only": False,
+        "d_route": None,
     }
