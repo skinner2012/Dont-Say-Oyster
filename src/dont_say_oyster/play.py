@@ -17,7 +17,8 @@ reject count printed is the whole game's (the length of the earlier rejected des
 since State's `rejects` counter is scoped to the round [R25]. num_ctx warnings (`llm.py`) go to
 stderr through `logging`, configured here. A model error (`LLMError`) stops the game
 (`SPEC.md` Recovery, forks, and replay, Model errors): the error goes to stderr, no output file
-is written, and the exit code is non-zero. An unknown card id exits non-zero before any model
+is written, and the exit code is non-zero. An unknown card id, and an output path that cannot be
+written (its parent directory is created if missing), each exit non-zero before any model
 call."""
 
 import argparse
@@ -142,6 +143,20 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def prepare_output(path: Path) -> None:
+    """Make the output path writable before the game runs (T13 F1), so a missing directory or an
+    unwritable path fails before any model call instead of after a long live run: create the
+    parent directory and open the file for append, removing the file again when it did not
+    exist, so a game that stops on a model error leaves no output file. Raises OSError when the
+    directory or the file cannot be made."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existed = path.exists()
+    with path.open("a", encoding="utf-8"):
+        pass
+    if not existed:
+        path.unlink()
+
+
 def main(argv: Sequence[str] | None = None, client_for: ClientFor | None = None) -> int:
     """Run the command; `client_for` replaces the Ollama client factory (tests)."""
     args = build_parser().parse_args(argv)
@@ -154,6 +169,11 @@ def main(argv: Sequence[str] | None = None, client_for: ClientFor | None = None)
         return 1
     if not any(card.card_id == args.card_id for card in cards):
         print(f"no card with id {args.card_id} in {args.cards}", file=sys.stderr)
+        return 1
+    try:
+        prepare_output(args.output)
+    except OSError as e:
+        print(f"cannot write the output file: {e}", file=sys.stderr)
         return 1
     settings = role_settings(args)
     try:

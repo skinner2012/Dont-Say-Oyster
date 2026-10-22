@@ -411,6 +411,33 @@ def test_a_missing_cards_file_exits_non_zero(
     assert "missing.json" in capsys.readouterr().err
 
 
+def test_a_missing_output_directory_is_created_and_the_file_written(tmp_path: Path) -> None:
+    models = Models(
+        describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
+    )
+    output = tmp_path / "runs" / "v2" / "game.json"
+    assert not output.parent.exists()
+    code = main([CARD_ID, str(output)], client_for=models)
+    assert code == 0
+    assert final_state(output)["result"] == "right guess"
+
+
+def test_an_unwritable_output_path_exits_non_zero_before_any_model_call(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    models = Models(
+        describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
+    )
+    blocker = tmp_path / "not-a-directory"
+    blocker.write_text("", encoding="utf-8")
+    output = blocker / "game.json"  # the parent is a regular file
+    code = main([CARD_ID, str(output)], client_for=models)
+    assert code != 0
+    assert "not-a-directory" in capsys.readouterr().err
+    assert [models.calls(role) for role in ROLES] == [0, 0, 0]
+    assert models.settings == {role: [] for role in ROLES}
+
+
 # Settings and logging.
 
 
