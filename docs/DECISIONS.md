@@ -224,6 +224,10 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 ### 2026-09-19 — Batch time estimate added; thinking on/off decided in M5  (spec v0.2; Implementation)
 - Why: there was no estimate at all. With 27B-class models at 10–15 tok/s and prefill at 150–300 tok/s, four batches take roughly 25–60 hours with thinking off and 95–250 hours with it on for the Describer and Guesser, so thinking is a budget decision, not a default.
 
+### 2026-10-22 — Two-week limit dropped  (commit dc492bf)
+- Removed: Non-goals, the bullet "From starting to write code to finishing all four variants with results, the real time takes more than two weeks." Changed: Evaluation, Experiment plan, the credibility bullet no longer says the forty cards are "because of time limits".
+- Why: the limit passed on 2026-10-21 (first code commit 6becd4f, 2026-10-07) with M2 still in progress. The author finds calendar time hard to estimate for a learning project and prefers to build it well over building it fast. The 2026-09-18 and 2026-10-07 entries stay as history. CLAUDE.md, Start here, step 4 loses its reference to the limit in the next commit; no BACKLOG item or ticket cited it.
+
 ## Process
 
 ### 2026-09-28 — Spec rewritten in English with numbered rules and one unified flow  (spec v0.4–v0.6)
