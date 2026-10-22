@@ -139,7 +139,7 @@ def test_the_prompt_holds_only_the_names_aliases_distractors_and_description(
                              "confidence": 0.5}],
         "lookups": [{"S-lookup": "S-lookup"}],
         "round": 7771,
-        "rejects": 0,
+        "rejects": 7772,
         "lookup_count": 7773,
         "questions": 7774,
         "forced_passes": 7775,
@@ -156,7 +156,7 @@ def test_the_prompt_holds_only_the_names_aliases_distractors_and_description(
         assert shown in prompt
     for hidden in ("S-card-id", "S-english", "S-forbidden", "S-attribute", "S-guesser-input",
                    "S-answer", "S-guesser-output", "S-verdict", "S-earlier-text", "S-rejected",
-                   "S-earlier-guess", "S-lookup", "777"):
+                   "S-earlier-guess", "S-lookup", "7771", "7772", "7773", "7774", "7775"):
         assert hidden not in prompt
     assert "===" not in prompt
     assert SECTIONS["re-ask [R40]"] not in prompt
