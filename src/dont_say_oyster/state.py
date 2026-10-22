@@ -103,6 +103,24 @@ class EarlierGuessOrQuestion(TypedDict):
     confidence: float | None
 
 
+class Lookup(TypedDict):
+    """One corpus lookup run by E (T12): `name` and `arguments` as the model sent them,
+    `result` the result JSON the model read, or the message it got for a call that was not
+    searched (`status` "error")."""
+
+    round: int
+    call: int  # the ordinal of the tool-loop call in the round
+    name: str
+    arguments: dict[str, Any]
+    result: dict[str, Any] | str
+    status: str
+    # These three are the tool-loop call's, and repeat across the lookups of one reply [R26].
+    latency: float
+    input_tokens: int | None
+    output_tokens: int | None
+    attempt: int
+
+
 class State(TypedDict):
     # The card [R9]
     card_id: str
@@ -121,7 +139,7 @@ class State(TypedDict):
     earlier_texts: list[EarlierText]  # earlier descriptions and answers
     rejected: list[RejectedDescription]
     earlier_guesses: list[EarlierGuessOrQuestion]  # guesses and valid questions [R17]
-    lookups: list[dict[str, Any]]  # corpus lookup results; their shape is T12's
+    lookups: list[Lookup]  # corpus lookup results
 
     # Counters [R25] and the game result
     round: int

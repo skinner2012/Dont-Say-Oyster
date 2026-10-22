@@ -8,7 +8,7 @@ that keeps each call's messages, what was bound, its attempt number, and its Rep
 
 import json
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, get_type_hints
 
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -27,7 +27,7 @@ from dont_say_oyster.guesser import (
 from dont_say_oyster.llm import ModelSettings, Reply, call_structured, call_tools
 from dont_say_oyster.program_nodes import node_a, node_g
 from dont_say_oyster.prompt_sections import sections
-from dont_say_oyster.state import PROGRAM_ONLY, State
+from dont_say_oyster.state import PROGRAM_ONLY, Lookup, State
 from tests.test_llm import Clients, reply, scripted
 
 CORPUS_PATH = REPO_ROOT / "data" / "corpus" / "corpus.json"
@@ -164,6 +164,12 @@ def tool_messages(call: Call) -> list[ToolMessage]:
     return [m for m in call.messages if isinstance(m, ToolMessage)]
 
 
+def found(lookup: Lookup) -> dict[str, Any]:
+    """The result JSON of a lookup that was searched."""
+    assert isinstance(lookup["result"], dict) and lookup["status"] == "success"
+    return lookup["result"]
+
+
 # The prompt.
 
 
@@ -222,8 +228,12 @@ def test_the_prompt_holds_only_the_guessers_items(start: State) -> None:
             {"round": 2, "kind": "question", "text": "SENTINEL-earlier-question",
              "confidence": None},
         ],
-        "lookups": [{"round": 2, "arguments": {"keywords": ["SENTINEL-lookup"]},
-                     "result": "SENTINEL-lookup-result"}],
+        "lookups": [{
+            "round": 2, "call": 1, "name": "search",
+            "arguments": {"keywords": ["SENTINEL-lookup"]}, "result": "SENTINEL-lookup-result",
+            "status": "error", "latency": 1.0, "input_tokens": 1, "output_tokens": 1,
+            "attempt": 1,
+        }],
         "round": 3,
         "questions": 1,
         "guess_only": False,
@@ -291,11 +301,11 @@ def test_two_lookups_then_none_give_two_results_and_one_structured_call(
     assert state["lookups"][0]["arguments"] == {
         "main_ingredients": ["Seafood"], "cooking_method": ["Grilled"],
     }
-    first = [hit["official_name"] for hit in state["lookups"][0]["result"]["results"]]
+    first = [hit["official_name"] for hit in found(state["lookups"][0])["results"]]
     assert "烤蚵仔" in first and "烤魷魚" in first
-    assert state["lookups"][0]["result"]["more_results"] is False
+    assert found(state["lookups"][0])["more_results"] is False
     assert state["lookups"][1]["arguments"] == {"keywords": ["oyster"]}
-    second = [hit["official_name"] for hit in state["lookups"][1]["result"]["results"]]
+    second = [hit["official_name"] for hit in found(state["lookups"][1])["results"]]
     assert {"烤蚵仔", "蚵仔煎", "蚵嗲", "蚵仔酥"} <= set(second)
     # Each tool-bound call binds the search tool and nothing else; the structured call binds no
     # tool and sends the schema as Ollama's format.
@@ -388,7 +398,11 @@ def test_a_rejected_call_counts_as_one_lookup_with_the_validation_message(
 def test_lookups_from_earlier_rounds_are_kept_and_the_counter_is_this_rounds(
     start: State, corpus: list[CorpusEntry], spy: Spy
 ) -> None:
-    earlier = {"round": 0, "arguments": {"keywords": ["x"]}, "result": "earlier"}
+    earlier: Lookup = {
+        "round": 0, "call": 1, "name": "search", "arguments": {"keywords": ["x"]},
+        "result": "earlier", "status": "error", "latency": 0.5, "input_tokens": 1,
+        "output_tokens": 1, "attempt": 1,
+    }
     state, _ = run(
         {**start, "lookups": [earlier]}, corpus, tool_reply({"keywords": ["oyster"]}),
         tool_reply(), guess("烤蚵仔"),
@@ -588,6 +602,8 @@ def test_every_call_carries_latency_tokens_and_the_attempt_number(
     assert (lookup["input_tokens"], lookup["output_tokens"], lookup["attempt"]) == (300, 20, 1)
     assert lookup["latency"] >= 0
     assert lookup["call"] == 1
+    assert lookup["name"] == "search"
+    assert set(lookup) == set(get_type_hints(Lookup))
 
 
 def test_no_tool_call_at_all_goes_straight_to_the_structured_call(

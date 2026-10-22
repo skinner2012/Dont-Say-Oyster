@@ -191,7 +191,9 @@ def test_isolation_the_prompt_holds_the_describer_items_and_no_others() -> None:
         "earlier_guesses": [
             {"round": 1, "kind": "guess", "text": "S-earlier-guess", "confidence": 0.3}
         ],
-        "lookups": [{"result": "S-lookup"}],
+        "lookups": [{"round": 1, "call": 1, "name": "search", "arguments": {}, "result": "S-lookup",
+                     "status": "error", "latency": 1.0, "input_tokens": 1, "output_tokens": 1,
+                     "attempt": 1}],
         "round": 7,
         "rejects": 41,
         "lookup_count": 42,

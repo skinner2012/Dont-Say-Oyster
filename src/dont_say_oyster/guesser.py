@@ -34,12 +34,9 @@ Ticket-level readings (T12, from the ticket and the M2 orchestrator, 2026-10-21)
   earlier guesses and questions. The tool loop does not run on a retry.
 - Attempt numbers [R26]: the tool-loop calls and the structured call of one try share one
   number, 1 on the first try (G zeroes the [R17] count), one more per retry.
-- The lookup record, one entry per lookup run, in order: the round, the ordinal of the
-  tool-loop call in this round (`call`, so several lookups from one reply can be told apart
-  from several calls), the call's arguments as the model sent them, the result (the result
-  JSON as the model read it, or the validation message), the tool result's status, and the
-  tool-loop call's latency, token counts, and attempt number. Lookups of one reply share that
-  reply's latency and tokens; `call` says so. A tool-loop reply without a tool call leaves no
+- The lookup record is one `Lookup` (state.py) per lookup run, in order; the tool-loop call's
+  latency, token counts, and attempt number repeat across the lookups of one reply, which
+  `call` tells apart from several calls. A tool-loop reply without a tool call leaves no
   entry; its latency and tokens are only on the wrapper's Reply (M3 traces every call)."""
 
 import json
@@ -54,7 +51,13 @@ from dont_say_oyster.corpus import CorpusEntry
 from dont_say_oyster.llm import ClientFor, ModelSettings, call_structured, call_tools, ollama_client
 from dont_say_oyster.oracle import check_question
 from dont_say_oyster.search import search_tool
-from dont_say_oyster.state import EarlierGuessOrQuestion, GuessOrQuestion, State, card_from_state
+from dont_say_oyster.state import (
+    EarlierGuessOrQuestion,
+    GuessOrQuestion,
+    Lookup,
+    State,
+    card_from_state,
+)
 
 PROMPT_PATH = Path(__file__).resolve().parents[2] / "prompts" / "guesser.txt"
 
@@ -139,13 +142,13 @@ def _tool_loop(
     client_for: ClientFor,
     messages: list[BaseMessage],
     attempt: int,
-) -> tuple[int, list[dict[str, Any]]]:
+) -> tuple[int, list[Lookup]]:
     """Run the tool loop [R43] on `messages`, appending each reply and its tool results; return
     this round's lookup counter and the lookups appended to State's record."""
     tool = search_tool(corpus)
     blocked_text = prompt_sections.sections(PROMPT_PATH)["blocked lookup result"]
     count = state["lookup_count"]
-    lookups: list[dict[str, Any]] = []
+    lookups: list[Lookup] = []
     call_index = 0
     while True:
         call_index += 1
@@ -165,6 +168,7 @@ def _tool_loop(
             lookups.append({
                 "round": state["round"],
                 "call": call_index,
+                "name": call["name"],
                 "arguments": call["args"],
                 "result": json.loads(result.text) if result.status == "success" else result.text,
                 "status": result.status,
