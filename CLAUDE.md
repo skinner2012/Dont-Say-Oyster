@@ -67,7 +67,7 @@ Progress lives in the repo: each ticket carries a `Status` line (`todo`, `done <
 1. The initial import commit on `main` holds the five files plus the first `docs/DECISIONS.md` Process entry: "SPEC v1 imported" with that commit's hash added in the next commit on the milestone branch.
 2. Create branch `m1-corpus`. Write `docs/tasks/M1-corpus.md` by the procedure in `docs/tasks/TEMPLATE.md`; the author reviews it.
 3. Backlog item M1.1 sets up the repo and the dev toolchain, and appends a `## Commands` section to this file with the lint, type-check, and test commands.
-4. Record the date of the first code commit in `docs/DECISIONS.md`; the two-week limit in `SPEC.md` Non-goals counts from it.
+4. Record the date of the first code commit in `docs/DECISIONS.md`.
 
 ## Milestones and tickets
 
