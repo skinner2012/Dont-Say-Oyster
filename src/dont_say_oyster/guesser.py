@@ -17,7 +17,9 @@ Ticket-level readings (T12, from the ticket and the M2 orchestrator, 2026-10-21)
   order: while fewer than five lookups have been made this round, the call is run (its tool
   result is the result JSON, or the validation message for a call the schema rejects, counted
   the same [R43], `SPEC.md` Recovery, forks, and replay) and recorded in State; otherwise its
-  tool result is the `blocked lookup result` section, and nothing is counted or recorded. The
+  tool result is the `blocked lookup result` section, and nothing is counted or recorded. A
+  call to a tool name other than the search tool's is treated like a call the schema rejects:
+  counted, recorded under its name with a message saying the tool is unknown, not run. The
   loop goes on only while the last reply had tool calls and none was blocked. The Ollama client
   matches tool results to calls by order (T3 F3), so every tool call gets a result in order.
 - The structured call sends the schema as Ollama's format over the whole history, with no
@@ -65,6 +67,7 @@ PROMPT_PATH = Path(__file__).resolve().parents[2] / "prompts" / "guesser.txt"
 LOOKUP_LIMIT = 5  # per round [R43]
 INVALID_QUESTION_LIMIT = 3  # the third invalid question is a violation [R17]
 NONE = "(none)"
+UNKNOWN_TOOL = "The call was not run: there is no tool named {name}; the only tool is {tool}."
 
 QUESTION_OR_GUESS_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -161,9 +164,16 @@ def _tool_loop(
                 messages.append(ToolMessage(blocked_text, tool_call_id=call_id))
                 blocked = True
                 continue
-            result = tool.invoke(call)
-            if not isinstance(result, ToolMessage):  # pragma: no cover - the tool's contract
-                raise TypeError(f"search tool returned {type(result).__name__}")
+            if call["name"] != tool.name:
+                result = ToolMessage(
+                    UNKNOWN_TOOL.format(name=call["name"], tool=tool.name),
+                    tool_call_id=call_id,
+                    status="error",
+                )
+            else:
+                result = tool.invoke(call)
+                if not isinstance(result, ToolMessage):  # pragma: no cover - the tool's contract
+                    raise TypeError(f"search tool returned {type(result).__name__}")
             count += 1
             lookups.append({
                 "round": state["round"],

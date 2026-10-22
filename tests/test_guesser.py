@@ -12,6 +12,7 @@ from typing import Any, Literal, get_type_hints
 
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
+from langchain_core.tools import StructuredTool
 
 from dont_say_oyster import guesser
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, Card, load_cards
@@ -77,14 +78,14 @@ def with_input(
     }
 
 
-def tool_reply(*calls: dict[str, Any]) -> AIMessage:
-    """A tool-loop reply carrying one search call per argument dict, in order."""
+def tool_reply(*calls: dict[str, Any], name: str = "search") -> AIMessage:
+    """A tool-loop reply carrying one call of `name` per argument dict, in order."""
     return reply(
         "",
         300,
         20,
         tool_calls=[
-            {"name": "search", "args": args, "id": f"call-{n}", "type": "tool_call"}
+            {"name": name, "args": args, "id": f"call-{n}", "type": "tool_call"}
             for n, args in enumerate(calls, 1)
         ],
     )
@@ -153,6 +154,21 @@ class Spy:
 @pytest.fixture
 def spy(monkeypatch: pytest.MonkeyPatch) -> Spy:
     return Spy(monkeypatch)
+
+
+@pytest.fixture
+def invocations(monkeypatch: pytest.MonkeyPatch) -> list[Any]:
+    """Every tool call the search tool was invoked with, so a search that was run can be told
+    from one that was only counted or recorded."""
+    calls: list[Any] = []
+    real_invoke = StructuredTool.invoke
+
+    def counted(self: StructuredTool, input: Any, *args: Any, **kwargs: Any) -> Any:
+        calls.append(input)
+        return real_invoke(self, input, *args, **kwargs)
+
+    monkeypatch.setattr(StructuredTool, "invoke", counted)
+    return calls
 
 
 def run(state: State, corpus: list[CorpusEntry], *replies: AIMessage) -> tuple[State, Clients]:
@@ -393,6 +409,26 @@ def test_a_rejected_call_counts_as_one_lookup_with_the_validation_message(
     assert problem in lookup["result"]
     (result,) = tool_messages(spy.structured[0])
     assert result.text == lookup["result"] and result.status == "error"
+
+
+def test_a_call_to_an_unknown_tool_counts_as_one_lookup_and_is_not_run(
+    start: State, corpus: list[CorpusEntry], spy: Spy, invocations: list[Any]
+) -> None:
+    state, _ = run(
+        start, corpus, tool_reply({"keywords": ["oyster"]}, name="lookup"), tool_reply(),
+        guess("烤蚵仔"),
+    )
+    assert invocations == []
+    assert state["lookup_count"] == 1
+    (lookup,) = state["lookups"]
+    assert lookup["name"] == "lookup"
+    assert lookup["arguments"] == {"keywords": ["oyster"]}
+    assert lookup["status"] == "error"
+    assert isinstance(lookup["result"], str) and "lookup" in lookup["result"]
+    (result,) = tool_messages(spy.structured[0])
+    assert result.status == "error" and result.text == lookup["result"]
+    assert result.tool_call_id == "call-1"
+    assert spy.kinds == ["tools", "tools", "structured"]
 
 
 def test_lookups_from_earlier_rounds_are_kept_and_the_counter_is_this_rounds(
