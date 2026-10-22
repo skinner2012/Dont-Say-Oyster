@@ -582,6 +582,19 @@ def test_with_the_guess_only_flag_the_schema_has_no_question(
     assert structured.messages[0].text.rstrip().endswith(SECTIONS["task: guess only"])
 
 
+def test_a_guess_only_reply_that_still_carries_kind_is_accepted(
+    start: State, corpus: list[CorpusEntry], spy: Spy
+) -> None:
+    """The guess-only schema does not forbid extra keys: E reads only text and confidence."""
+    only: State = {**start, "guess_only": True}
+    state, _ = run(only, corpus, tool_reply(), guess("烤蚵仔", 0.7))
+    assert "additionalProperties" not in GUESS_ONLY_SCHEMA
+    assert route_after_e(state) == "F"
+    assert state["guesser_output"] is not None
+    assert (state["guesser_output"]["kind"], state["guesser_output"]["text"],
+            state["guesser_output"]["confidence"]) == ("guess", "烤蚵仔", 0.7)
+
+
 def test_every_call_carries_latency_tokens_and_the_attempt_number(
     start: State, corpus: list[CorpusEntry], spy: Spy
 ) -> None:

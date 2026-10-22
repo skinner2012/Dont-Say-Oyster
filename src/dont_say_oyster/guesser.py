@@ -23,7 +23,8 @@ Ticket-level readings (T12, from the ticket and the M2 orchestrator, 2026-10-21)
 - The structured call sends the schema as Ollama's format over the whole history, with no
   tool bound. Both schemas require `confidence`, also on a question, because Ollama's
   enforcement of conditional schemas is untested; the program drops it on a question
-  (`confidence` None [R48]). The guess-only schema has no `kind`.
+  (`confidence` None [R48]). The guess-only schema has no `kind` and does not forbid extra
+  keys, so a reply that still carries one is not an error: E reads only text and confidence.
 - A guess, in Chinese or not, goes to F (a non-Chinese guess counts wrong there [R5]) and is
   written to the earlier guesses and questions; `owes` becomes "description". A valid question
   counts one question, is written there with `confidence` None, and goes to G; `owes` becomes
@@ -79,7 +80,6 @@ QUESTION_OR_GUESS_SCHEMA: dict[str, Any] = {
 GUESS_ONLY_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": ["text", "confidence"],
-    "additionalProperties": False,
     "properties": {
         "text": {"type": "string"},
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
