@@ -8,7 +8,7 @@ Parameters (`SPEC.md` Implementation, Commands, without the variant (M4) and the
 role; the temperature; thinking on or off per role. The Ollama endpoint comes from `.env`
 through `llm.ollama_client`. keep_alive is not a parameter (`SPEC.md` Implementation, Models):
 the Challenger gets 0, so it is unloaded after each call, and the Describer and the Guesser get
-one fixed long value, `KEEP_ALIVE_RESIDENT`.
+one fixed value, `KEEP_ALIVE_RESIDENT`, that keeps them loaded.
 
 Output: until the JSONL record (M4), the output file is the final State as JSON, the
 program-only fields (`state.PROGRAM_ONLY`) included, since nothing else records them yet. The
@@ -47,8 +47,12 @@ DEFAULT_TEMPERATURE = 0.7  # SPEC.md Implementation, Temperature policy
 ROLE_NAMES = {"describer": "Describer", "challenger": "Challenger", "guesser": "Guesser"}
 
 # keep_alive (SPEC.md Implementation, Models): the Describer and the Guesser stay resident; the
-# Challenger is loaded for each call and unloaded after it.
-KEEP_ALIVE_RESIDENT: KeepAlive = "30m"
+# Challenger is loaded for each call and unloaded after it. The resident value is -1 (Ollama:
+# keep the model loaded until an explicit unload or memory pressure), not a duration, because a
+# duration is a guess at the longest idle gap of a resident model: with thinking on, a round's
+# Describer calls can idle the Guesser for over half an hour, and a duration shorter than that
+# would unload it mid-game and reopen the Q19 eviction question (T13 F2, author, 2026-10-22).
+KEEP_ALIVE_RESIDENT: KeepAlive = -1
 KEEP_ALIVE_CHALLENGER: KeepAlive = 0
 
 

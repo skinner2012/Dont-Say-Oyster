@@ -450,11 +450,11 @@ def test_the_default_settings_are_the_role_defaults_with_keep_alive_fixed_per_ro
     code, _ = run(tmp_path, models)
     assert code == 0
     assert {role: set(s) for role, s in models.settings.items()} == {
-        "Describer": {ModelSettings("Describer", "qwen3.8:27b-q4_K_M", 8192, 0.7, False, "30m")},
+        "Describer": {ModelSettings("Describer", "qwen3.8:27b-q4_K_M", 8192, 0.7, False, -1)},
         "Challenger": {ModelSettings("Challenger", "gemma4:12b-it-q4_K_M", 4096, 0.7, False, 0)},
-        "Guesser": {ModelSettings("Guesser", "gemma4:26b-a4b-it-q4_K_M", 16384, 0.7, False, "30m")},
+        "Guesser": {ModelSettings("Guesser", "gemma4:26b-a4b-it-q4_K_M", 16384, 0.7, False, -1)},
     }
-    assert (KEEP_ALIVE_RESIDENT, KEEP_ALIVE_CHALLENGER) == ("30m", 0)
+    assert (KEEP_ALIVE_RESIDENT, KEEP_ALIVE_CHALLENGER) == (-1, 0)
 
 
 def test_the_parameters_set_each_roles_model_num_ctx_temperature_and_thinking() -> None:
@@ -468,9 +468,9 @@ def test_the_parameters_set_each_roles_model_num_ctx_temperature_and_thinking() 
     ])
     settings = role_settings(args)
     assert settings == RoleSettings(
-        describer=ModelSettings("Describer", "qwen3.8:9b-q4_K_M", 4096, 0.3, "medium", "30m"),
+        describer=ModelSettings("Describer", "qwen3.8:9b-q4_K_M", 4096, 0.3, "medium", -1),
         challenger=ModelSettings("Challenger", "gemma4:4b-it-q4_K_M", 2048, 0.3, True, 0),
-        guesser=ModelSettings("Guesser", "gemma4:12b-it-q4_K_M", 8192, 0.3, True, "30m"),
+        guesser=ModelSettings("Guesser", "gemma4:12b-it-q4_K_M", 8192, 0.3, True, -1),
     )
 
 
