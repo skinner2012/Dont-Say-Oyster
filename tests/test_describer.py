@@ -204,10 +204,10 @@ def test_isolation_the_prompt_holds_the_describer_items_and_no_others() -> None:
         ],
         "lookups": [{"result": "S-lookup"}],
         "round": 7,
-        "rejects": 1,
-        "lookup_count": 4,
-        "questions": 2,
-        "forced_passes": 3,
+        "rejects": 41,
+        "lookup_count": 42,
+        "questions": 43,
+        "forced_passes": 44,
         "result": None,
         "violation": None,
         "matched_name": "S-matched-name",
@@ -227,7 +227,7 @@ def test_isolation_the_prompt_holds_the_describer_items_and_no_others() -> None:
     )
     hidden = (
         "S-card-id", "S-attribute", "S-distractor", "S-guesser-input", "S-description-row",
-        "S-answer-row", "S-lookup", "S-matched-name", "0.3",
+        "S-answer-row", "S-lookup", "S-matched-name", "0.3", "41", "42", "43", "44",
     )
     assert [s for s in shown if s not in prompt] == []
     assert [s for s in hidden if s in prompt] == []
