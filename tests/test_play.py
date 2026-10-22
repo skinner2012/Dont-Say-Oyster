@@ -39,7 +39,7 @@ from dont_say_oyster.play import (
 )
 from dont_say_oyster.program_nodes import SEND_BACKS, node_a
 from dont_say_oyster.state import PROGRAM_ONLY, ROUNDS, State
-from tests.test_llm import Scripted, reply, scripted
+from tests.test_llm import Scripted, raising, reply, scripted
 
 CARD_ID = "card-5ed17f8f"  # 烤蚵仔
 CLEAN = (
@@ -377,6 +377,23 @@ def test_a_challenger_connection_error_in_round_2_exits_non_zero_without_an_outp
     assert captured.out == ""
     assert "Challenger" in captured.err and "Connection refused" in captured.err
     assert [models.calls(role) for role in ROLES] == [2, 2, 2]
+
+
+@pytest.mark.parametrize("role", ["Describer", "Guesser"])
+def test_a_describer_or_guesser_connection_error_exits_non_zero_without_an_output_file(
+    role: str, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    models = Models(
+        describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
+    )
+    models.models[role] = raising(httpx.ConnectError("[Errno 61] Connection refused"))
+    code, output = run(tmp_path, models)
+    assert code != 0
+    assert not output.exists()
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert role in captured.err and "Connection refused" in captured.err
+    assert models.calls(role) == 1  # the one request that failed; nothing is retried
 
 
 def test_an_unknown_card_id_exits_non_zero_before_any_model_call(
