@@ -1,6 +1,7 @@
 """Node B (Describer) and node C with the [R11] send-back loop, on scripted Describer replies and
 the committed card 烤蚵仔 (T9 Acceptance)."""
 
+import re
 from typing import Any, Literal
 
 import pytest
@@ -119,14 +120,16 @@ def _prompt(model: Recording, call: int) -> str:
 # The prompt file
 
 
-def test_the_prompt_file_has_the_sections_and_each_slot_once() -> None:
+def test_the_prompt_section_braces_are_exactly_the_slots_each_once() -> None:
+    # build_prompt fills the section with str.format_map, so a stray brace would raise in a game.
     prompt = SECTIONS["prompt"]
-    for slot in (
+    slots = [
         "official_name", "aliases", "english_names", "forbidden_words", "round",
         "earlier_descriptions_and_answers", "earlier_guesses_and_questions",
         "latest_guess_or_question", "latest_verdict", "rejected_descriptions", "task",
-    ):
-        assert prompt.count("{" + slot + "}") == 1
+    ]
+    assert re.findall(r"\{[^}]*\}", prompt) == ["{" + slot + "}" for slot in slots]
+    assert prompt.count("{") == prompt.count("}") == len(slots)
 
 
 def test_a_prompt_file_lacking_a_section_raises_naming_it() -> None:
