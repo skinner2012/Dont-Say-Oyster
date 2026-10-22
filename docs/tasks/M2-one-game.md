@@ -380,7 +380,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Depends on:** T8, T9, T10, T12
 
 ### T14 — One live V2 game
-- **Status:** todo
+- **Status:** done 4a7ae08
 - **Produces:** the record of one V2 game on the three local models that reaches F, written into this Detail.
 - **Consumes:** the tags and num_ctx from T1; `play-game` from T13; the committed cards and corpus (5ba08c6 or later).
 - **Detail:**
@@ -522,3 +522,12 @@ Q16, Q17, and Q18 are open; none blocks T2 (author, 2026-10-18). Q19 was answere
 - T13 F7: the recursion limit is 240 + 60; the exact count is pinned by a test (240 raises, 241 passes), so the margin only bounds how far a routing bug could run. No change.
 - T13 F8: G increments the round counter before B, so a Describer violation in the second description prints round 2 though by [R14] one description reached the Guesser; M7's "Number of rounds" must pick a definition. Report only (author, 2026-10-22).
 - T13 F9: the three model tags are named in play.py and in model_checks.py; M5's tag change touches both. No change.
+- T14 F1: the record counted three Guesser tool-bound calls; the State proves four (three lookups with call ordinals 1–3, none blocked, so a fourth tool-bound call without a tool call ended the loop and left no entry, T12 F8); fixed in the F1–F7 corrections commit.
+- T14 F2: the 1.3 GB `ollama ps` figure for the Guesser was called unexplained with "partial load" as a hypothesis, reopening Q16, which already records that the model is fully loaded and `ollama ps` under-counts it; T1 saw 1.5 GB; fixed in the corrections commit (Q16 cited; the 1.5 → 1.3 GB difference left as unexplained).
+- T14 F3: the record's 08:57:30–08:59:04 span (94 s) disagreed with `time`'s 1:25.30 because the start stamp was written eight seconds before the launch; fixed in the corrections commit.
+- T14 F4: "Describer calls 3, Challenger calls 3" are lower bounds, since State keeps the attempt number of the last output only (T9 F10, T10 F2); fixed in the corrections commit ("at least 3").
+- T14 F5: every Challenger call includes the 12B load (keep_alive 0), which the record named only for the first Describer and Guesser calls; fixed in the corrections commit.
+- T14 F6: the output file holds no settings, so the Acceptance's tags, num_ctx, and temperature rest on play.py's defaults at b8c7ffb and a command line without overrides; fixed in the corrections commit (the basis stated; M4's manifest and JSONL record settings).
+- T14 F7: the record did not say Run 1 was the only run; fixed in the corrections commit.
+- T14 F8: the shell server's `OLLAMA_MAX_LOADED_MODELS=3`, the menu-bar app being closed, no model loaded before the run, and the post-run `ollama ps` (UNTIL "Forever", 12B unloaded) rest on the orchestrator's captures during the session, with no log on disk (the shell server logs to its terminal); the same class as T1 F1 and T3 F5. Deferred (author, 2026-10-22).
+- T14 F9: the `.gitignore` commit 83affa6 landed during the run, so the working tree differed from b8c7ffb by that uncommitted line only; no code effect. No change.
