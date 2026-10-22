@@ -20,13 +20,11 @@ Ticket-level readings (T9, settled with the author through the M2 orchestrator, 
 - The attempt number is the [R11] count + 1 [R26]; G and D zero the count when they ask for a
   new output, so B only reads it."""
 
-import re
 from collections.abc import Sequence
-from functools import cache
-from pathlib import Path
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
+from dont_say_oyster import prompt_sections
 from dont_say_oyster.cards import REPO_ROOT
 from dont_say_oyster.llm import ClientFor, ModelSettings, call_text, ollama_client
 from dont_say_oyster.state import (
@@ -40,28 +38,7 @@ from dont_say_oyster.state import (
 )
 
 PROMPT_PATH = REPO_ROOT / "prompts" / "describer.txt"
-SECTIONS = ("prompt", "task: description", "task: answer", "fixed message [R11]")
 NONE = "(none)"
-
-_HEADER = re.compile(r"^=== (.+) ===$", re.MULTILINE)
-
-
-def parse_sections(text: str) -> dict[str, str]:
-    """The `=== name ===` sections of a prompt file, each stripped of surrounding whitespace.
-    Raises ValueError naming any of SECTIONS the text lacks."""
-    parts = _HEADER.split(text)
-    sections = {name: body.strip() for name, body in zip(parts[1::2], parts[2::2], strict=True)}
-    missing = [name for name in SECTIONS if name not in sections]
-    if missing:
-        raise ValueError(f"prompt file lacks sections: {', '.join(missing)}")
-    return sections
-
-
-@cache
-def load_sections(path: Path = PROMPT_PATH) -> dict[str, str]:
-    """The sections of the prompt file at `path`, read once."""
-    return parse_sections(path.read_text(encoding="utf-8"))
-
 
 def _list(items: Sequence[str]) -> str:
     return ", ".join(items) if items else NONE
@@ -137,7 +114,7 @@ def node_b(
     sections: dict[str, str] | None = None,
 ) -> State:
     """B: one call for the description or answer `owes` names, written into its row as given."""
-    sections = load_sections() if sections is None else sections
+    sections = prompt_sections.sections(PROMPT_PATH) if sections is None else sections
     reply = call_text(
         settings,
         build_messages(state, sections),

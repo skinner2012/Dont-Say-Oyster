@@ -11,10 +11,11 @@ from langchain_core.outputs import ChatResult
 
 from dont_say_oyster import challenger, llm
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, load_cards
-from dont_say_oyster.challenger import SCHEMA, build_prompt, load_sections, node_d, route_after_d
+from dont_say_oyster.challenger import PROMPT_PATH, SCHEMA, build_prompt, node_d, route_after_d
 from dont_say_oyster.corpus import load_corpus
 from dont_say_oyster.llm import ModelSettings, Reply
 from dont_say_oyster.program_nodes import node_a, node_g
+from dont_say_oyster.prompt_sections import sections
 from dont_say_oyster.state import State
 from tests.test_llm import Scripted, reply
 
@@ -28,7 +29,7 @@ SETTINGS = ModelSettings(
     thinking=False,
     keep_alive=0,
 )
-SECTIONS = load_sections()
+SECTIONS = sections(PROMPT_PATH)
 FIXED = SECTIONS["fixed message [R40]"]
 FIRST = "Smoky shellfish opened on a grill at a night-market stall, eaten hot in the half shell."
 SECOND = "Plump shellfish cooked over a flame until they pop open, served with a squeeze of lime."

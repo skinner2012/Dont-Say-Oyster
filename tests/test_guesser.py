@@ -23,10 +23,10 @@ from dont_say_oyster.guesser import (
     build_prompt,
     node_e,
     route_after_e,
-    sections,
 )
 from dont_say_oyster.llm import ModelSettings, Reply, call_structured, call_tools
 from dont_say_oyster.program_nodes import node_a, node_g
+from dont_say_oyster.prompt_sections import sections
 from dont_say_oyster.state import PROGRAM_ONLY, State
 from tests.test_llm import Clients, reply, scripted
 

@@ -49,6 +49,7 @@ from typing import Any, Literal
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 
+from dont_say_oyster import prompt_sections
 from dont_say_oyster.corpus import CorpusEntry
 from dont_say_oyster.llm import ClientFor, ModelSettings, call_structured, call_tools, ollama_client
 from dont_say_oyster.oracle import check_question
@@ -83,24 +84,6 @@ GUESS_ONLY_SCHEMA: dict[str, Any] = {
 }
 
 
-def sections(path: Path = PROMPT_PATH) -> dict[str, str]:
-    """The prompt file's `=== name ===` sections, each stripped of surrounding blank lines."""
-    found: dict[str, str] = {}
-    name: str | None = None
-    lines: list[str] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.startswith("=== ") and line.rstrip().endswith(" ==="):
-            if name is not None:
-                found[name] = "\n".join(lines).strip("\n")
-            name = line.strip()[4:-4]
-            lines = []
-        else:
-            lines.append(line)
-    if name is not None:
-        found[name] = "\n".join(lines).strip("\n")
-    return found
-
-
 def _earlier_texts(state: State) -> str:
     """The earlier descriptions and answers, without this round's item (the last entry when it
     is the one in the Guesser's row)."""
@@ -132,7 +115,7 @@ def _earlier_guesses(state: State) -> str:
 def build_prompt(state: State) -> str:
     """The Guesser's prompt for this round, from the `prompt` section and the task section
     matching the schema (guess only when G set the flag [R16])."""
-    texts = sections()
+    texts = prompt_sections.sections(PROMPT_PATH)
     task = texts["task: guess only"] if state["guess_only"] else texts["task: question or guess"]
     current = state["guesser_input"]
     slots = {
@@ -160,7 +143,7 @@ def _tool_loop(
     """Run the tool loop [R43] on `messages`, appending each reply and its tool results; return
     this round's lookup counter and the lookups appended to State's record."""
     tool = search_tool(corpus)
-    blocked_text = sections()["blocked lookup result"]
+    blocked_text = prompt_sections.sections(PROMPT_PATH)["blocked lookup result"]
     count = state["lookup_count"]
     lookups: list[dict[str, Any]] = []
     call_index = 0
@@ -204,7 +187,7 @@ def node_e(
     """E: the tool loop, then the structured call for a question or a guess, repeated with the
     fixed message on an invalid question [R17]; writes the Guesser's output, the lookups, the
     counters, `owes`, and on the third invalid question `violation`."""
-    texts = sections()
+    texts = prompt_sections.sections(PROMPT_PATH)
     messages: list[BaseMessage] = [HumanMessage(build_prompt(state))]
     invalid = state["invalid_questions"]
     attempt = invalid + 1

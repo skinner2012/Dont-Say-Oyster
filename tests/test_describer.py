@@ -11,23 +11,17 @@ from langchain_core.outputs import ChatResult
 
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, Card, load_cards
 from dont_say_oyster.corpus import load_corpus
-from dont_say_oyster.describer import (
-    NONE,
-    build_messages,
-    build_prompt,
-    load_sections,
-    node_b,
-    parse_sections,
-)
+from dont_say_oyster.describer import NONE, PROMPT_PATH, build_messages, build_prompt, node_b
 from dont_say_oyster.llm import ModelSettings
 from dont_say_oyster.program_nodes import node_a, node_c, node_f, node_g, route_after_c
+from dont_say_oyster.prompt_sections import sections
 from dont_say_oyster.state import EarlierGuessOrQuestion, GuessOrQuestion, State
 from tests.test_llm import Clients, Scripted, reply
 
 CORPUS_PATH = REPO_ROOT / "data" / "corpus" / "corpus.json"
 CARD_ID = "card-5ed17f8f"
 SETTINGS = ModelSettings("describer", "qwen3.8:27b-q4_K_M", 8192, 0.7, False, "30m")
-SECTIONS = load_sections()
+SECTIONS = sections(PROMPT_PATH)
 FIXED = SECTIONS["fixed message [R11]"]
 CLEAN = (
     "A street-stall snack of shellfish cooked over hot coals until the edges curl. "
@@ -130,11 +124,6 @@ def test_the_prompt_section_braces_are_exactly_the_slots_each_once() -> None:
     ]
     assert re.findall(r"\{[^}]*\}", prompt) == ["{" + slot + "}" for slot in slots]
     assert prompt.count("{") == prompt.count("}") == len(slots)
-
-
-def test_a_prompt_file_lacking_a_section_raises_naming_it() -> None:
-    with pytest.raises(ValueError, match=r"fixed message \[R11\]"):
-        parse_sections("=== prompt ===\nx\n=== task: description ===\ny\n=== task: answer ===\nz")
 
 
 def test_the_conventions_never_reach_the_model(round_1: State) -> None:

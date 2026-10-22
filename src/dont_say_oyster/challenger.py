@@ -19,11 +19,11 @@ Implementer's readings (T10, for the audit):
   same verdict and reject counter as a forced pass."""
 
 import json
-from pathlib import Path
 from typing import Any, Literal
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
+from dont_say_oyster import prompt_sections
 from dont_say_oyster.cards import REPO_ROOT
 from dont_say_oyster.llm import ClientFor, ModelSettings, call_structured, ollama_client
 from dont_say_oyster.matching import has_chinese_characters
@@ -44,19 +44,6 @@ SCHEMA: dict[str, Any] = {
         "reason": {"type": "string"},
     },
 }
-
-
-def load_sections(path: Path = PROMPT_PATH) -> dict[str, str]:
-    """The prompt file's `=== name ===` sections by name, each stripped of surrounding blank
-    lines."""
-    sections: dict[str, list[str]] = {}
-    lines: list[str] | None = None
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.startswith("=== ") and line.endswith(" ==="):
-            lines = sections.setdefault(line[4:-4], [])
-        elif lines is not None:
-            lines.append(line)
-    return {name: "\n".join(body).strip() for name, body in sections.items()}
 
 
 def _slot(items: list[str]) -> str:
@@ -90,8 +77,8 @@ def node_d(
     description = state["description"]
     if description is None:
         raise ValueError("D reached with no description")
-    sections = load_sections()
-    messages: list[BaseMessage] = [HumanMessage(build_prompt(state, sections[PROMPT]))]
+    texts = prompt_sections.sections(PROMPT_PATH)
+    messages: list[BaseMessage] = [HumanMessage(build_prompt(state, texts[PROMPT]))]
     first = call_structured(settings, messages, SCHEMA, 1, client_for)
     reason: str | None = None  # only a fail keeps a reason [R40]
     reasks = 0
@@ -102,12 +89,12 @@ def node_d(
             reask = [
                 *messages,
                 AIMessage(json.dumps(first.output, ensure_ascii=False)),
-                HumanMessage(sections[REASK]),
+                HumanMessage(texts[REASK]),
             ]
             second = call_structured(settings, reask, SCHEMA, 2, client_for)
             reason = second.output["reason"]
             if not _shown(reason):
-                reason = sections[FIXED_MESSAGE]
+                reason = texts[FIXED_MESSAGE]
     verdict: Verdict = {
         "verdict": first.output["verdict"],
         "reason": reason,
