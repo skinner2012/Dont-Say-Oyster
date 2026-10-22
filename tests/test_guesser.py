@@ -342,7 +342,7 @@ def test_two_lookups_then_none_give_two_results_and_one_structured_call(
 
 
 def test_six_lookup_requests_run_five_and_block_the_sixth(
-    start: State, corpus: list[CorpusEntry], spy: Spy
+    start: State, corpus: list[CorpusEntry], spy: Spy, invocations: list[Any]
 ) -> None:
     state, _ = run(
         start, corpus,
@@ -352,6 +352,9 @@ def test_six_lookup_requests_run_five_and_block_the_sixth(
     )
     assert spy.kinds == ["tools"] * 6 + ["structured"]
     assert state["lookup_count"] == 5
+    assert [call["args"]["keywords"] for call in invocations] == [
+        ["oyster"], ["squid"], ["snail"], ["fritter"], ["omelet"],
+    ]
     assert [lookup["arguments"] for lookup in state["lookups"]] == [
         {"keywords": [w]} for w in ("oyster", "squid", "snail", "fritter", "omelet")
     ]
@@ -364,7 +367,7 @@ def test_six_lookup_requests_run_five_and_block_the_sixth(
 
 
 def test_a_reply_with_three_calls_after_three_lookups_runs_two_and_blocks_the_third(
-    start: State, corpus: list[CorpusEntry], spy: Spy
+    start: State, corpus: list[CorpusEntry], spy: Spy, invocations: list[Any]
 ) -> None:
     state, _ = run(
         start, corpus,
@@ -376,6 +379,11 @@ def test_a_reply_with_three_calls_after_three_lookups_runs_two_and_blocks_the_th
     )
     assert spy.kinds == ["tools"] * 4 + ["structured"]
     assert state["lookup_count"] == 5
+    # The tool was invoked five times: the third call of the last reply was not searched.
+    assert len(invocations) == 5
+    assert [call["args"]["keywords"] for call in invocations] == [
+        ["oyster"], ["squid"], ["snail"], ["fritter"], ["omelet"],
+    ]
     assert [lookup["arguments"]["keywords"] for lookup in state["lookups"]] == [
         ["oyster"], ["squid"], ["snail"], ["fritter"], ["omelet"],
     ]
