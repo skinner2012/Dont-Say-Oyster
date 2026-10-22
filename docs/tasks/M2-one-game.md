@@ -366,7 +366,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 
 ### T13 — V2 graph and the one-game command
 - **Status:** todo
-- **Produces:** `src/dont_say_oyster/graph.py` (A, G, B, C, D, E, and F in one LangGraph graph with the V2 transitions) and the one-game command `play-game` (`src/dont_say_oyster/play.py`, console script); tests that play whole games with scripted model outputs.
+- **Produces:** `src/dont_say_oyster/graph.py` (G, B, C, D, E, and F in one LangGraph graph with the V2 transitions; A runs before the graph and its State is the graph's input, so M3 traces A by hand, carried into M3's dispatch) and the one-game command `play-game` (`src/dont_say_oyster/play.py`, console script); tests that play whole games with scripted model outputs.
 - **Consumes:** nodes and State from T8–T10 and T12; the search tool (T11); the wrapper (T4); the cards, corpus, and their loaders from M1.
 - **Detail:**
   - From BACKLOG M2.19 (the wiring; the live game is T14, split) and the command part of M2.9 (node A is T8, split). Merged: the command only builds the graph and runs it on one card, and the graph is tested end to end through the command.
