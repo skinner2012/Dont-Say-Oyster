@@ -365,7 +365,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Depends on:** T3, T4, T7, T8, T11
 
 ### T13 — V2 graph and the one-game command
-- **Status:** todo
+- **Status:** done 3bf5048
 - **Produces:** `src/dont_say_oyster/graph.py` (G, B, C, D, E, and F in one LangGraph graph with the V2 transitions; A runs before the graph and its State is the graph's input, so M3 traces A by hand, carried into M3's dispatch) and the one-game command `play-game` (`src/dont_say_oyster/play.py`, console script); tests that play whole games with scripted model outputs.
 - **Consumes:** nodes and State from T8–T10 and T12; the search tool (T11); the wrapper (T4); the cards, corpus, and their loaders from M1.
 - **Detail:**
@@ -507,3 +507,12 @@ Q16, Q17, and Q18 are open; none blocks T2 (author, 2026-10-18). Q19 was answere
 - T12 F8: the latency and tokens of a tool-loop reply that makes no tool call, and of every [R17] retry call, are in no State field; `guesser_output` carries the accepted call alone, so a per-round Guesser time summed from State understates reality; the per-call record is M3's and M4's, the same reading as T9 F10 and T10 F2. No change (author, 2026-10-21).
 - T12 F9: slots are filled by sequential `str.replace`, so a slot value containing a later slot's literal would be substituted; far-fetched. No change.
 - T12 F10: an empty-string question passes the [R17] check, counts a question, and asks B to answer nothing; no rule forbids it and a `minLength` in the schema has untested enforcement. No change (author, 2026-10-21).
+- T13 F1: the output path was first touched by `write_text` after the whole game, so a missing parent directory or an unwritable path lost a live run's result after every model call was paid for; fixed 2d15e04 (the parent directory is created and the path probed for writing after the card check and before any client is built; a failure exits non-zero; a model error still leaves no file; the author chose to create the directory, 2026-10-22).
+- T13 F2: `KEEP_ALIVE_RESIDENT = "30m"` guessed the longest idle gap of a resident model, which with thinking on exceeds half an hour (nine Describer calls in a worst-case round), so Ollama would unload the Guesser mid-game and reopen Q19; fixed 200bec4 (-1, loaded until an explicit unload or memory pressure; the Challenger stays 0; author, 2026-10-22).
+- T13 F3: the Produces line said A is in the graph; `play_game` runs A before the graph and the graph starts at G, as the Detail allows; fixed in the Produces line (this ticket's first doc fix after the audit); M3's dispatch must trace A by hand since LangGraph instruments only graph nodes.
+- T13 F4: only a Challenger model error was tested through `main`; fixed 54bf076 (a Describer's and a Guesser's connection error each exit non-zero with no output file, one request made).
+- T13 F5: the test for "num_ctx warnings go to stderr" checks the logging level and that the warning is emitted, not the stream; production behaviour rests on `basicConfig`'s default. No change (author, 2026-10-22).
+- T13 F6: the mapping of thinking on to a level ("medium" for tags starting with `qwen3.8`, `True` otherwise) lived only in code; fixed in the Detail (this ticket's second doc fix after the audit).
+- T13 F7: the recursion limit is 240 + 60; the exact count is pinned by a test (240 raises, 241 passes), so the margin only bounds how far a routing bug could run. No change.
+- T13 F8: G increments the round counter before B, so a Describer violation in the second description prints round 2 though by [R14] one description reached the Guesser; M7's "Number of rounds" must pick a definition. Report only (author, 2026-10-22).
+- T13 F9: the three model tags are named in play.py and in model_checks.py; M5's tag change touches both. No change.
