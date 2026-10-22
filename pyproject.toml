@@ -18,6 +18,7 @@ pick-distractors = "dont_say_oyster.distractors:main"
 select-cards = "dont_say_oyster.selection:main"
 build-cards = "dont_say_oyster.cards:main"
 check-models = "dont_say_oyster.model_checks:main"
+play-game = "dont_say_oyster.play:main"
 
 [build-system]
 requires = ["hatchling"]
