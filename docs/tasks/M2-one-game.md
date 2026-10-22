@@ -385,7 +385,7 @@ T1 → T2 → T3 are the three model checks, the project's biggest risk, and run
 - **Consumes:** the tags and num_ctx from T1; `play-game` from T13; the committed cards and corpus (5ba08c6 or later).
 - **Detail:**
   - From BACKLOG M2.19 (the run; the wiring is T13, split). This is the M2 exit check.
-  - **Settings** (author fills in at dispatch): the card id; thinking on/off per role. Temperature 0.7 and num_ctx from T1.
+  - **Settings** (author, 2026-10-22): card card-0a001d83 (牛肉麵); thinking off for all three roles. Temperature 0.7 and num_ctx from T1.
   - An agent runs the command. A run stopped by a model error writes no output file and is rerun as a crash (`SPEC.md` Recovery, forks, and replay, Model errors); a run stopped by a code error is debugged by the session (`CLAUDE.md`, Delegation), fixed as an audit finding of the ticket that owns the code, and rerun; every run is recorded, not only the last.
   - The record, written into this Detail: the date; the command line; `ollama --version` and the three tags with their IDs; the card; for each run, the outcome or the error, and the round, question, reject, and forced pass counts; wall time; any num_ctx warning; where the output file was written. The output file is not committed (the JSONL record is M4).
   - A live run: accepted by the record, not by who wins or by the quality of the descriptions.
