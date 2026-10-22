@@ -253,3 +253,6 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 
 ### 2026-10-16 — M1 (Corpus) done  (no spec change)
 - Why: the M1 Done when holds: the corpus (342 entries, 338f56b) and the forty cards (645fc01) load without error, every entry (T5) and every distractor (T8) was reviewed by the author, and the four manifests carry the same card order. Tickets T1–T8 in `docs/tasks/M1-corpus.md`, 62 commits on `m1-corpus`, fast-forwarded into `main` (the author prefers no merge commits; CLAUDE.md updated in the next commit). The three Open questions in that file ([R22] 面/麵 and 干/乾, plurals; [R5] "in Chinese") were answered in chat and become the first `SPEC.md` changes after the merge.
+
+### 2026-10-22 — M2 (One game) done  (no spec change)
+- Why: the M2 Done when holds: one V2 game on card-0a001d83 reached F ("Guesser wins", the T14 record, 4a7ae08). Tickets T1–T14 in `docs/tasks/M2-one-game.md`, 107 commits on `m2-one-game`, fast-forwarded into `main`. In: the three model checks, the wrapper, the matching and Oracle rules, the loader's name check, the State and the program nodes A, C, F, G, the search tool, the three prompt files, the model nodes B, D, E, the V2 graph, and `play-game`. Open for M4–M5: Q16, Q17, Q18, Q20, Q21, and the deferred findings those tickets carry.
