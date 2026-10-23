@@ -4,7 +4,7 @@ Behavioural contract for Claude Code on this repo. Every line here should change
 
 ## What this project is
 
-A Taboo-like guessing game about Taiwanese snacks, played by three local LLM agents (Describer, Guesser, Challenger) on Ollama with LangChain/LangGraph and Phoenix tracing. It is built as four ablation variants V0–V3 and run on a Mac mini M4 Pro (64 GB). The output is material for a Substack post, not a product.
+A Taboo-like guessing game about Taiwanese snacks, played by three local LLM agents (Describer, Guesser, Challenger) on Ollama with LangChain/LangGraph and Langfuse tracing. It is built as four ablation variants V0–V3 and run on a Mac mini M4 Pro (64 GB). The output is material for a Substack post, not a product.
 
 ## Source of truth
 
@@ -47,7 +47,7 @@ Progress lives in the repo: each ticket carries a `Status` line (`todo`, `done <
 
 ## Rules of engagement
 
-- Dependencies named in `SPEC.md` (LangChain, LangGraph, Phoenix) and the dev toolchain chosen in M1 (test runner, linter, type checker, Chinese script converter) are pre-approved. Ask before adding any other.
+- Dependencies named in `SPEC.md` (LangChain, LangGraph, Langfuse) and the dev toolchain chosen in M1 (test runner, linter, type checker, Chinese script converter) are pre-approved. Ask before adding any other.
 - Never commit secrets. Endpoints and keys come from `.env`.
 - Pin everything that affects reproducibility: model tags and quantization, `num_ctx`, temperature, library versions. The ablation comparison depends on it.
 - Prefer surgical edits over rewrites. Write a test for each new behaviour.
