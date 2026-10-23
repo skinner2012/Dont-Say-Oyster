@@ -312,6 +312,7 @@ Transitions that differ between variants, explicitly:
 No LangGraph checkpoints are used; recovery works from files.
 
 - Crash recovery: continue from the last memory file written; the game that crashed is rerun, and it does not resume inside a game. For V0–V2, which have no memory file, the batch script skips cards that already have a JSONL record.
+- Trace loss: if Langfuse is down or drops a batch of spans, the game's trace is incomplete or missing; the JSONL record is the record of the game, so the game is not rerun for its trace.
 - Model errors: a connection error or a reply the program cannot parse is not retried; the game stops with an error, writes no JSONL record, and is rerun as a crash. A search-tool call whose arguments the tool's schema rejects is not an error: it counts as one lookup [R43] and returns the validation message to the Guesser as its result.
 - Fork and rerun: not needed, because the same command only needs a different variant as its argument.
 - Replay: decided not to do it.
@@ -379,7 +380,7 @@ No LangGraph checkpoints are used; recovery works from files.
     - Two anchor points (with prefill): with thinking off for all three roles, four batches, 160 games in all take about 25–60 hours (1–2.5 days); with it on for both the Describer and the Guesser, about 95–250 hours (4–10 days).
     - Also add: two calls per game for node H in V3 (see Full flow of one game); the optional V2 rerun adds one more batch.
     - Whether the Describer and the Guesser each have thinking on or off will be decided in M5, and after that the real time will be worked out from the table above.
-- **Frameworks and versions**: will definitely use these: LangChain, LangGraph, Phoenix, each at its latest stable version.
+- **Frameworks and versions**: will definitely use these: LangChain, LangGraph, and Langfuse (self-hosted with Docker Compose on the same machine; server and Python SDK versions pinned in the compose file and `pyproject.toml`), each at its latest stable version when adopted.
 - **Data and persistence**: cards and the corpus are stored as JSON. The corpus file's format is `data/corpus/schema.json`, and the loader validates the corpus against it. Within a game, LangGraph State is passed between nodes. Cross-game memory uses JSON memory files.
 - **Repo**: the name is "Dont-Say-Oyster"; the directory structure was decided in M1, and the committed directories are its record.
 - **Commands**:
@@ -414,9 +415,9 @@ No LangGraph checkpoints are used; recovery works from files.
 
 ### M3 Add observability
 
-- Instrument the program with Phoenix, and see the trace of several rounds in one game.
+- Instrument the program with Langfuse, and see the trace of several rounds in one game: one game is one trace, one batch is one session.
 - Each model call, corpus lookup, and program node shows as a span; model spans carry latency, token count, and attempt number.
-- Done when one game's trace in Phoenix shows a span for every model call, corpus lookup, and program node, and the model spans carry latency, token count, and attempt number.
+- Done when one game's trace in Langfuse shows a span for every model call, corpus lookup, and program node, and the model spans carry latency, token count, and attempt number.
 
 ### M4 Get one game running end to end
 
@@ -448,7 +449,7 @@ No LangGraph checkpoints are used; recovery works from files.
 
 ### M7 Build batches and metrics
 
-- Build the batch script: it reads a manifest and runs the forty cards in the fixed order; on a crash it skips cards that already have a JSONL record (V0–V2) or continues from the last memory file (V3).
+- Build the batch script: it reads a manifest and runs the forty cards in the fixed order; before each game it checks that Langfuse answers its health endpoint and stops if it does not; on a crash it skips cards that already have a JSONL record (V0–V2) or continues from the last memory file (V3).
 - Run the four batches on the fixed card set.
 - Optional, if time allows: run V2 a second time as the luck ruler mentioned in Evaluation.
 - Compute the per-game and per-batch metrics listed in Evaluation.
