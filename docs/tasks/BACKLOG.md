@@ -47,7 +47,7 @@ Keeping it current: when `SPEC.md` changes, fix the affected items here in the s
 
 ### M3 Add observability
 
-- M3.1 Hook up Phoenix so one game shows as one trace with a span for each node step and each corpus lookup across its rounds. Done when a V2 game's trace in Phoenix shows the node spans of at least three rounds. Needs: M2.19. Spec: M3, Goals (Evaluation and observability).
+- M3.1 Hook up Langfuse (the self-hosted stack from a pinned Docker Compose file in the repo, keys in `.env`) so one game shows as one trace with a span for each node step and each corpus lookup across its rounds, and one batch is one session. Done when a V2 game's trace in Langfuse shows the node spans of at least three rounds under the batch's session. Needs: M2.19. Spec: M3, Goals (Evaluation and observability), Implementation (Frameworks and versions).
 - M3.2 Put latency, token count, and attempt number on every model-call span. Done when every Describer, Challenger, and Guesser span in a V2 trace shows the three values and they match the wrapper's output. Needs: M2.4, M3.1. Spec: M3, [R26].
 
 ### M4 Get one game running end to end
@@ -78,7 +78,7 @@ Keeping it current: when `SPEC.md` changes, fix the affected items here in the s
 
 ### M7 Build batches and metrics
 
-- M7.1 Write the batch script: it reads one batch manifest (card set and order from M1.11; models, num_ctx, temperature, thinking from M5.5; variant) and runs the one-game command for the forty cards in that order. Done when a V0 run over the first three cards of a manifest writes three JSONL records next to that manifest. Needs: M1.11, M4.2, M6.5. Spec: Implementation (Commands, Experiment result format).
+- M7.1 Write the batch script: it reads one batch manifest (card set and order from M1.11; models, num_ctx, temperature, thinking from M5.5; variant) and runs the one-game command for the forty cards in that order; before each game it checks that Langfuse answers its health endpoint and stops if it does not. Done when a V0 run over the first three cards of a manifest writes three JSONL records next to that manifest, and the same run with Langfuse stopped exits before its first game. Needs: M1.11, M4.2, M6.5. Spec: M7, Implementation (Commands, Experiment result format).
 - M7.2 Add crash recovery to the batch script: in V0–V2 it skips cards that already have a JSONL record; in V3 it continues from the last memory file written and reruns the game that crashed; a game stopped by a model error (Recovery, forks, and replay) is a crash. Done when a V1 batch and a V3 batch, each killed mid-game and restarted, end with one record per card and no duplicates. Needs: M7.1. Spec: Recovery, forks, and replay, Self-checks.
 - M7.3 Run the V0 and V1 batches. Done when each batch has forty JSONL records next to its manifest. Needs: M5.5, M7.2. Spec: M7, Experiment plan.
 - M7.4 Run the V2 and V3 batches. Done when each batch has forty JSONL records next to its manifest. Needs: M5.5, M7.2. Spec: M7, Experiment plan.
