@@ -82,20 +82,25 @@ def parent_name(span: ReadableSpan, spans: list[ReadableSpan]) -> str | None:
 def test_a_scripted_game_is_one_trace_of_the_expected_spans(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # Round 1: a description, passed; the Guesser looks up the corpus once, then asks a valid
-    # question (E → G). Round 2: the answer, no Challenger [R12]; the Guesser guesses right.
+    # Round 1: a description, passed; the Guesser runs the search tool once with a valid query
+    # (a keyword, see `SearchQuery` in search.py), then asks a valid question (E → G). Round 2:
+    # the answer, no Challenger [R12]; the Guesser guesses right.
     models = Models(
         describer=[text(CLEAN), text(ANSWER)],
         challenger=[verdict("pass")],
         guesser=[
-            tool_reply({"query": "蚵仔"}),
+            tool_reply({"keywords": ["oyster"]}),
             *guesser_turn(question(VALID)),
             *guesser_turn(guess(RIGHT)),
         ],
     )
     code, output, spans = run_traced(tmp_path, monkeypatch, models)
     assert code == 0
-    assert final_state(output)["result"] == "right guess"
+    state = final_state(output)
+    assert state["result"] == "right guess"
+    assert [(lookup["round"], lookup["status"]) for lookup in state["lookups"]] == [
+        (1, "success")
+    ]
     assert [models.calls(role) for role in ROLES] == [2, 1, 5]
 
     names = by_name(spans)
