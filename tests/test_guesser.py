@@ -4,7 +4,8 @@ and the invalid-question loop [R17].
 
 The scripted client answers each call from a fixed list (an AIMessage with tool calls for the
 loop, JSON text for the structured calls); the wrapper functions E calls are wrapped by a spy
-that keeps each call's messages, what was bound, its attempt number, and its Reply."""
+that keeps each call's messages, what was bound, its attempt number, the run metadata it was
+given (M3 T3), and its Reply."""
 
 import json
 from collections.abc import Iterator
@@ -103,13 +104,21 @@ def question(text: str, confidence: float = 0.5) -> AIMessage:
 
 class Call:
     """One wrapper call E made: which wrapper, the messages sent, what was bound, the attempt
-    number passed, and the Reply returned."""
+    number and the metadata passed, and the Reply returned."""
 
-    def __init__(self, kind: str, messages: list[BaseMessage], bound: Any, attempt: int) -> None:
+    def __init__(
+        self,
+        kind: str,
+        messages: list[BaseMessage],
+        bound: Any,
+        attempt: int,
+        metadata: Any = None,
+    ) -> None:
         self.kind = kind
         self.messages = messages
         self.bound = bound
         self.attempt = attempt
+        self.metadata = metadata
         self.result: Reply[Any] | None = None
 
 
@@ -121,19 +130,31 @@ class Spy:
         real_tools, real_structured = call_tools, call_structured
 
         def spy_tools(
-            settings: Any, messages: Any, tools: Any, attempt: int, client_for: Any
+            settings: Any,
+            messages: Any,
+            tools: Any,
+            attempt: int,
+            client_for: Any,
+            metadata: Any = None,
         ) -> Any:
-            call = Call("tools", list(messages), list(tools), attempt)
+            call = Call("tools", list(messages), list(tools), attempt, metadata)
             self.calls.append(call)
-            call.result = real_tools(settings, messages, tools, attempt, client_for)
+            call.result = real_tools(settings, messages, tools, attempt, client_for, metadata)
             return call.result
 
         def spy_structured(
-            settings: Any, messages: Any, schema: Any, attempt: int, client_for: Any
+            settings: Any,
+            messages: Any,
+            schema: Any,
+            attempt: int,
+            client_for: Any,
+            metadata: Any = None,
         ) -> Any:
-            call = Call("structured", list(messages), schema, attempt)
+            call = Call("structured", list(messages), schema, attempt, metadata)
             self.calls.append(call)
-            call.result = real_structured(settings, messages, schema, attempt, client_for)
+            call.result = real_structured(
+                settings, messages, schema, attempt, client_for, metadata
+            )
             return call.result
 
         monkeypatch.setattr(guesser, "call_tools", spy_tools)
@@ -170,6 +191,20 @@ def invocations(monkeypatch: pytest.MonkeyPatch) -> list[Any]:
 
     monkeypatch.setattr(StructuredTool, "invoke", counted)
     return calls
+
+
+@pytest.fixture
+def tool_metadata(monkeypatch: pytest.MonkeyPatch) -> list[Any]:
+    """The run metadata of every search-tool invocation, in order (M3 T3)."""
+    metadata: list[Any] = []
+    real_invoke = StructuredTool.invoke
+
+    def recorded(self: StructuredTool, input: Any, config: Any = None, **kwargs: Any) -> Any:
+        metadata.append((config or {}).get("metadata"))
+        return real_invoke(self, input, config, **kwargs)
+
+    monkeypatch.setattr(StructuredTool, "invoke", recorded)
+    return metadata
 
 
 def run(state: State, corpus: list[CorpusEntry], *replies: AIMessage) -> tuple[State, Clients]:
@@ -662,6 +697,42 @@ def test_every_call_carries_latency_tokens_and_the_attempt_number(
     assert lookup["call"] == 1
     assert lookup["name"] == "search"
     assert set(lookup) == set(get_type_hints(Lookup))
+
+
+def test_tool_loop_calls_carry_round_and_call_and_each_search_run_adds_its_lookup_counter(
+    start: State, corpus: list[CorpusEntry], spy: Spy, tool_metadata: list[Any]
+) -> None:
+    # Call 1: two searches (lookups 1 and 2); call 2: an unknown tool (lookup 3, not run) and a
+    # search (lookup 4); call 3: no tool call. The structured call gets no metadata of E's.
+    state, _ = run(
+        start, corpus,
+        tool_reply({"keywords": ["oyster"]}, {"keywords": ["squid"]}),
+        reply("", 300, 20, tool_calls=[
+            {"name": "lookup", "args": {"keywords": ["snail"]}, "id": "c1", "type": "tool_call"},
+            {"name": "search", "args": {"keywords": ["omelet"]}, "id": "c2", "type": "tool_call"},
+        ]),
+        tool_reply(),
+        guess("烤蚵仔"),
+    )
+    assert spy.kinds == ["tools", "tools", "tools", "structured"]
+    assert [c.metadata for c in spy.calls] == [
+        {"round": 1, "call": 1}, {"round": 1, "call": 2}, {"round": 1, "call": 3}, None,
+    ]
+    assert tool_metadata == [
+        {"round": 1, "call": 1, "lookup": 1},
+        {"round": 1, "call": 1, "lookup": 2},
+        {"round": 1, "call": 2, "lookup": 4},
+    ]
+    # `(round, call)` and the lookup counter name the Lookup entries: the entries of a round
+    # sit in counter order, the unknown tool's at position 3.
+    assert [(lookup["round"], lookup["call"], lookup["name"]) for lookup in state["lookups"]] == [
+        (1, 1, "search"), (1, 1, "search"), (1, 2, "lookup"), (1, 2, "search"),
+    ]
+    for meta in tool_metadata:
+        entry = state["lookups"][meta["lookup"] - 1]
+        assert (entry["round"], entry["call"], entry["name"]) == (
+            meta["round"], meta["call"], "search"
+        )
 
 
 # Model errors are not retried and not caught (SPEC.md Recovery, forks, and replay).

@@ -1,5 +1,6 @@
-"""The model-call wrapper with a scripted chat model: what each call returns, the num_ctx
-warning, the client's settings, and the errors [R26]."""
+"""The model-call wrapper with a scripted chat model: what each call returns, the run metadata
+each request carries for the trace (M3 T3), the num_ctx warning, the client's settings, and the
+errors [R26]."""
 
 import json
 import logging
@@ -70,9 +71,10 @@ def reply(
 
 class Scripted(GenericFakeChatModel):
     """A fake chat model that answers from `messages` after `delay` seconds and keeps the
-    keyword arguments of each request it receives."""
+    keyword arguments and the run metadata of each request it receives."""
 
     requests: list[dict[str, Any]] = []
+    run_metadata: list[dict[str, Any]] = []
     delay: float = 0.0
 
     def _generate(
@@ -83,6 +85,7 @@ class Scripted(GenericFakeChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         self.requests.append(kwargs)
+        self.run_metadata.append(dict(run_manager.metadata) if run_manager else {})
         time.sleep(self.delay)
         return super()._generate(messages, stop, run_manager, **kwargs)
 
@@ -145,6 +148,50 @@ def test_a_tool_bound_call_returns_the_message_with_latency_tokens_and_attempt()
     assert (result.input_tokens, result.output_tokens, result.attempt) == (300, 20, 3)
     assert result.latency >= DELAY
     assert clients.model.requests == [{"tools": [TOOL]}]
+
+
+def ours(run_metadata: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The run metadata without the keys LangChain adds itself (`ls_*`, `lc_versions`)."""
+    return [
+        {k: v for k, v in m.items() if not k.startswith(("ls_", "lc_"))} for m in run_metadata
+    ]
+
+
+def test_each_call_carries_the_role_the_attempt_and_its_kind_in_its_run_metadata() -> None:
+    call = {"name": "search", "args": {"keywords": ["boba"]}, "id": "c1", "type": "tool_call"}
+    model = scripted(
+        reply("A chewy drink."),
+        reply(json.dumps({"guess": "珍珠奶茶", "confidence": 0.8})),
+        reply("", tool_calls=[call]),
+    )
+    clients = Clients(model)
+    call_text(SETTINGS, MESSAGES, attempt=1, client_for=clients)
+    call_structured(SETTINGS, MESSAGES, SCHEMA, attempt=2, client_for=clients)
+    call_tools(SETTINGS, MESSAGES, [TOOL], attempt=3, client_for=clients)
+    assert ours(model.run_metadata) == [
+        {"role": "guesser", "attempt": 1, "kind": "text"},
+        {"role": "guesser", "attempt": 2, "kind": "structured"},
+        {"role": "guesser", "attempt": 3, "kind": "tools"},
+    ]
+
+
+def test_the_callers_metadata_is_merged_and_cannot_override_role_attempt_or_kind() -> None:
+    model = scripted(reply(""), reply("x"), reply(json.dumps({"guess": "x", "confidence": 1})))
+    clients = Clients(model)
+    call_tools(
+        SETTINGS, MESSAGES, [TOOL], attempt=1, client_for=clients,
+        metadata={"round": 2, "call": 3},
+    )
+    call_text(SETTINGS, MESSAGES, attempt=1, client_for=clients, metadata={"attempt": 9})
+    call_structured(
+        SETTINGS, MESSAGES, SCHEMA, attempt=1, client_for=clients, metadata={"kind": "tools"}
+    )
+    assert ours(model.run_metadata) == [
+        {"round": 2, "call": 3, "role": "guesser", "attempt": 1, "kind": "tools"},
+        {"role": "guesser", "attempt": 1, "kind": "text"},
+        {"role": "guesser", "attempt": 1, "kind": "structured"},
+    ]
+    assert model.requests[0] == {"tools": [TOOL]}  # the metadata is not a request argument
 
 
 def test_prompt_tokens_over_90_percent_of_num_ctx_log_one_warning(

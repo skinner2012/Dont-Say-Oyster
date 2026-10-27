@@ -40,7 +40,14 @@ Ticket-level readings (T12, from the ticket and the M2 orchestrator, 2026-10-21)
 - The lookup record is one `Lookup` (state.py) per lookup run, in order; the tool-loop call's
   latency, token counts, and attempt number repeat across the lookups of one reply, which
   `call` tells apart from several calls. A tool-loop reply without a tool call leaves no
-  entry; its latency and tokens are only on the wrapper's Reply (M3 traces every call)."""
+  entry; its latency and tokens are only on the wrapper's Reply (M3 traces every call).
+
+Trace metadata (M3 T3): each tool-loop call carries `round` and `call` (the call index) in its
+run metadata, and each run of the search tool carries the same two and `lookup`, the round's
+lookup counter after it [R43], so a tool span, a sibling of its call's generation span under E's
+span, is joined to that span by `(round, call)` and to its `Lookup` entry by the round and the
+counter. A call naming an unknown tool or a blocked call never runs the tool and has no tool
+span; a call the schema rejects runs it, and its span's output is the validation message."""
 
 import json
 from collections.abc import Sequence
@@ -155,7 +162,8 @@ def _tool_loop(
     call_index = 0
     while True:
         call_index += 1
-        reply = call_tools(settings, messages, [tool], attempt, client_for)
+        key = {"round": state["round"], "call": call_index}
+        reply = call_tools(settings, messages, [tool], attempt, client_for, metadata=key)
         messages.append(reply.output)
         blocked = False
         for call in reply.output.tool_calls:
@@ -171,7 +179,7 @@ def _tool_loop(
                     status="error",
                 )
             else:
-                result = tool.invoke(call)
+                result = tool.invoke(call, config={"metadata": {**key, "lookup": count + 1}})
                 if not isinstance(result, ToolMessage):  # pragma: no cover - the tool's contract
                     raise TypeError(f"search tool returned {type(result).__name__}")
             count += 1
