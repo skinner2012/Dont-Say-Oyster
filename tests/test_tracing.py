@@ -16,7 +16,7 @@ from opentelemetry.trace import StatusCode
 
 from dont_say_oyster import tracing
 from dont_say_oyster.play import main
-from dont_say_oyster.tracing import NODE_A_SPAN, session_id
+from dont_say_oyster.tracing import DISABLED_PUBLIC_KEY, NODE_A_SPAN, TracingClient, session_id
 from tests.test_guesser import tool_reply
 from tests.test_llm import Scripted
 from tests.test_play import (
@@ -39,7 +39,8 @@ from tests.test_play import (
 )
 
 SESSION = "t14"
-LANGFUSE_VARIABLES = ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_BASE_URL")
+LANGFUSE_KEYS = ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY")
+LOCAL_BASE_URL = "http://127.0.0.1:9"  # never reached by any test
 # The SDK's attribute keys, read off the exported spans of the smoke test, not from its code.
 OBSERVATION_TYPE = "langfuse.observation.type"
 SESSION_ID = "session.id"
@@ -171,10 +172,11 @@ def test_the_session_id_is_the_resolved_parent_directory_name(
 def test_without_keys_the_game_runs_untraced_with_the_sdk_warning(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
-    """The real `build_client`, with `.env` not loaded and the three variables absent: the SDK
-    warns and the game ends with its result in the output file (T2, Q2)."""
+    """The real `build_client`, with `.env` not loaded, a local base URL, and both keys absent:
+    the SDK warns and the game ends with its result in the output file (T2, Q2)."""
     monkeypatch.setattr(tracing, "load_dotenv", lambda: None)
-    for variable in LANGFUSE_VARIABLES:
+    monkeypatch.setenv("LANGFUSE_BASE_URL", LOCAL_BASE_URL)
+    for variable in LANGFUSE_KEYS:
         monkeypatch.delenv(variable, raising=False)
     models = Models(
         describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
@@ -186,4 +188,43 @@ def test_without_keys_the_game_runs_untraced_with_the_sdk_warning(
     assert final_state(output)["result"] == "right guess"
     warnings = [r.getMessage() for r in caplog.records if r.name.startswith("langfuse")]
     assert any("without public_key" in w for w in warnings)
+
+
+def test_without_a_base_url_the_game_runs_untraced_with_a_warning(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """The real `build_client`, with `.env` not loaded, both keys present, and the base URL
+    absent: the client is built disabled (T2 audit F1), so nothing is traced and nothing could
+    go to Langfuse Cloud, and the game ends with its result in the output file."""
+    monkeypatch.setattr(tracing, "load_dotenv", lambda: None)
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-present")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-present")
+    monkeypatch.delenv("LANGFUSE_BASE_URL", raising=False)
+    monkeypatch.delenv("LANGFUSE_HOST", raising=False)
+    built: list[TracingClient] = []
+    real_build_client = tracing.build_client
+
+    def spy() -> TracingClient:
+        built.append(real_build_client())
+        return built[-1]
+
+    monkeypatch.setattr(tracing, "build_client", spy)
+    models = Models(
+        describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
+    )
+    output = tmp_path / SESSION / "game.json"
+    with caplog.at_level(logging.WARNING, logger="dont_say_oyster.tracing"):
+        code = main([CARD_ID, str(output)], client_for=models)
+    assert code == 0
+    assert final_state(output)["result"] == "right guess"
+    (client,) = built
+    assert client.public_key == DISABLED_PUBLIC_KEY
+    # The disabled client's tracer is the SDK's no-op one: a span made on it has no trace id,
+    # so nothing the game made was exported anywhere.
+    with client.client.start_as_current_observation(name="probe", as_type="span") as probe:
+        assert probe.trace_id == "0" * 32
+    assert [r.getMessage() for r in caplog.records if r.name == "dont_say_oyster.tracing"] == [
+        "LANGFUSE_BASE_URL is not set: tracing nothing, since the SDK would fall back to "
+        "Langfuse Cloud"
+    ]
 
