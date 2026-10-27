@@ -6,12 +6,16 @@ services:
     image: docker.langfuse.com/langfuse/langfuse:4.69.0
     mem_limit: 2g
   clickhouse:
+    image: docker.io/clickhouse/clickhouse-server:25.12@sha256:8a790dd3468db22b1d4e7b18a176f378ff5ff6053b9c48dd4ea1fa71a24c5ba6
     mem_limit: 3g
     volumes:
       - ./ch-config/zz-disable-logs.xml:/etc/clickhouse-server/config.d/zz-disable-logs.xml:ro
   minio:
+    image: cgr.dev/chainguard/minio@sha256:d88920d6a50bd0b088223b688be3b76c63e6205dbe494437f67ba1240ea12880
     mem_limit: 512m
   redis:
+    image: docker.io/redis:7@sha256:44960b3100c48159a66d28c18b0588c193492e25f7551d60e51dd464fc3eca5b
     mem_limit: 512m
   postgres:
+    image: docker.io/postgres:17@sha256:b8faeff7712663c2773a190181e1246e37e364b887611c04658c28b44e2408fe
     mem_limit: 1g
