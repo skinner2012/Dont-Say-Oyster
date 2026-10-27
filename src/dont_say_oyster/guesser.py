@@ -42,12 +42,14 @@ Ticket-level readings (T12, from the ticket and the M2 orchestrator, 2026-10-21)
   `call` tells apart from several calls. A tool-loop reply without a tool call leaves no
   entry; its latency and tokens are only on the wrapper's Reply (M3 traces every call).
 
-Trace metadata (M3 T3): each tool-loop call carries `round` and `call` (the call index) in its
-run metadata, and each run of the search tool carries the same two and `lookup`, the round's
-lookup counter after it [R43], so a tool span, a sibling of its call's generation span under E's
-span, is joined to that span by `(round, call)` and to its `Lookup` entry by the round and the
-counter. A call naming an unknown tool or a blocked call never runs the tool and has no tool
-span; a call the schema rejects runs it, and its span's output is the validation message."""
+Trace metadata (`SPEC.md` Goals, Evaluation and observability): every call carries `round` in
+its run metadata, so its span says which round it belongs to without reading its neighbours;
+each tool-loop call adds `call` (the call index), and each run of the search tool carries the
+same two and `lookup`, the round's lookup counter after it [R43], so a tool span, a sibling of
+its call's generation span under E's span, is joined to that span by `(round, call)` and to its
+`Lookup` entry by the round and the counter. A call naming an unknown tool or a blocked call
+never runs the tool and has no tool span; a call the schema rejects runs it, and its span's
+output is the validation message."""
 
 import json
 from collections.abc import Sequence
@@ -222,7 +224,9 @@ def node_e(
     schema = GUESS_ONLY_SCHEMA if state["guess_only"] else QUESTION_OR_GUESS_SCHEMA
     card = card_from_state(state)
     while True:
-        reply = call_structured(settings, messages, schema, attempt, client_for)
+        reply = call_structured(
+            settings, messages, schema, attempt, client_for, metadata={"round": state["round"]}
+        )
         kind: Literal["guess", "question"] = (
             "guess" if state["guess_only"] or reply.output["kind"] == "guess" else "question"
         )

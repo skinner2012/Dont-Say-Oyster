@@ -10,8 +10,9 @@ Each request carries run metadata for the trace (M3 T3): the role, the attempt n
 kind of call (`text`, `structured`, or `tools`), passed as `config["metadata"]` to `invoke`, so
 the callback handler puts them on the call's generation span; the handler sees the model tag but
 not the role, and cannot know the attempt number [R26], which the caller computes. A caller may
-add keys of its own (`metadata`): the Guesser's tool loop adds the round and the tool-loop call
-index, which its tool spans carry too, since a tool runs after the call returns and its span is
+add keys of its own (`metadata`): every node adds the round, so a span says which round it
+belongs to without reading its neighbours, and the Guesser's tool loop also adds the tool-loop
+call index; its tool spans carry both, since a tool runs after the call returns and its span is
 a sibling of the generation span, not its child. The token counts and the latency on the span
 need no code: the handler reads the same `usage_metadata` this wrapper reads, and the span's
 duration is the latency around the same `invoke`.

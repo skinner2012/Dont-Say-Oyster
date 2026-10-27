@@ -10,6 +10,8 @@ Ticket-level readings (T10, settled with the author through the M2 orchestrator,
   one with Chinese characters (T10 Detail, schema bullet).
 - The re-ask is a second structured call at attempt 2; the verdict row keeps the first call's
   verdict, latency, token counts, and attempt number and takes only the reason from the re-ask.
+- Both calls pass the round in their run metadata, so each span says which round it belongs to
+  without reading its neighbours in the trace (`SPEC.md` Goals, Evaluation and observability).
 
 Implementer's readings (T10, for the audit):
 - A reason of only whitespace counts as empty.
@@ -79,7 +81,8 @@ def node_d(
         raise ValueError("D reached with no description")
     texts = prompt_sections.sections(PROMPT_PATH)
     messages: list[BaseMessage] = [HumanMessage(build_prompt(state, texts[PROMPT]))]
-    first = call_structured(settings, messages, SCHEMA, 1, client_for)
+    round_key = {"round": state["round"]}
+    first = call_structured(settings, messages, SCHEMA, 1, client_for, metadata=round_key)
     reason: str | None = None  # only a fail keeps a reason [R40]
     reasks = 0
     if first.output["verdict"] == "fail":
@@ -91,7 +94,7 @@ def node_d(
                 AIMessage(json.dumps(first.output, ensure_ascii=False)),
                 HumanMessage(texts[REASK]),
             ]
-            second = call_structured(settings, reask, SCHEMA, 2, client_for)
+            second = call_structured(settings, reask, SCHEMA, 2, client_for, metadata=round_key)
             reason = second.output["reason"]
             if not _shown(reason):
                 reason = texts[FIXED_MESSAGE]

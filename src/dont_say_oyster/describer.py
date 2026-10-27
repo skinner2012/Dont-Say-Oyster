@@ -18,7 +18,9 @@ Ticket-level readings (T9, settled with the author through the M2 orchestrator, 
   model's message, then the fixed message, so the model sees what it wrote; only the last reply
   is shown, not every reply sent back for this output.
 - The attempt number is the [R11] count + 1 [R26]; G and D zero the count when they ask for a
-  new output, so B only reads it."""
+  new output, so B only reads it.
+- The call passes the round in its run metadata, so its span says which round it belongs to
+  without reading its neighbours in the trace (`SPEC.md` Goals, Evaluation and observability)."""
 
 from collections.abc import Sequence
 
@@ -120,6 +122,7 @@ def node_b(
         build_messages(state, sections),
         attempt=state["describer_send_backs"] + 1,
         client_for=client_for,
+        metadata={"round": state["round"]},
     )
     if state["owes"] == "answer":
         answer: Answer = {

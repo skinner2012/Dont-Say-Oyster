@@ -703,7 +703,7 @@ def test_tool_loop_calls_carry_round_and_call_and_each_search_run_adds_its_looku
     start: State, corpus: list[CorpusEntry], spy: Spy, tool_metadata: list[Any]
 ) -> None:
     # Call 1: two searches (lookups 1 and 2); call 2: an unknown tool (lookup 3, not run) and a
-    # search (lookup 4); call 3: no tool call. The structured call gets no metadata of E's.
+    # search (lookup 4); call 3: no tool call. The structured call carries the round only.
     state, _ = run(
         start, corpus,
         tool_reply({"keywords": ["oyster"]}, {"keywords": ["squid"]}),
@@ -716,7 +716,7 @@ def test_tool_loop_calls_carry_round_and_call_and_each_search_run_adds_its_looku
     )
     assert spy.kinds == ["tools", "tools", "tools", "structured"]
     assert [c.metadata for c in spy.calls] == [
-        {"round": 1, "call": 1}, {"round": 1, "call": 2}, {"round": 1, "call": 3}, None,
+        {"round": 1, "call": 1}, {"round": 1, "call": 2}, {"round": 1, "call": 3}, {"round": 1},
     ]
     assert tool_metadata == [
         {"round": 1, "call": 1, "lookup": 1},

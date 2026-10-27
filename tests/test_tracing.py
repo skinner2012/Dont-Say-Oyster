@@ -384,6 +384,10 @@ def test_every_generation_span_carries_its_role_attempt_kind_tokens_and_latency(
         # The span wraps the model's time: never shorter than the scripted reply's delay.
         assert duration >= DELAY
         assert abs(duration - result.latency) < 0.1
+    # Every generation span says its round, from the script: round 1 has three B, three D,
+    # three tool-bound E, and two structured E calls; round 2 has B's answer, E's tool-bound
+    # call, and its guess.
+    assert [metadata(s, "round") for s in game.generations] == [1] * 11 + [2] * 3
     assert [metadata(s, "kind") for s in game.generations] == [
         "text", "text", "structured", "structured", "text", "structured",  # round 1, B to D
         "tools", "tools", "tools", "structured", "structured",  # round 1, E
