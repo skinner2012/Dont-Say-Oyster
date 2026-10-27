@@ -50,7 +50,7 @@ T1 → T2 → T3 → T4, strictly in order: T1 puts the Langfuse stack and the c
       oyster-langfuse-postgres-1          0.03%     44.08MiB / 1GiB     4.30%
       oyster-langfuse-redis-1             0.77%     10.48MiB / 512MiB   2.05%
       ```
-      Sum about 1.51 GiB and about 0.1 core, in line with the 2026-10-23 measurement in `docs/DECISIONS.md`.
+      Sum about 1.51 GiB and about 0.1 core. This is a floor, not the idle value: the auditor's sample about three minutes after the start summed to about 1.87 GiB and 0.12 core, with ClickHouse at 641.5 MiB (background merges and cache allocation after the first-start migrations) and web at 668.4 MiB; the 2026-10-23 measurement in `docs/DECISIONS.md` (about 1.7 GiB) sits between the two.
     - `git status --short --ignored` lists `.env` and `infra/langfuse/.env` as ignored; neither was staged. The stack was left running.
     - Not pinned by this ticket: only the two Langfuse images carry an exact tag; ClickHouse (`25.12`), Postgres (`17`), and Redis (`7`) are upstream's floating major or minor tags, and MinIO has no tag (`latest`). The IDs above are what this start ran.
 - **Acceptance:** from the repo root with a filled-in `infra/langfuse/.env`, the start command brings the six containers up and `curl -s localhost:3000/api/public/health` returns `"status":"OK"` with the pinned version; `uv run --env-file .env python -c "from langfuse import get_client; assert get_client().auth_check()"` exits 0 from the repo root; `git status` shows no `.env` staged; the record is in this Detail.
