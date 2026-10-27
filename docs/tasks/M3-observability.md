@@ -26,6 +26,33 @@ T1 → T2 → T3 → T4, strictly in order: T1 puts the Langfuse stack and the c
   - `pyproject.toml`: `langfuse==5.0.4` (the exact pin; `CLAUDE.md` Rules of engagement, pin everything that affects reproducibility; Langfuse's LangChain integration page says SDK 5 needs `langchain-core>=1`, which the already locked 1.6.10 satisfies, so the pin adds no LangChain dependency). No code uses it in this ticket.
   - `CLAUDE.md` `## Commands` gains three lines, each run from the repo root like the others: start (`docker compose --project-directory infra/langfuse -p oyster-langfuse up -d`; Compose reads `infra/langfuse/.env` from that project directory), stop (the same with `stop`, never `down -v`, which deletes the volumes), and health (`curl -s localhost:3000/api/public/health`, which M7's batch script will call before each game). Nothing else in `CLAUDE.md` changes.
   - No test. The record, written into this Detail: the date; `docker --version` and the runtime (`docker info` OS field); the image tags and IDs after the pull; the health response with its version field; the idle `docker stats` line per container about one minute after start; and the `auth_check()` result of the SDK against the keys in the repo-root `.env` (the SDK does not read `.env` itself; the command below loads it with `uv run --env-file`).
+  - **Record** (2026-10-26), code at d464cc6:
+    - `docker --version`: `Docker version 29.4.0, build 9d7ad9f`; runtime (`docker info` OS field): `OrbStack`. The images were already pulled before the run (Consumes, 2026-10-23); the five volumes of project `oyster-langfuse` were created by this start at 18:13:17 PDT, so this was a first start with the `LANGFUSE_INIT_*` values from `infra/langfuse/.env`.
+    - Start command from the repo root at 18:13:17 PDT: all six containers created and started; Postgres, Redis, MinIO, and ClickHouse reported healthy before web and worker started (upstream's `depends_on` conditions).
+    - Images, tag and ID, as `docker compose ... images` lists them:
+      ```
+      langfuse-web     docker.langfuse.com/langfuse/langfuse:4.69.0         e4cc4bfd0f77
+      langfuse-worker  docker.langfuse.com/langfuse/langfuse-worker:4.69.0  48f8af2c4b6b
+      clickhouse       clickhouse/clickhouse-server:25.12                   8a790dd3468d
+      postgres         postgres:17                                          b8faeff77126
+      redis            redis:7                                              44960b3100c4
+      minio            cgr.dev/chainguard/minio:latest                      d88920d6a50b
+      ```
+    - Health, first `"status":"OK"` at 18:13:37 PDT (20 seconds after the start, polled every 3 seconds): `{"status":"OK","version":"4.69.0"}`.
+    - `auth_check()`: `uv run --env-file .env python -c "from langfuse import get_client; assert get_client().auth_check()"` from the repo root exited 0 at 18:13:51 PDT (`auth_check()` returned `True`), with SDK 5.0.4 against the key pair in the repo-root `.env`.
+    - Idle `docker stats --no-stream` at 18:14:25 PDT, 68 seconds after the start, no traces sent:
+      ```
+      NAME                                CPU %     MEM USAGE / LIMIT   MEM %
+      oyster-langfuse-clickhouse-1        2.59%     304MiB / 3GiB       9.90%
+      oyster-langfuse-langfuse-web-1      0.43%     725.9MiB / 2GiB     35.45%
+      oyster-langfuse-langfuse-worker-1   2.57%     400.6MiB / 2GiB     19.56%
+      oyster-langfuse-minio-1             3.22%     62.38MiB / 512MiB   12.18%
+      oyster-langfuse-postgres-1          0.03%     44.08MiB / 1GiB     4.30%
+      oyster-langfuse-redis-1             0.77%     10.48MiB / 512MiB   2.05%
+      ```
+      Sum about 1.51 GiB and about 0.1 core, in line with the 2026-10-23 measurement in `docs/DECISIONS.md`.
+    - `git status --short --ignored` lists `.env` and `infra/langfuse/.env` as ignored; neither was staged. The stack was left running.
+    - Not pinned by this ticket: only the two Langfuse images carry an exact tag; ClickHouse (`25.12`), Postgres (`17`), and Redis (`7`) are upstream's floating major or minor tags, and MinIO has no tag (`latest`). The IDs above are what this start ran.
 - **Acceptance:** from the repo root with a filled-in `infra/langfuse/.env`, the start command brings the six containers up and `curl -s localhost:3000/api/public/health` returns `"status":"OK"` with the pinned version; `uv run --env-file .env python -c "from langfuse import get_client; assert get_client().auth_check()"` exits 0 from the repo root; `git status` shows no `.env` staged; the record is in this Detail.
 - **Out of scope:** any game code or test (T2, T3); a health-check function in Python (M7, where the batch script needs it); retention, backups, Kubernetes, or Langfuse Cloud; upgrading past the pinned tag.
 - **Depends on:** M2
