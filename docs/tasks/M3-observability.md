@@ -16,7 +16,7 @@ T1 → T2 → T3 → T4, strictly in order: T1 puts the Langfuse stack and the c
 ## Tickets
 
 ### T1 — Langfuse stack and client library in the repo
-- **Status:** todo
+- **Status:** done d464cc6
 - **Produces:** `infra/langfuse/` holding the pinned Docker Compose files and the ClickHouse config, and the repo-root `env.sample.langfuse` (committed ahead of the ticket, 2026-10-26); `langfuse` pinned in `pyproject.toml` with the matching `uv.lock` change; the start, stop, and health commands in `CLAUDE.md` `## Commands`; and the record of one start on this machine, written into this Detail.
 - **Consumes:** the files already copied, uncommitted, into `infra/langfuse/` on 2026-10-23: the upstream `docker-compose.yml` (copied unedited from github.com/langfuse/langfuse at commit 09f29e2 of 2026-10-23), `docker-compose.override.yml`, `ch-config/zz-disable-logs.xml`; and the repo-root `env.sample.langfuse` (committed on 2026-10-26).
 - **Detail:**
@@ -111,3 +111,11 @@ Q1, Q2, and Q3 were answered by the author in chat on 2026-10-25: Q1, no `--sess
 
 ## Audit findings
 
+- T1 F1: the record's 68-second memory sample (1.51 GiB) was called "in line with" the 2026-10-23 figure; a sample three minutes after the start gave 1.87 GiB, ClickHouse doubling meanwhile; fixed c6310ed (both samples recorded, the first named a floor).
+- T1 F2: the health line in `CLAUDE.md` `## Commands` is `curl` without `-f`, so it exits 0 on an HTTP 503; "each must exit 0" does not mean healthy, and M7's batch script must read `"status":"OK"` from the body, not the exit code. Deferred to M7.1 (author, 2026-10-26).
+- T1 F3: only the two Langfuse images were pinned to an exact version; ClickHouse `25.12`, Postgres `17`, Redis `7`, and the untagged MinIO image could change on a re-pull; fixed fa51d0f (the four pinned by digest to the images running at the record; the next `up -d` recreates those four containers once, volumes untouched). The record's "Not pinned by this ticket" bullet describes d464cc6 and stays.
+- T1 F4: upstream's `restart: always` on all six containers brings the stack back with OrbStack or after a crash, so it shares the 64 GB with the three models without being started by hand. Note for T4 and M7 (author, 2026-10-26).
+- T1 F5: web (3000) and MinIO (9090) are published on all interfaces, as upstream ships them; secrets are random. Note (author, 2026-10-26).
+- T1 F6: ClickHouse keeps `query_log`, `part_log`, and `background_schedule_pool_log`, which the config does not remove; harmless at this project's volume. Note (author, 2026-10-26).
+- T1 F7: `env.sample.langfuse` covers every `# CHANGEME` variable of the compose file and every variable set in `infra/langfuse/.env` (names only); the compose file is byte-identical to upstream 09f29e2. No change.
+- T1 F8: the record writes MinIO's tag as `latest` where the compose file has no tag; `docker compose images` prints `latest`. No change.
