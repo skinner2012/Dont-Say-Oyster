@@ -1,7 +1,7 @@
 """The V2 graph of one game (Full flow of one game, the V2 column): G, B, C, D, E, and F as one
 LangGraph graph, and `play_game`, which runs it on one card.
 
-Node A is not a graph node: `node_a` (T8) builds the initial State from the card id, and the
+Node A is not a graph node: `node_a` builds the initial State from the card id, and the
 graph starts at G with that State as its input, so an unknown card id raises before any model
 call (A → G is kept). The model nodes B, D, and E take their ModelSettings, the client factory,
 and (E) the corpus beside State; `build_graph` wraps each in a closure, so every graph node is
@@ -11,16 +11,16 @@ names here.
 
 Edges, the V2 column: G → B; B → C; C → B (send-back), D (description), E (answer), or F
 (violation); D → B (reject) or E (pass or forced pass); E → G (valid question) or F (guess or
-violation); F → G (new round) or the end. In M2 a description always goes to D; the V0–V1 edge
-C → E for a description is M4's.
+violation); F → G (new round) or the end. For now a description always goes to D; the V0–V1 edge
+C → E for a description is not built yet.
 
 The recursion limit is set explicitly from the worst case (see `WORST_CASE_STEPS`), never from
 LangGraph's default: langgraph 1.2.16 defaults to 10007 steps, earlier versions to 25, below a
 ten-round V2 game.
 
-Tracing (`SPEC.md` M3): given a `TracingClient` (`tracing.py`), `play_game` runs node A inside
-its span and passes the Langfuse callback handler in the graph's config, so each node visit is
-a chain span named by the node's single-letter name, matching the node table in `SPEC.md` Full
+Tracing (`SPEC.md` Milestones, M3): given a `TracingClient` (`tracing.py`), `play_game` runs node A
+inside its span and passes the Langfuse callback handler in the graph's config, so each node visit
+is a chain span named by the node's single-letter name, matching the node table in `SPEC.md` Full
 flow of one game, under the game span `play.main` opens."""
 
 from collections.abc import Sequence

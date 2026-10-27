@@ -3,14 +3,14 @@ one V2 game on one card through the graph (`graph.play_game`), writes the final 
 JSON file to the output path, and prints the outcome with the round, question, reject, and
 forced pass counts.
 
-Parameters (`SPEC.md` Implementation, Commands, without the variant (M4) and the memory file
-(M6)): the card id and the output path; the cards and corpus paths; the model and num_ctx per
-role; the temperature; thinking on or off per role. The Ollama endpoint comes from `.env`
-through `llm.ollama_client`. keep_alive is not a parameter (`SPEC.md` Implementation, Models):
-the Challenger gets 0, so it is unloaded after each call, and the Describer and the Guesser get
-one fixed value, `KEEP_ALIVE_RESIDENT`, that keeps them loaded.
+Parameters (`SPEC.md` Implementation, Commands, without the variant and the memory file, which
+are not built yet): the card id and the output path; the cards and corpus paths; the model and
+num_ctx per role; the temperature; thinking on or off per role. The Ollama endpoint comes from
+`.env` through `llm.ollama_client`. keep_alive is not a parameter (`SPEC.md` Implementation,
+Models): the Challenger gets 0, so it is unloaded after each call, and the Describer and the Guesser
+get one fixed value, `KEEP_ALIVE_RESIDENT`, that keeps them loaded.
 
-Output: until the JSONL record (M4), the output file is the final State as JSON, the
+Output: until the JSONL record exists, the output file is the final State as JSON, the
 program-only fields (`state.PROGRAM_ONLY`) included, since nothing else records them yet. The
 printed line gives the outcome (one of the four F results and who wins) and the counts; the
 reject count printed is the whole game's (the length of the earlier rejected descriptions row),
@@ -21,14 +21,14 @@ is written, and the exit code is non-zero. An unknown card id, and an output pat
 written (its parent directory is created if missing), each exit non-zero before any model
 call.
 
-Tracing (`SPEC.md` M3, `tracing.py`): the Langfuse client is built once per game from `.env`
-after the checks above; with it, the game runs inside a span named by the card id with the
+Tracing (`SPEC.md` Milestones, M3, `tracing.py`): the Langfuse client is built once per game from
+`.env` after the checks above; with it, the game runs inside a span named by the card id with the
 session id taken from the output file's directory, and the client is flushed in a `finally`, so
 a game stopped by a model error still exports the spans it made, the game span ended in error.
 No client (`build_client` returns None, after its warning, when a key or the base URL is
 missing) means no tracing: the game runs with no span, no handler, and no flush. With wrong
 keys the client is built and the exporter logs each rejected export. None of the three stops
-the game (T2, Q2)."""
+the game (author, 2026-10-25)."""
 
 import argparse
 import json
@@ -53,7 +53,7 @@ from dont_say_oyster.state import State, winner
 
 CORPUS_PATH = REPO_ROOT / "data" / "corpus" / "corpus.json"
 
-# Role defaults: SPEC.md Implementation (Models) with T1's tags and num_ctx readings.
+# Role defaults: SPEC.md Implementation (Models) with the tags and num_ctx checked on Ollama.
 DEFAULT_MODELS = {
     "describer": "qwen3.8:27b-q4_K_M",
     "challenger": "gemma4:12b-it-q4_K_M",
@@ -68,14 +68,15 @@ ROLE_NAMES = {"describer": "Describer", "challenger": "Challenger", "guesser": "
 # keep the model loaded until an explicit unload or memory pressure), not a duration, because a
 # duration is a guess at the longest idle gap of a resident model: with thinking on, a round's
 # Describer calls can idle the Guesser for over half an hour, and a duration shorter than that
-# would unload it mid-game and reopen the Q19 eviction question (T13 F2, author, 2026-10-22).
+# would unload it mid-game and reopen the Q19 eviction question (author, 2026-10-22).
 KEEP_ALIVE_RESIDENT: KeepAlive = -1
 KEEP_ALIVE_CHALLENGER: KeepAlive = 0
 
 
 def thinking(model: str, on: bool) -> Thinking:
-    """Ollama's `think` value for thinking off or on (T2's record): off is False for every
-    model; on is "medium" for Qwen 3.8, which takes levels, and True for the Gemma tags."""
+    """Ollama's `think` value for thinking off or on (checked on Ollama, 2026-10-19): off is False
+    for every model; on is "medium" for Qwen 3.8, which takes levels, and True for the Gemma
+    tags."""
     if not on:
         return False
     return "medium" if model.startswith("qwen3.8") else True
@@ -165,7 +166,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def prepare_output(path: Path) -> None:
-    """Make the output path writable before the game runs (T13 F1), so a missing directory or an
+    """Make the output path writable before the game runs, so a missing directory or an
     unwritable path fails before any model call instead of after a long live run: create the
     parent directory and open the file for append, removing the file again when it did not
     exist, so a game that stops on a model error leaves no output file. Raises OSError when the

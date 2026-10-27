@@ -5,19 +5,19 @@ or a forced pass fills the row the Guesser reads and appends the description to 
 descriptions and answers (State schema, the note under the table); a reject appends it to the
 earlier rejected descriptions with its reason and asks B for a new description.
 
-Ticket-level readings (T10, settled with the author through the M2 orchestrator, 2026-10-21):
+Readings settled with the author on 2026-10-21:
 - `reason` is a required string that may be empty; on a fail an empty reason is re-asked like
-  one with Chinese characters (T10 Detail, schema bullet).
+  one with Chinese characters.
 - The re-ask is a second structured call at attempt 2; the verdict row keeps the first call's
   verdict, latency, token counts, and attempt number and takes only the reason from the re-ask.
 - Both calls pass the round in their run metadata, so each span says which round it belongs to
   without reading its neighbours in the trace (`SPEC.md` Goals, Evaluation and observability).
 
-Implementer's readings (T10, for the audit):
+Implementer's readings, for the audit:
 - A reason of only whitespace counts as empty.
 - The re-ask shows the model its first reply as the parsed object written back as JSON; the
   wrapper does not return the raw text.
-- D writes its route into the program-only `d_route` (T10 F1), since a second reject leaves the
+- D writes its route into the program-only `d_route`, since a second reject leaves the
   same verdict and reject counter as a forced pass."""
 
 import json

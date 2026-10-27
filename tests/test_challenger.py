@@ -1,5 +1,5 @@
 """Node D (Challenger) and the reject loop with scripted Challenger replies on the committed card
-烤蚵仔 (T10 Acceptance)."""
+烤蚵仔."""
 
 import json
 from typing import Any

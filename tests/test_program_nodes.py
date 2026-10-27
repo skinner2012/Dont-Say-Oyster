@@ -1,4 +1,4 @@
-"""State and the program nodes A, G, and F on the committed card 烤蚵仔 (T8 Acceptance)."""
+"""State and the program nodes A, G, and F on the committed card 烤蚵仔."""
 
 import json
 import types

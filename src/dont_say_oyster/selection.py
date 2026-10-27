@@ -3,7 +3,7 @@ batch manifests list them in. Run as `uv run select-cards CORPUS SELECTION` to w
 selection, a JSON array of forty official names in the order of the ordering criterion; it is
 the input of `pick-distractors --names` and of `build-cards`.
 
-Both criteria are the author's, in T7 of `docs/tasks/M1-corpus.md`:
+Both criteria are the author's, in `docs/tasks/M1-corpus.md`:
 
 - Selection: the corpus is split by Dish type and Physical form into the ten GROUPS below, in
   that order. Each group gets a quota in proportion to its size, forty in all, by the
@@ -18,7 +18,7 @@ Both criteria are the author's, in T7 of `docs/tasks/M1-corpus.md`:
   second from each, and so on, skipping a group with no cards left; within a group, the order
   it was drawn in.
 
-Changing the seed means changing T7's selection criterion and SEED together."""
+Changing the seed means changing the selection criterion above and SEED together."""
 
 import argparse
 import json

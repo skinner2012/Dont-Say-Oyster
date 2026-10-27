@@ -1,6 +1,6 @@
-"""Langfuse tracing of one game: one game is one trace, one batch is one session (`SPEC.md` M3;
-Goals, Evaluation and observability). This module owns every `langfuse` import; the rest of the
-program sees a `TracingClient` and the functions here.
+"""Langfuse tracing of one game: one game is one trace, one batch is one session (`SPEC.md`
+Milestones, M3; Goals, Evaluation and observability). This module owns every `langfuse` import; the
+rest of the program sees a `TracingClient` and the functions here.
 
 The client: `build_client`, called once per game by `play.main`, reads `LANGFUSE_PUBLIC_KEY`,
 `LANGFUSE_SECRET_KEY`, and `LANGFUSE_BASE_URL`, loaded with python-dotenv from the repo-root
@@ -12,18 +12,18 @@ key it builds a disabled client that still reads the keys from the environment, 
 missing base URL it falls back to `LANGFUSE_HOST` and then to Langfuse Cloud, which would send
 the prompts off the machine (`docs/DECISIONS.md`, 2026-10-23, rejected Cloud). With wrong keys
 the client is built and the exporter logs each rejected export. In every case the game runs to
-its end, since the health check before each game is M7's (T2, Q2). The `TracingClient` carries
-the public key beside the SDK client because the callback handler finds its client in the SDK's
-process-wide registry by that key, and the SDK client does not expose the key it holds; the
-tests register several in-memory clients in one process.
+its end, since the health check before each game belongs to the batch script (author, 2026-10-25).
+The `TracingClient` carries the public key beside the SDK client because the callback handler finds
+its client in the SDK's process-wide registry by that key, and the SDK client does not expose the
+key it holds; the tests register several in-memory clients in one process.
 
 The trace: `game_span` wraps one game in a span named by the card id, the trace's root, and
 propagates the session id and the trace name (the card id, also in the trace metadata) to every
 span under it. The session id is the name of the output file's parent directory after the path
 is resolved (`session_id`), so `out.json` in the current directory gets that directory's name,
 a game run by hand into `runs/t14/` lands in session `t14`, and a batch's records written next
-to its manifest (BACKLOG M7) share one session; the one-game command gains no parameter (T2,
-Q1).
+to its manifest share one session; the one-game command gains no parameter (author,
+2026-10-25).
 
 The spans: node A runs before the graph and gets no span from the callback handler, so
 `node_a_span` makes one named `A`; the graph's nodes get chain spans named by their node names

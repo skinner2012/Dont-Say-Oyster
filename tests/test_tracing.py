@@ -1,8 +1,8 @@
-"""One scripted game is one trace (M3 T2): the spans a game exports through an in-memory
+"""One scripted game is one trace: the spans a game exports through an in-memory
 exporter, counted by name and type, with the session id and the trace name on every one; the
 game span ended in error after a model error, the spans before it still exported; the session
 id from the output path; and `build_client` with a variable missing, which returns None after
-one warning, so the game runs untraced. The per-call values on the spans (M3 T3): the role,
+one warning, so the game runs untraced. The per-call values on the spans: the role,
 attempt, and kind on every generation span, with the token counts and the latency of the
 wrapper's Reply; the round, call, and lookup on every tool span; and the events State does not
 keep (send-backs, re-asks, a reply with no tool call), each as its own span. No test needs the
@@ -243,7 +243,7 @@ def test_without_keys_the_game_runs_untraced_after_one_warning(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     """Both keys absent, the base URL present: no client, one warning naming both keys, and the
-    game ends with its result in the output file (T2, Q2)."""
+    game ends with its result in the output file (author, 2026-10-25)."""
     environment(monkeypatch, "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY")
     code, output, built = run_with_the_real_build_client(tmp_path, monkeypatch, caplog)
     assert code == 0
@@ -258,8 +258,8 @@ def test_without_a_base_url_the_game_runs_untraced_after_one_warning(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     """Both keys present, the base URL absent: no client, so nothing could go to Langfuse Cloud
-    (T2 audit F1), one warning saying so, and the game ends with its result in the output
-    file."""
+    (rejected, `docs/DECISIONS.md`, 2026-10-23), one warning saying so, and the game ends with its
+    result in the output file."""
     environment(monkeypatch, "LANGFUSE_BASE_URL")
     code, output, built = run_with_the_real_build_client(tmp_path, monkeypatch, caplog)
     assert code == 0
@@ -271,7 +271,7 @@ def test_without_a_base_url_the_game_runs_untraced_after_one_warning(
     ]
 
 
-# The per-call values on the spans (M3 T3).
+# The per-call values on the spans.
 
 CHINESE_REASON = "The batter (麵糊) also fits a fried oyster fritter."
 ENGLISH_REASON = "The batter also fits a fried oyster fritter."
@@ -333,7 +333,7 @@ class Game:
 
 @pytest.fixture
 def every_event_game(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Game:
-    """One scripted two-round game holding every event T3 lists.
+    """One scripted two-round game holding every kind of event the trace records.
 
     Round 1: a description with Chinese, sent back once [R11], then a clean one, which the
     Challenger fails with a Chinese reason and is re-asked for an English one [R40]; rejected,

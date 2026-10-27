@@ -117,7 +117,7 @@ def test_select_writes_forty_names_and_a_second_run_writes_the_same(
 def test_select_follows_the_criteria_as_written(
     tmp_path: Path, corpus_path: Path, corpus: list[CorpusEntry]
 ) -> None:
-    """Replays T7's selection and ordering criteria step by step and compares."""
+    """Replays the selection and ordering criteria of `selection.py` step by step and compares."""
     pools: list[list[CorpusEntry]] = [[] for _ in GROUPS]
     for entry in corpus:  # corpus file order
         pools[group_index(entry)].append(entry)

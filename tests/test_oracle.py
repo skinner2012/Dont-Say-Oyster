@@ -1,4 +1,4 @@
-"""Oracle checks on the committed card 烤蚵仔 and the committed corpus (T7 Acceptance)."""
+"""Oracle checks on the committed card 烤蚵仔 and the committed corpus."""
 
 from dataclasses import replace
 
@@ -41,7 +41,7 @@ def test_guess_simplified_alias_is_right_as_the_alias(card: Card) -> None:
 
 def test_guess_reports_the_first_match_in_card_order(card: Card) -> None:
     """Two aliases equal only after normalization both equal the guess; the check names the
-    first in the card's list order (T6 audit)."""
+    first in the card's list order."""
     twin = replace(card, aliases=("蚵煎", "蚵 煎"))
     result = check_guess("蚵 煎", twin)
     assert result.correct
@@ -69,8 +69,9 @@ def test_guess_in_chinese_but_wrong(card: Card) -> None:
 
 
 def test_guess_with_an_english_tail_is_wrong(corpus: list[CorpusEntry]) -> None:
-    """Q20: the decorated guess from T3's live run, on a card made from its own corpus entry, is
-    in Chinese but equals no name after normalization, so it is wrong under [R20] as written."""
+    """Q20: the decorated guess from the live tool-calling check, on a card made from its own corpus
+    entry, is in Chinese but equals no name after normalization, so it is wrong under [R20] as
+    written."""
     (entry,) = [e for e in corpus if e.official_name == "黑糖珍珠鮮奶"]
     own = Card(
         card_id=card_id(entry.official_name),
@@ -175,7 +176,7 @@ def test_question_with_a_non_distractors_english_name_is_valid(
     card: Card, corpus: list[CorpusEntry]
 ) -> None:
     """Only the card's distractors are looked up, by official name [R17]; another corpus entry's
-    English name leaves the question valid (T7 F1)."""
+    English name leaves the question valid."""
     (entry,) = [e for e in corpus if e.official_name == "豬血糕"]
     assert "Pig's blood cake" in entry.english_names
     assert entry.official_name not in card.distractors

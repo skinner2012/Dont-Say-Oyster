@@ -1,12 +1,12 @@
 """The data test: loads the committed corpus, cards file, and manifests, so every commit that
 touches them is checked by the normal test command. The corpus part skips only while the corpus
-file is absent (before T4). The card part loads the cards file, runs the manifest check,
-reselects the forty names from the committed corpus, failing when the result differs from the
-committed selection (T8 F5), and rebuilds the cards from the committed corpus, selection, and
-distractor file, failing when the result differs from the committed cards file or manifests
-(T7 F1). It skips only while the cards
-file and all four manifests are absent (before T8), and fails when some card files (those five,
-the selection, and the distractor file) are present and some are not."""
+file is absent (before it is committed). The card part loads the cards file, runs the manifest
+check, reselects the forty names from the committed corpus, failing when the result differs from the
+committed selection, and rebuilds the cards from the committed corpus, selection, and
+distractor file, failing when the result differs from the committed cards file or manifests.
+It skips only while the cards
+file and all four manifests are absent (before they are built), and fails when some card files
+(those five, the selection, and the distractor file) are present and some are not."""
 
 import json
 import shutil

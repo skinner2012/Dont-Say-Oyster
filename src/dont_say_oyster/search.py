@@ -3,16 +3,16 @@
 from `data/corpus/schema.json`; the model-facing text (tool, field, and keyword descriptions and
 the rejection messages) is `prompts/search_tool.json`.
 
-Schema shape, from T3's record and audit: each filter is `list[Literal[...]]` defaulting to empty,
-never an `Optional` (an `anyOf`, which reaches Ollama as `{}` with its enum gone). The ollama
-client drops `additionalProperties`, `uniqueItems`, and `minItems`, so what they would say is
-checked here, program-side.
+Schema shape, from the live tool-calling check of 2026-10-19: each filter is `list[Literal[...]]`
+defaulting to empty, never an `Optional` (an `anyOf`, which reaches Ollama as `{}` with its enum
+gone). The ollama client drops `additionalProperties`, `uniqueItems`, and `minItems`, so what they
+would say is checked here, program-side.
 
 A call the schema rejects (a value outside its field's list, an unknown argument, or no filter and
 no keyword [R44]) is not searched: the tool returns the validation message as its result and
 does not raise (SPEC.md Recovery, forks, and replay, Model errors). Counting lookups is node E's.
 
-Ticket-level readings (T11, answered for the author by the M2 orchestrator, 2026-10-20):
+Readings answered for the author on 2026-10-20:
 - The result: `search` returns a SearchResult, at most ten hits in corpus order and whether
   more entries matched [R46]; a Hit has no forbidden words [R45]. The tool returns content and
   artifact: the content is the JSON the model reads, `{"results": [...], "more_results": bool}`;
@@ -28,7 +28,7 @@ Ticket-level readings (T11, answered for the author by the M2 orchestrator, 2026
   heading drops its value list (the enum carries it) and its cardinality ("required, one"), and
   the authoring bullets are left out: the cardinality and those bullets describe corpus entries,
   and in a filter, where every field is an optional list, the Guesser could read them as the
-  filter's rule (T11 F1)."""
+  filter's rule."""
 
 import json
 from collections.abc import Sequence
@@ -73,7 +73,7 @@ def _dedupe(values: list[str]) -> list[str]:
 
 
 def _not_empty(keyword: str) -> str:
-    """Reject a keyword that T5's English normalization [R22] leaves empty."""
+    """Reject a keyword that the English normalization [R22] leaves empty."""
     if not english_normalize(keyword):
         raise PydanticCustomError("empty_keyword", TEXTS["messages"]["empty_keyword"])
     return keyword

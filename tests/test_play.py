@@ -1,8 +1,8 @@
 """Whole V2 games through the `play-game` command on the committed card 烤蚵仔 and the committed
-corpus, with one scripted model per role injected through `main(argv, client_for=...)` (T13
-Acceptance); the recursion limit and its arithmetic; the settings the command builds; the
-errors; `--help`. Every test traces into memory (`in_memory_tracing`, M3 T2): none reads the
-developer's Langfuse keys or reaches the stack."""
+corpus, with one scripted model per role injected through `main(argv, client_for=...)`; the
+recursion limit and its arithmetic; the settings the command builds; the errors; `--help`. Every
+test traces into memory (`in_memory_tracing`): none reads the developer's Langfuse keys or reaches
+the stack."""
 
 import json
 import logging
@@ -356,7 +356,7 @@ def test_the_worst_case_game_reaches_f_without_hitting_the_recursion_limit(
     code, output = run(tmp_path, models)
     assert code == 0
     assert_worst_case_outcome(final_state(output))
-    # The one invoke: the limit, and the tracing handler the game's config carries (M3 T2).
+    # The one invoke: the limit, and the tracing handler the game's config carries.
     (config,) = configs
     assert set(config) == {"recursion_limit", "callbacks"}
     assert config["recursion_limit"] == RECURSION_LIMIT
@@ -548,7 +548,7 @@ def test_the_command_configures_logging_so_num_ctx_warnings_appear(
     assert code == 0
     assert len(configured) == 1 and configured[0]["level"] == logging.WARNING
     # The program's warnings only: the Langfuse handler also warns once per model call that it
-    # cannot read a model name off the scripted fake, which a ChatOllama has (M3 T2).
+    # cannot read a model name off the scripted fake, which a ChatOllama has.
     warnings = [
         r.getMessage()
         for r in caplog.records

@@ -241,7 +241,7 @@ def test_tool_schema_lists_each_fields_values_exactly_as_schema_json() -> None:
 
 
 def test_enums_survive_the_ollama_tool_type() -> None:
-    # The ollama client drops keys it does not name; an anyOf would lose the enum (T3).
+    # The ollama client drops keys it does not name; an anyOf would lose the enum.
     sent = Tool.model_validate(convert_to_openai_tool(search_tool(CORPUS))).model_dump(
         exclude_none=True
     )

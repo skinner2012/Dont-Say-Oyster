@@ -3,9 +3,9 @@ tool loop with the search tool bound [R43], [R49], the separate structured call 
 or a guess [R47], [R48], the invalid-question loop [R17], and E's routing.
 
 E is a plain `State -> State` function taking its ModelSettings, the loaded corpus, and the
-client factory as parameters; no model tag is fixed here (T13 passes the constants).
+client factory as parameters; no model tag is fixed here (`play.py` passes the constants).
 
-Ticket-level readings (T12, from the ticket and the M2 orchestrator, 2026-10-21):
+Readings settled on 2026-10-21:
 - The prompt file is parsed by its `=== name ===` sections; the model gets the `prompt`
   section with `{task}` replaced by the task section matching the schema. The slots are the
   Guesser's items in Information isolation: the round and question counters, the earlier
@@ -21,7 +21,7 @@ Ticket-level readings (T12, from the ticket and the M2 orchestrator, 2026-10-21)
   call to a tool name other than the search tool's is treated like a call the schema rejects:
   counted, recorded under its name with a message saying the tool is unknown, not run. The
   loop goes on only while the last reply had tool calls and none was blocked. The Ollama client
-  matches tool results to calls by order (T3 F3), so every tool call gets a result in order.
+  matches tool results to calls by order, not by id, so every tool call gets a result in order.
 - The structured call sends the schema as Ollama's format over the whole history, with no
   tool bound. Both schemas require `confidence`, also on a question, because Ollama's
   enforcement of conditional schemas is untested; the program drops it on a question
@@ -40,7 +40,7 @@ Ticket-level readings (T12, from the ticket and the M2 orchestrator, 2026-10-21)
 - The lookup record is one `Lookup` (state.py) per lookup run, in order; the tool-loop call's
   latency, token counts, and attempt number repeat across the lookups of one reply, which
   `call` tells apart from several calls. A tool-loop reply without a tool call leaves no
-  entry; its latency and tokens are only on the wrapper's Reply (M3 traces every call).
+  entry; its latency and tokens are only on the wrapper's Reply (the trace has them for every call).
 
 Trace metadata (`SPEC.md` Goals, Evaluation and observability): every call carries `round` in
 its run metadata, so its span says which round it belongs to without reading its neighbours;

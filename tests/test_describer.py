@@ -1,5 +1,5 @@
 """Node B (Describer) and node C with the [R11] send-back loop, on scripted Describer replies and
-the committed card 烤蚵仔 (T9 Acceptance)."""
+the committed card 烤蚵仔."""
 
 import re
 from typing import Any, Literal
@@ -309,7 +309,7 @@ def test_chinese_chinese_then_clean_reaches_d_with_the_fixed_message_and_attempt
 def test_after_a_reject_the_new_description_gets_its_own_two_send_backs(round_1: State) -> None:
     state, route, attempts = _run(round_1, recording(CHINESE, CHINESE, CLEAN))
     assert (route, attempts, state["describer_send_backs"]) == ("D", [1, 2, 3], 2)
-    # D's fail, as T10 leaves the State: the reject counted, the [R11] count zeroed.
+    # D's fail, as the Challenger node leaves the State: the reject counted, the [R11] count zeroed.
     rejected: State = {
         **state,
         "rejects": 1,

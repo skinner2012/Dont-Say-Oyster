@@ -1,5 +1,5 @@
 """The model-call wrapper with a scripted chat model: what each call returns, the run metadata
-each request carries for the trace (M3 T3), the num_ctx warning, the client's settings, and the
+each request carries for the trace, the num_ctx warning, the client's settings, and the
 errors [R26]."""
 
 import json

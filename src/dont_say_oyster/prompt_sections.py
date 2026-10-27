@@ -1,5 +1,5 @@
 """The `=== name ===` sections of the author's prompt files (`prompts/*.txt`), one parser for
-every role (T10 F3). A header is a line `=== name ===`, trailing whitespace allowed; a section's
+every role. A header is a line `=== name ===`, trailing whitespace allowed; a section's
 text runs to the next header and is stripped of surrounding whitespace; text before the first
 header is ignored. Each file is read once per path."""
 

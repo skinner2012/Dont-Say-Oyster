@@ -1,7 +1,7 @@
 """The program nodes A, G, F, and C (Full flow of one game) and the routing of F and C. Each
 node takes the State and returns a new State; none calls a model.
 
-Ticket-level readings (T8, settled with the author through the M2 orchestrator, 2026-10-20):
+Readings settled with the author on 2026-10-20:
 - F's route is the pure function `route_after_f` over `result`; State has no route key.
 - G also zeroes the [R11] and [R17] counts, since a new round asks for new outputs; it leaves
   `owes` alone (E sets it before G runs on a valid question)."""
@@ -108,7 +108,7 @@ def node_c(state: State) -> State:
 
 def route_after_c(state: State) -> Literal["B", "D", "E", "F"]:
     """C's route: F on a violation; B when the reply has Chinese (a send-back); E for an answer,
-    skipping the Challenger [R12]; D for a description (in M2 a description always goes to D)."""
+    skipping the Challenger [R12]; D for a description (for now a description always goes to D)."""
     if state["violation"] == "Describer":
         return "F"
     if has_chinese_characters(describer_output(state)):

@@ -2,11 +2,11 @@
 
 One wrapper call is one request to Ollama through langchain-ollama: a plain-text call, a
 structured-output call (the JSON schema sent as Ollama's `format`, as `with_structured_output`
-with method `json_schema` sends it, T2), or a call with tools bound (`bind_tools`, T3). The model,
+with method `json_schema` sends it), or a call with tools bound (`bind_tools`). The model,
 num_ctx, temperature, thinking setting, and keep_alive are the caller's and are forwarded to
 ChatOllama as given; the attempt number is the caller's too [R26] and is passed through.
 
-Each request carries run metadata for the trace (M3 T3): the role, the attempt number, and the
+Each request carries run metadata for the trace: the role, the attempt number, and the
 kind of call (`text`, `structured`, or `tools`), passed as `config["metadata"]` to `invoke`, so
 the callback handler puts them on the call's generation span; the handler sees the model tag but
 not the role, and cannot know the attempt number [R26], which the caller computes. A caller may
@@ -20,9 +20,9 @@ duration is the latency around the same `invoke`.
 Each call returns its output with the latency (wall time around the one request, thinking and
 any model load included; `SPEC.md` Metrics, Latency) and the input and output token counts
 Ollama reports, kept apart. Ollama reports the whole prompt as input tokens, cached tokens
-included (T2's record), so the input count is the prompt's size for the num_ctx warning:
-when it is over 90% of num_ctx, a WARNING naming the role, the prompt tokens, and num_ctx goes
-through `logging` (`SPEC.md` Implementation, Models).
+included (seen in the server log of a live check on 2026-10-19), so the input count is the prompt's
+size for the num_ctx warning: when it is over 90% of num_ctx, a WARNING naming the role, the prompt
+tokens, and num_ctx goes through `logging` (`SPEC.md` Implementation, Models).
 
 Nothing is retried (`SPEC.md` Recovery, forks, and replay, Model errors): a connection error,
 an error response from Ollama, a reply langchain-ollama cannot read, or a structured reply that

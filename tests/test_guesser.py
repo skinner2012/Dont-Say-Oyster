@@ -1,11 +1,11 @@
-"""Node E (the Guesser) with scripted replies on the committed card 烤蚵仔 and the committed corpus
-(T12 Acceptance): the prompt and its isolation, the tool loop [R43], the structured call [R47],
+"""Node E (the Guesser) with scripted replies on the committed card 烤蚵仔 and the committed corpus:
+the prompt and its isolation, the tool loop [R43], the structured call [R47],
 and the invalid-question loop [R17].
 
 The scripted client answers each call from a fixed list (an AIMessage with tool calls for the
 loop, JSON text for the structured calls); the wrapper functions E calls are wrapped by a spy
 that keeps each call's messages, what was bound, its attempt number, the run metadata it was
-given (M3 T3), and its Reply."""
+given, and its Reply."""
 
 import json
 from collections.abc import Iterator
@@ -195,7 +195,7 @@ def invocations(monkeypatch: pytest.MonkeyPatch) -> list[Any]:
 
 @pytest.fixture
 def tool_metadata(monkeypatch: pytest.MonkeyPatch) -> list[Any]:
-    """The run metadata of every search-tool invocation, in order (M3 T3)."""
+    """The run metadata of every search-tool invocation, in order."""
     metadata: list[Any] = []
     real_invoke = StructuredTool.invoke
 

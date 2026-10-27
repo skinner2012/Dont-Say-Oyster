@@ -3,9 +3,9 @@ and the question check [R17], on the matching helpers [R22]. Pure functions that
 send-backs, violations, rounds, and counters are the nodes'. Matched names are given as written
 on the card or in the corpus, in list order.
 
-A list item that normalizes to empty matches every text (T5 F2); the checks do not skip such
-items but rely on the corpus having none, so a bad item shows in every check instead of being
-dropped silently."""
+A list item that normalizes to empty matches every text (deferred, author, 2026-10-19); the checks
+do not skip such items but rely on the corpus having none, so a bad item shows in every check
+instead of being dropped silently."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass

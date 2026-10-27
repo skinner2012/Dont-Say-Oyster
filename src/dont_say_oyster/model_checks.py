@@ -49,8 +49,8 @@ Think = bool | str
 
 @dataclass(frozen=True)
 class Model:
-    """One role's model as T1 recorded it, with its check schema and prompt and the `think`
-    values sent for thinking off and on."""
+    """One role's model as the model checks record it, with its check schema and prompt and the
+    `think` values sent for thinking off and on."""
 
     role: str
     tag: str
@@ -292,7 +292,7 @@ def _listed_values() -> dict[str, list[str]]:
 LISTED = _listed_values()
 
 # A stand-in with the input shape of [R44]: optional enum filters and an optional keyword list.
-# The real tool and its schema are T11's.
+# The real tool and its schema are in `search.py`.
 SEARCH_TOOL: dict[str, Any] = {
     "type": "function",
     "function": {

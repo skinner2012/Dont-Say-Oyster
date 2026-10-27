@@ -1,8 +1,8 @@
 """The LangGraph State of one game: every row of the State schema except the two cross-game
-memory rows (M6), the counters [R25], and the program-only fields the loops need. Every value is
-a JSON type, so the final State can be written with `json.dumps`.
+memory rows (not built yet), the counters [R25], and the program-only fields the loops need. Every
+value is a JSON type, so the final State can be written with `json.dumps`.
 
-Ticket-level readings (T8, settled with the author through the M2 orchestrator, 2026-10-20):
+Readings settled with the author on 2026-10-20:
 - The card's "Official name and accepted aliases" row is one list, `names`, official name
   first; whether a right guess matched the official name is `matched_name == names[0]`.
 - "No result yet" is `result` None; otherwise it is one of the four F outcomes, and `winner`
@@ -11,7 +11,7 @@ Ticket-level readings (T8, settled with the author through the M2 orchestrator, 
   (Guesser), since only F writes the game result.
 - There is no attempt-number field: each node computes the attempt number [R26] of its call from
   its own count (the [R11] count + 1, the [R17] count + 1, 2 for the [R40] re-ask).
-- A token count [R26] is the pair `input_tokens`, `output_tokens` the wrapper reports (T4)."""
+- A token count [R26] is the pair `input_tokens`, `output_tokens` the wrapper reports."""
 
 from dataclasses import asdict
 from typing import Any, Literal, TypedDict
@@ -104,7 +104,7 @@ class EarlierGuessOrQuestion(TypedDict):
 
 
 class Lookup(TypedDict):
-    """One corpus lookup run by E (T12): `name` and `arguments` as the model sent them,
+    """One corpus lookup run by E: `name` and `arguments` as the model sent them,
     `result` the result JSON the model read, or the message it got for a call that was not
     searched (`status` "error")."""
 

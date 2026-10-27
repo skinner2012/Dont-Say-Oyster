@@ -7,13 +7,13 @@ the `prompt` section, with `{task}` replaced by the `task: description` or `task
 section, and the `fixed message [R11]` section. The `conventions` section is for the
 implementer and never goes to the model.
 
-Ticket-level readings (T9, settled with the author through the M2 orchestrator, 2026-10-21):
+Readings settled with the author on 2026-10-21:
 - The prompt holds only the Describer's items of Information isolation, without cross-game
-  memory (M6): the card's names, English names, and forbidden words; the round counter; earlier
-  descriptions and answers; earlier guesses and questions, without the latest when it is the
-  last entry; the latest guess or question; the latest verdict, only while this round's reject
-  counter is above zero, so a verdict left from an earlier round is not shown; and the rejected
-  descriptions with their reasons. A guess is shown without its confidence.
+  memory (not built yet): the card's names, English names, and forbidden words; the round
+  counter; earlier descriptions and answers; earlier guesses and questions, without the latest when
+  it is the last entry; the latest guess or question; the latest verdict, only while this round's
+  reject counter is above zero, so a verdict left from an earlier round is not shown; and the
+  rejected descriptions with their reasons. A guess is shown without its confidence.
 - On a send-back [R11] the request is the prompt, then the Describer's previous reply as the
   model's message, then the fixed message, so the model sees what it wrote; only the last reply
   is shown, not every reply sent back for this output.

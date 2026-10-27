@@ -1,4 +1,4 @@
-"""The shared `=== name ===` parser of the prompt files (T10 F3)."""
+"""The shared `=== name ===` parser of the prompt files."""
 
 from pathlib import Path
 
