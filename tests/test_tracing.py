@@ -380,7 +380,10 @@ def test_every_generation_span_carries_its_role_attempt_kind_tokens_and_latency(
         usage = json.loads(attribute(span, USAGE))
         assert (usage["input"], usage["output"]) == (result.input_tokens, result.output_tokens)
         assert span.start_time is not None and span.end_time is not None
-        assert abs((span.end_time - span.start_time) / 1e9 - result.latency) < 0.1
+        duration = (span.end_time - span.start_time) / 1e9
+        # The span wraps the model's time: never shorter than the scripted reply's delay.
+        assert duration >= DELAY
+        assert abs(duration - result.latency) < 0.1
     assert [metadata(s, "kind") for s in game.generations] == [
         "text", "text", "structured", "structured", "text", "structured",  # round 1, B to D
         "tools", "tools", "tools", "structured", "structured",  # round 1, E
