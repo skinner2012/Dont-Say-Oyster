@@ -51,6 +51,7 @@ Progress lives in the repo: each ticket carries a `Status` line (`todo`, `done <
 - Never commit secrets. Endpoints and keys come from `.env`.
 - Pin everything that affects reproducibility: model tags and quantization, `num_ctx`, temperature, library versions. The ablation comparison depends on it.
 - Prefer surgical edits over rewrites. Write a test for each new behaviour.
+- Code comments and docstrings cite `SPEC.md` section names and rule ids, never a milestone or ticket id (`M4`, `T13 F2`): ticket ids restart every milestone, so they stop meaning one thing. State the reason or describe the behaviour instead. Ticket files and `docs/DECISIONS.md` are where ticket ids belong (the author's rule, 2026-10-27).
 - Each ticket is self-contained: it can be completed from the ticket, the `SPEC.md` sections it cites, and the artifacts its Consumes line names.
 
 ## Commit workflow
