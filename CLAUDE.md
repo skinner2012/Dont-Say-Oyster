@@ -85,3 +85,6 @@ Run from the repo root; each must exit 0.
 - Lint: `uv run ruff check .`
 - Type check: `uv run mypy`
 - Test: `uv run pytest`
+- Langfuse start: `docker compose --project-directory infra/langfuse -p oyster-langfuse up -d`
+- Langfuse stop: `docker compose --project-directory infra/langfuse -p oyster-langfuse stop` (never `down -v`, which deletes the volumes)
+- Langfuse health: `curl -s localhost:3000/api/public/health`

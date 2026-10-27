@@ -1,0 +1,11 @@
+<clickhouse>
+  <trace_log remove="1"/>
+  <text_log remove="1"/>
+  <opentelemetry_span_log remove="1"/>
+  <asynchronous_metric_log remove="1"/>
+  <metric_log remove="1"/>
+  <latency_log remove="1"/>
+  <processors_profile_log remove="1"/>
+  <max_server_memory_usage_to_ram_ratio>0.8</max_server_memory_usage_to_ram_ratio>
+  <mark_cache_size>268435456</mark_cache_size>
+</clickhouse>

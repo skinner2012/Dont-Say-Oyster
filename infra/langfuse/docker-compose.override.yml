@@ -1,0 +1,17 @@
+services:
+  langfuse-worker:
+    image: docker.langfuse.com/langfuse/langfuse-worker:4.69.0
+    mem_limit: 2g
+  langfuse-web:
+    image: docker.langfuse.com/langfuse/langfuse:4.69.0
+    mem_limit: 2g
+  clickhouse:
+    mem_limit: 3g
+    volumes:
+      - ./ch-config/zz-disable-logs.xml:/etc/clickhouse-server/config.d/zz-disable-logs.xml:ro
+  minio:
+    mem_limit: 512m
+  redis:
+    mem_limit: 512m
+  postgres:
+    mem_limit: 1g
