@@ -1,7 +1,8 @@
 """Whole V2 games through the `play-game` command on the committed card 烤蚵仔 and the committed
 corpus, with one scripted model per role injected through `main(argv, client_for=...)` (T13
 Acceptance); the recursion limit and its arithmetic; the settings the command builds; the
-errors; `--help`."""
+errors; `--help`. Every test traces into memory (`in_memory_tracing`, M3 T2): none reads the
+developer's Langfuse keys or reaches the stack."""
 
 import json
 import logging
@@ -9,15 +10,19 @@ import tomllib
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any, cast
+from uuid import uuid4
 
 import httpx
 import pytest
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
+from langfuse import Langfuse
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-from dont_say_oyster import play
+from dont_say_oyster import play, tracing
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, Card, load_cards
 from dont_say_oyster.challenger import REJECT_LIMIT
 from dont_say_oyster.corpus import CorpusEntry, load_corpus
@@ -39,6 +44,7 @@ from dont_say_oyster.play import (
 )
 from dont_say_oyster.program_nodes import SEND_BACKS, node_a
 from dont_say_oyster.state import PROGRAM_ONLY, ROUNDS, State
+from dont_say_oyster.tracing import TracingClient
 from tests.test_llm import Scripted, raising, reply, scripted
 
 CARD_ID = "card-5ed17f8f"  # 烤蚵仔
@@ -134,6 +140,30 @@ def final_state(output: Path) -> State:
     data = json.loads(output.read_text(encoding="utf-8"))
     assert isinstance(data, dict)
     return data  # type: ignore[return-value]
+
+
+def in_memory_client() -> tuple[TracingClient, InMemorySpanExporter]:
+    """A Langfuse client that exports into memory, under a public key of its own: the SDK's
+    client registry is process-wide and keyed by public key, so each client gets a fresh key
+    and its handler finds it there."""
+    exporter = InMemorySpanExporter()
+    public_key = f"pk-test-{uuid4().hex}"
+    client = Langfuse(
+        public_key=public_key,
+        secret_key="sk-test",
+        base_url="http://127.0.0.1:9",  # never reached: the exporter is in memory
+        span_exporter=exporter,
+    )
+    return TracingClient(client, public_key), exporter
+
+
+@pytest.fixture(autouse=True)
+def in_memory_tracing(monkeypatch: pytest.MonkeyPatch) -> InMemorySpanExporter:
+    """Every command run in this module traces into memory: `tracing.build_client` never reads
+    the developer's keys or reaches `localhost:3000`."""
+    client, exporter = in_memory_client()
+    monkeypatch.setattr(tracing, "build_client", lambda: client)
+    return exporter
 
 
 @pytest.fixture(scope="module")
@@ -326,7 +356,11 @@ def test_the_worst_case_game_reaches_f_without_hitting_the_recursion_limit(
     code, output = run(tmp_path, models)
     assert code == 0
     assert_worst_case_outcome(final_state(output))
-    assert configs == [{"recursion_limit": RECURSION_LIMIT}]
+    # The one invoke: the limit, and the tracing handler the game's config carries (M3 T2).
+    (config,) = configs
+    assert config["recursion_limit"] == RECURSION_LIMIT
+    assert [type(h).__name__ for h in config["callbacks"]] == ["LangchainCallbackHandler"]
+    assert all(isinstance(h, BaseCallbackHandler) for h in config["callbacks"])
     assert [models.calls(role) for role in ROLES] == [
         ROUNDS * (REJECT_LIMIT + 1) * (SEND_BACKS + 1),
         ROUNDS * (REJECT_LIMIT + 1),
@@ -512,7 +546,13 @@ def test_the_command_configures_logging_so_num_ctx_warnings_appear(
         code, _ = run(tmp_path, models)
     assert code == 0
     assert len(configured) == 1 and configured[0]["level"] == logging.WARNING
-    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    # The program's warnings only: the Langfuse handler also warns once per model call that it
+    # cannot read a model name off the scripted fake, which a ChatOllama has (M3 T2).
+    warnings = [
+        r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.WARNING and r.name.startswith("dont_say_oyster")
+    ]
     assert warnings == ["Describer: prompt tokens 7500 are over 90% of num_ctx 8192"]
 
 

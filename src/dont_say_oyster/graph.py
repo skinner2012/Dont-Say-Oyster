@@ -16,12 +16,18 @@ C → E for a description is M4's.
 
 The recursion limit is set explicitly from the worst case (see `WORST_CASE_STEPS`), never from
 LangGraph's default: langgraph 1.2.16 defaults to 10007 steps, earlier versions to 25, below a
-ten-round V2 game."""
+ten-round V2 game.
+
+Tracing (`SPEC.md` M3): given a `TracingClient` (`tracing.py`), `play_game` runs node A inside
+its span and passes the Langfuse callback handler in the graph's config, so each node visit is
+a chain span named by the node's single-letter name, matching the node table in `SPEC.md` Full
+flow of one game, under the game span `play.main` opens."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import cast
 
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -41,6 +47,7 @@ from dont_say_oyster.program_nodes import (
     route_after_f,
 )
 from dont_say_oyster.state import ROUNDS, State
+from dont_say_oyster.tracing import TracingClient, callback_handler, node_a_span
 
 
 @dataclass(frozen=True)
@@ -119,11 +126,19 @@ def play_game(
     corpus: Sequence[CorpusEntry],
     settings: RoleSettings,
     client_for: ClientFor = ollama_client,
+    tracing: TracingClient | None = None,
 ) -> State:
     """One V2 game on the card `card_id`: A, then the graph from G to the end, with the
-    recursion limit set from the worst case. Raises KeyError for an unknown card id before any
-    model call; a model error (LLMError) propagates out of the node that hit it."""
-    state = node_a(card_id, cards)
+    recursion limit set from the worst case. With `tracing`, A runs inside its span and the
+    graph's config carries the callback handler. Raises KeyError for an unknown card id before
+    any model call; a model error (LLMError) propagates out of the node that hit it."""
+    config: RunnableConfig = {"recursion_limit": RECURSION_LIMIT}
+    if tracing is None:
+        state = node_a(card_id, cards)
+    else:
+        with node_a_span(tracing):
+            state = node_a(card_id, cards)
+        config["callbacks"] = [callback_handler(tracing)]
     graph = build_graph(settings, corpus, client_for)
-    final = graph.invoke(state, config={"recursion_limit": RECURSION_LIMIT})
+    final = graph.invoke(state, config=config)
     return cast(State, final)

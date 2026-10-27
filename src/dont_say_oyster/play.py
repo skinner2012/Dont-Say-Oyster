@@ -19,7 +19,14 @@ stderr through `logging`, configured here. A model error (`LLMError`) stops the 
 (`SPEC.md` Recovery, forks, and replay, Model errors): the error goes to stderr, no output file
 is written, and the exit code is non-zero. An unknown card id, and an output path that cannot be
 written (its parent directory is created if missing), each exit non-zero before any model
-call."""
+call.
+
+Tracing (`SPEC.md` M3, `tracing.py`): the Langfuse client is built once per game from `.env`
+after the checks above, the game runs inside a span named by the card id with the session id
+taken from the output file's directory, and the client is flushed in a `finally`, so a game
+stopped by a model error still exports the spans it made, the game span ended in error. With no
+keys the SDK warns and the game runs untraced; with wrong keys the exporter logs each rejected
+export; neither stops the game (T2, Q2)."""
 
 import argparse
 import json
@@ -28,6 +35,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from dont_say_oyster import tracing
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, CardFileError, load_cards
 from dont_say_oyster.corpus import CorpusError, load_corpus
 from dont_say_oyster.graph import RoleSettings, play_game
@@ -180,14 +188,18 @@ def main(argv: Sequence[str] | None = None, client_for: ClientFor | None = None)
         print(f"cannot write the output file: {e}", file=sys.stderr)
         return 1
     settings = role_settings(args)
+    tracer = tracing.build_client()
     try:
-        if client_for is None:
-            state = play_game(args.card_id, cards, corpus, settings)
-        else:
-            state = play_game(args.card_id, cards, corpus, settings, client_for)
+        with tracing.game_span(tracer, args.card_id, tracing.session_id(args.output)):
+            if client_for is None:
+                state = play_game(args.card_id, cards, corpus, settings, tracing=tracer)
+            else:
+                state = play_game(args.card_id, cards, corpus, settings, client_for, tracer)
     except LLMError as e:
         print(f"the game stopped on a model error: {e}", file=sys.stderr)
         return 1
+    finally:
+        tracing.flush(tracer)
     args.output.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     print(outcome_line(state))
     return 0
