@@ -358,6 +358,7 @@ def test_the_worst_case_game_reaches_f_without_hitting_the_recursion_limit(
     assert_worst_case_outcome(final_state(output))
     # The one invoke: the limit, and the tracing handler the game's config carries (M3 T2).
     (config,) = configs
+    assert set(config) == {"recursion_limit", "callbacks"}
     assert config["recursion_limit"] == RECURSION_LIMIT
     assert [type(h).__name__ for h in config["callbacks"]] == ["LangchainCallbackHandler"]
     assert all(isinstance(h, BaseCallbackHandler) for h in config["callbacks"])
