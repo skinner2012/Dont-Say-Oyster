@@ -29,8 +29,13 @@ The spans: node A runs before the graph and gets no span from the callback handl
 `node_a_span` makes one named `A`; the graph's nodes get chain spans named by their node names
 (G, B, C, D, E, F; the node table in `SPEC.md` Full flow of one game) from the LangChain
 callback handler (`callback_handler`) passed in the graph's config, which also makes one
-generation span per model call and one tool span per run of the search tool. The per-call
-metadata on those spans (attempt, role, lookup index) is T3's.
+generation span per model call and one tool span per run of the search tool. The callers put
+run metadata on those spans: every generation span carries `role`, `attempt` [R26], `kind`
+(text, structured, or tools), and `round`; the Guesser's tool-bound calls add `call`, the round's
+tool-loop call index; and every tool span carries `round`, `call`, and `lookup`, the round's
+lookup counter after the call [R43], so a tool span and the generation span that made the call
+share `(round, call)`, since the tool runs after the call returns and its span is not the
+generation span's child.
 
 The flush: `flush` sends what the SDK has buffered; `play.main` calls it in a `finally`, so a
 game stopped by a model error still exports what it has, with the game span ended in error.
