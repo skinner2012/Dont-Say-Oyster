@@ -1,8 +1,8 @@
 """One scripted game is one trace (M3 T2): the spans a game exports through an in-memory
 exporter, counted by name and type, with the session id and the trace name on every one; the
 game span ended in error after a model error, the spans before it still exported; the session
-id from the output path; and a game run with no Langfuse keys, which ends untraced with the
-SDK's warning. No test needs the stack or Ollama."""
+id from the output path; and `build_client` with a variable missing, which returns None after
+one warning, so the game runs untraced. No test needs the stack or Ollama."""
 
 import logging
 from collections import Counter
@@ -16,7 +16,7 @@ from opentelemetry.trace import StatusCode
 
 from dont_say_oyster import tracing
 from dont_say_oyster.play import main
-from dont_say_oyster.tracing import DISABLED_PUBLIC_KEY, NODE_A_SPAN, TracingClient, session_id
+from dont_say_oyster.tracing import NODE_A_SPAN, VARIABLES, TracingClient, session_id
 from tests.test_guesser import tool_reply
 from tests.test_llm import Scripted
 from tests.test_play import (
@@ -39,8 +39,12 @@ from tests.test_play import (
 )
 
 SESSION = "t14"
-LANGFUSE_KEYS = ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY")
-LOCAL_BASE_URL = "http://127.0.0.1:9"  # never reached by any test
+PRESENT = {
+    "LANGFUSE_PUBLIC_KEY": "pk-present",
+    "LANGFUSE_SECRET_KEY": "sk-present",
+    "LANGFUSE_BASE_URL": "http://127.0.0.1:9",  # never reached by any test
+}
+TRACING_LOGGER = "dont_say_oyster.tracing"
 # The SDK's attribute keys, read off the exported spans of the smoke test, not from its code.
 OBSERVATION_TYPE = "langfuse.observation.type"
 SESSION_ID = "session.id"
@@ -174,42 +178,41 @@ def test_the_session_id_is_the_resolved_parent_directory_name(
     assert session_id(Path("out.json")) != ""
 
 
-def test_without_keys_the_game_runs_untraced_with_the_sdk_warning(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
-) -> None:
-    """The real `build_client`, with `.env` not loaded, a local base URL, and both keys absent:
-    the SDK warns and the game ends with its result in the output file (T2, Q2)."""
+def environment(monkeypatch: pytest.MonkeyPatch, *missing: str) -> None:
+    """`.env` not loaded; the three variables set to local test values except `missing`."""
     monkeypatch.setattr(tracing, "load_dotenv", lambda: None)
-    monkeypatch.setenv("LANGFUSE_BASE_URL", LOCAL_BASE_URL)
-    for variable in LANGFUSE_KEYS:
-        monkeypatch.delenv(variable, raising=False)
-    models = Models(
-        describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
-    )
-    output = tmp_path / SESSION / "game.json"
-    with caplog.at_level(logging.WARNING, logger="langfuse"):
-        code = main([CARD_ID, str(output)], client_for=models)
-    assert code == 0
-    assert final_state(output)["result"] == "right guess"
-    warnings = [r.getMessage() for r in caplog.records if r.name.startswith("langfuse")]
-    assert any("without public_key" in w for w in warnings)
-
-
-def test_without_a_base_url_the_game_runs_untraced_with_a_warning(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
-) -> None:
-    """The real `build_client`, with `.env` not loaded, both keys present, and the base URL
-    absent: the client is built disabled (T2 audit F1), so nothing is traced and nothing could
-    go to Langfuse Cloud, and the game ends with its result in the output file."""
-    monkeypatch.setattr(tracing, "load_dotenv", lambda: None)
-    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-present")
-    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-present")
-    monkeypatch.delenv("LANGFUSE_BASE_URL", raising=False)
+    for name, value in PRESENT.items():
+        if name in missing:
+            monkeypatch.delenv(name, raising=False)
+        else:
+            monkeypatch.setenv(name, value)
     monkeypatch.delenv("LANGFUSE_HOST", raising=False)
-    built: list[TracingClient] = []
+
+
+def tracing_warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [r.getMessage() for r in caplog.records if r.name == TRACING_LOGGER]
+
+
+@pytest.mark.parametrize("missing", VARIABLES)
+def test_build_client_returns_none_with_one_warning_naming_the_missing_variable(
+    missing: str, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    environment(monkeypatch, missing)
+    with caplog.at_level(logging.WARNING, logger=TRACING_LOGGER):
+        assert tracing.build_client() is None
+    (warning,) = tracing_warnings(caplog)
+    assert warning.startswith(f"{missing} not set: the game runs untraced")
+    assert ("Langfuse Cloud" in warning) == (missing == "LANGFUSE_BASE_URL")
+
+
+def run_with_the_real_build_client(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> tuple[int, Path, list[TracingClient | None]]:
+    """Run a one-round game through the real `build_client`, recording what it returned."""
+    built: list[TracingClient | None] = []
     real_build_client = tracing.build_client
 
-    def spy() -> TracingClient:
+    def spy() -> TracingClient | None:
         built.append(real_build_client())
         return built[-1]
 
@@ -218,18 +221,38 @@ def test_without_a_base_url_the_game_runs_untraced_with_a_warning(
         describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
     )
     output = tmp_path / SESSION / "game.json"
-    with caplog.at_level(logging.WARNING, logger="dont_say_oyster.tracing"):
+    with caplog.at_level(logging.WARNING, logger=TRACING_LOGGER):
         code = main([CARD_ID, str(output)], client_for=models)
+    return code, output, built
+
+
+def test_without_keys_the_game_runs_untraced_after_one_warning(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Both keys absent, the base URL present: no client, one warning naming both keys, and the
+    game ends with its result in the output file (T2, Q2)."""
+    environment(monkeypatch, "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY")
+    code, output, built = run_with_the_real_build_client(tmp_path, monkeypatch, caplog)
     assert code == 0
     assert final_state(output)["result"] == "right guess"
-    (client,) = built
-    assert client.public_key == DISABLED_PUBLIC_KEY
-    # The disabled client's tracer is the SDK's no-op one: a span made on it has no trace id,
-    # so nothing the game made was exported anywhere.
-    with client.client.start_as_current_observation(name="probe", as_type="span") as probe:
-        assert probe.trace_id == "0" * 32
-    assert [r.getMessage() for r in caplog.records if r.name == "dont_say_oyster.tracing"] == [
-        "LANGFUSE_BASE_URL is not set: tracing nothing, since the SDK would fall back to "
-        "Langfuse Cloud"
+    assert built == [None]
+    assert tracing_warnings(caplog) == [
+        "LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY not set: the game runs untraced"
     ]
 
+
+def test_without_a_base_url_the_game_runs_untraced_after_one_warning(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Both keys present, the base URL absent: no client, so nothing could go to Langfuse Cloud
+    (T2 audit F1), one warning saying so, and the game ends with its result in the output
+    file."""
+    environment(monkeypatch, "LANGFUSE_BASE_URL")
+    code, output, built = run_with_the_real_build_client(tmp_path, monkeypatch, caplog)
+    assert code == 0
+    assert final_state(output)["result"] == "right guess"
+    assert built == [None]
+    assert tracing_warnings(caplog) == [
+        "LANGFUSE_BASE_URL not set: the game runs untraced (with no base URL the SDK would fall "
+        "back to Langfuse Cloud)"
+    ]

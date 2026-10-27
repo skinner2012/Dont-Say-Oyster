@@ -5,15 +5,17 @@ program sees a `TracingClient` and the functions here.
 The client: `build_client`, called once per game by `play.main`, reads `LANGFUSE_PUBLIC_KEY`,
 `LANGFUSE_SECRET_KEY`, and `LANGFUSE_BASE_URL`, loaded with python-dotenv from the repo-root
 `.env` as `llm.ollama_client` loads the Ollama endpoint, and passes them to the SDK explicitly
-(the SDK does not read `.env`). With no keys the SDK logs a warning and traces nothing; with no
-base URL this module logs a warning and builds the client disabled, so it traces nothing, since
-the SDK would otherwise fall back to `LANGFUSE_HOST` and then to Langfuse Cloud and send the
-prompts off the machine (`docs/DECISIONS.md`, 2026-10-23, rejected Cloud); with wrong keys the
-exporter logs each rejected export. In every case the game runs to its end, since the health
-check before each game is M7's (T2, Q2). The `TracingClient` carries the public key
-beside the SDK client because the callback handler finds its client in the SDK's process-wide
-registry by that key, and the SDK client does not expose the key it holds; the tests register
-several in-memory clients in one process.
+(the SDK does not read `.env`). No tracing has one representation: `build_client` returns None.
+When any of the three is missing it logs one warning naming the missing variables and returns
+None, and the game runs untraced; the SDK's own fallbacks are never used, since for a missing
+key it builds a disabled client that still reads the keys from the environment, and for a
+missing base URL it falls back to `LANGFUSE_HOST` and then to Langfuse Cloud, which would send
+the prompts off the machine (`docs/DECISIONS.md`, 2026-10-23, rejected Cloud). With wrong keys
+the client is built and the exporter logs each rejected export. In every case the game runs to
+its end, since the health check before each game is M7's (T2, Q2). The `TracingClient` carries
+the public key beside the SDK client because the callback handler finds its client in the SDK's
+process-wide registry by that key, and the SDK client does not expose the key it holds; the
+tests register several in-memory clients in one process.
 
 The trace: `game_span` wraps one game in a span named by the card id, the trace's root, and
 propagates the session id and the trace name (the card id, also in the trace metadata) to every
@@ -50,49 +52,35 @@ from langfuse.langchain import CallbackHandler
 logger = logging.getLogger(__name__)
 
 NODE_A_SPAN = "A"
-
-# The disabled client's placeholders (the SDK's own form of a disabled client: tracing off and
-# placeholder keys); the base URL is local so that nothing the SDK builds points off the machine.
-DISABLED_PUBLIC_KEY = "disabled"
-DISABLED_BASE_URL = "http://127.0.0.1:0"
+VARIABLES = ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_BASE_URL")
 
 
 @dataclass(frozen=True)
 class TracingClient:
-    """The SDK client and the public key it was built with (None when no key was found, which
-    the SDK answers with a disabled client)."""
+    """The SDK client, built from all three variables, and the public key it was built with."""
 
     client: Langfuse
-    public_key: str | None
+    public_key: str
 
 
-def build_client() -> TracingClient:
+def build_client() -> TracingClient | None:
     """The client from the three `LANGFUSE_*` variables, loaded from `.env` when they are not
-    already in the environment and passed to the SDK explicitly. A missing base URL is treated
-    like a missing key: the client is built disabled, under `DISABLED_PUBLIC_KEY`, and traces
-    nothing, because the SDK's fallback for a missing base URL is `LANGFUSE_HOST` and then
-    Langfuse Cloud. Passing no keys would not do: the SDK reads `LANGFUSE_PUBLIC_KEY` from the
-    environment itself when the argument is None."""
+    already in the environment and passed to the SDK explicitly; None, after one warning naming
+    the missing variables, when any is missing, so the game runs untraced. The SDK is never
+    left to fill a gap: given no key it reads `LANGFUSE_PUBLIC_KEY` from the environment itself,
+    and given no base URL it falls back to `LANGFUSE_HOST` and then to Langfuse Cloud."""
     load_dotenv()
-    base_url = os.environ.get("LANGFUSE_BASE_URL")
-    if base_url is None:
-        logger.warning(
-            "LANGFUSE_BASE_URL is not set: tracing nothing, since the SDK would fall back to "
-            "Langfuse Cloud"
-        )
-        client = Langfuse(
-            tracing_enabled=False,
-            public_key=DISABLED_PUBLIC_KEY,
-            secret_key=DISABLED_PUBLIC_KEY,
-            base_url=DISABLED_BASE_URL,
-        )
-        return TracingClient(client, DISABLED_PUBLIC_KEY)
-    public_key = os.environ.get("LANGFUSE_PUBLIC_KEY")
-    client = Langfuse(
-        public_key=public_key,
-        secret_key=os.environ.get("LANGFUSE_SECRET_KEY"),
-        base_url=base_url,
-    )
+    values = {name: os.environ.get(name) for name in VARIABLES}
+    missing = [name for name, value in values.items() if value is None]
+    if missing:
+        consequence = "the game runs untraced"
+        if "LANGFUSE_BASE_URL" in missing:
+            consequence += " (with no base URL the SDK would fall back to Langfuse Cloud)"
+        logger.warning("%s not set: %s", ", ".join(missing), consequence)
+        return None
+    public_key, secret_key, base_url = (values[name] for name in VARIABLES)
+    assert public_key is not None and secret_key is not None and base_url is not None
+    client = Langfuse(public_key=public_key, secret_key=secret_key, base_url=base_url)
     return TracingClient(client, public_key)
 
 
