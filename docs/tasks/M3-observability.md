@@ -88,7 +88,7 @@ T1 → T2 → T3 → T4, strictly in order: T1 puts the Langfuse stack and the c
 - **Depends on:** T2
 
 ### T4 — One live V2 game traced
-- **Status:** todo
+- **Status:** done 0fa43b6
 - **Produces:** the record of one V2 game on the three local models whose trace in Langfuse meets the exit criterion, written into this Detail.
 - **Consumes:** the running stack from T1; `play-game` with T2 and T3; the three model tags and num_ctx that are `play.py`'s defaults; the settings of M2's live game record (card-0a001d83, thinking off for all three roles, temperature 0.7); the committed cards and corpus.
 - **Detail:**
@@ -191,3 +191,13 @@ Q1, Q2, and Q3 were answered by the author in chat on 2026-10-25: Q1, no `--sess
 - T3 F10: the suite grew from about 3 s to about 5.7 s because the function-scoped fixture replays the game per test; harmless. No change (author, 2026-10-27).
 - T3 F11: `tracing.py`'s docstring named only three of the six metadata keys and cited a ticket id; fixed 56ab159. The `llm.py` docstring's "T3" at line 5 (an M2 ticket) four lines above "M3 T3" stays ambiguous until the repo-wide sweep that removes ticket ids from code comments (`CLAUDE.md` Rules of engagement, the author's rule of 2026-10-27).
 - T3 F12: the unknown-tool test does not assert the entry's `status`, and the schema-rejected tool span's level ERROR is asserted only in T2's test. No change (author, 2026-10-27).
+- T4 F1: the auditor's independent re-derivation from the State file and the API (81 spans, 23 generation spans, 8 pairs, outputs cross-checked by text) agrees with the record; the Acceptance holds. No change.
+- T4 F2: the record read visibility through the API (all spans present 34 s after the game), not the UI; ClickHouse `created_at` puts the last batch 37 ms after the root span ended. The author opened the trace in the UI on 2026-10-27 and saw the node tree, the generation spans' metadata, usage, and model tag (the UI prints no observation count). Closed (author, 2026-10-27).
+- T4 F3: all 23 generation spans carry the model tag equal to `ls_model_name` and stderr is empty, so T2 F3 (the handler finds ChatOllama's model name live) is closed; T3 F4 (`round` on every generation span) and T3 F7 (generation spans named `ChatOllama`) hold live. Closed (author, 2026-10-27).
+- T4 F4: every live attempt is 1; the attempt-2 paths and the unknown-tool case have scripted evidence only. No change.
+- T4 F5: in Langfuse 4.69.0 the ClickHouse `traces` and `observations` tables are empty; only `events_full` and `events_core` hold rows. Note for anyone querying the database. No change.
+- T4 F6: the record's "includes the load" labels follow from the keep_alive settings, not from the spans. No change (the record need not explain unpaired spans).
+- T4 F7: the printed "rejects 4" is the length of the rejected row; State's per-round `rejects` counter is 0 at the end, which the record does not say. No change.
+- T4 F8: Ollama moved from 0.40.6 (M2's live game) to 0.40.8 between milestones and is not pinned anywhere; the weights are unchanged (same tag IDs) but the inference engine is not. The author turns off Ollama's auto-update; recording the server version in the batch manifest is an `SPEC.md` change (Implementation, Experiment result format) to make when M5 settles the models. Deferred to M5 (author, 2026-10-27).
+- T4 F9: the record does not say the tree was clean at the run (the auditor confirmed it by diff); the Settings placeholder stays "author fills in" with M2's defaults used; Q3 did not arise. No change.
+- T4 F10: the output file is untracked by design; no key or secret is in the record; the project's public key sits in every span's metadata in Langfuse. No change.
