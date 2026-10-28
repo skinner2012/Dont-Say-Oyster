@@ -329,7 +329,7 @@ No LangGraph checkpoints are used; recovery works from files.
 ### Experiment plan
 
 - Comparison method:
-    - Why not totals: the hit rate over forty games has an error of about ±8 percentage points by itself, so if two variants differ by three or four correct guesses, we cannot tell whether it is the variant or luck. So we do not compare totals; we compare card by card in pairs.
+    - Why not totals: the hit rate over forty games has an error of about ±8 percentage points by itself (one standard error at p = 0.5; a 95% interval is about ±16), so if two variants differ by three or four correct guesses, we cannot tell whether it is the variant or luck. So we do not compare totals; we compare card by card in pairs.
     - Per-card pairing: for each pair of neighboring variants (V0→V1, V1→V2, V2→V3), we only look at the cards where the two variants got different results. If the new variant guessed right and the old one did not, the new variant wins; the other way around, the old variant wins. Cards where both are right or both are wrong do not count.
     - Credibility: if the two variants are really equally good, who wins each discordant card is like a coin flip, half and half. We use the binomial distribution (one-sided) to get "the chance that a coin would lean at least this far", and credibility = 1 minus this chance. Higher means more credible, and the threshold is the usual 0.95.
     - Why credibility is only for reference: with forty cards there are usually only eight to twelve discordant cards, and reaching 0.95 needs something as one-sided as 8 to 1 (6 to 3 is about 0.75). A gap big enough to cross the threshold needs about one hundred twenty cards, but this project stays at forty.
@@ -337,31 +337,34 @@ No LangGraph checkpoints are used; recovery works from files.
     - If there is no second V2 run: we only list who wins and its credibility, do no luck comparison, and do not conclude that the improvement comes from the variant.
 - Each game (each card) can run at most ten rounds. Running V0 → V3 once each gives at most 160 games.
 - About hit rate: the numerator only counts games where the Guesser really guessed right (the denominator is forty). The number of games with Describer or Guesser violations is a separate metric.
-- Confidence score check: compare the confidence score of each guess with its result, to see if high confidence truly means a high hit rate (calibration). One chart for each of the four variants, side by side.
+- Confidence score check: every guess counts, final or not, with whether it was right; a non-Chinese guess [R5] counts as wrong. Confidence is binned into five bins of 0.2 ([0, 0.2), [0.2, 0.4), [0.4, 0.6), [0.6, 0.8), [0.8, 1.0]), and each bin shows its hit rate and its number of guesses, so a bin with few guesses is read as such. One chart for each of the four variants, side by side.
 - Extra metrics by variant:
-    - V0: out-of-corpus answer rate (including non-Chinese guesses), since without the corpus the Guesser has to come up with the Chinese name by itself.
-    - V1: number of lookups per round, and whether the lookup results contain the answer (recall); with the hit rate, this splits into three cases: not found, found but picked wrong, found and picked right.
+    - V0: out-of-corpus answer rate: the share of all V0 guesses (the denominator is guesses, not games) that equal no official name or alias of any corpus entry after normalization [R22]; a non-Chinese guess, and a name with a tail added (such as an English name in parentheses), both count as out of corpus. Without the corpus the Guesser has to come up with the Chinese name by itself.
+    - V1: number of lookups per round, and recall per game: whether the official name or an alias of the answer appeared in the returned results of any lookup of the game (the returned results only; the unreturned tail when there were more than ten [R46] does not count); with the hit rate, this splits the games into three cases: not found, found without a hit, found with a hit.
     - V2: number of Challenger rejects, hit rate of games that had a reject, hit rate of games with no reject.
-    - V3: lay out the per-card paired difference between V2↔V3 (correct guess, number of rounds) in game order; if memory helps, the paired difference in later games should lean toward V3. The V2 side already absorbs how hard each card is, so there is no need to split into first and second halves.
+    - V3: lay out the per-card paired difference between V2↔V3 (correct guess, number of rounds) in game order; the rounds difference is taken only on cards both variants got right, and a game ended by a violation contributes to the correct-guess difference only; if memory helps, the paired difference in later games should lean toward V3. The V2 side already absorbs how hard each card is, so there is no need to split into first and second halves.
 - Optional: if there is time, run V2 again; the gap between the two V2 runs is the noise estimate, used to judge whether the gap between variants is bigger than the noise.
 
 ### Metrics
 
 - Per game
     - Number of rounds.
-    - Win or loss.
+    - Game result: one of the four F outcomes. A hit is a right guess only, and the per-card pairing uses hits.
     - Whether the guess is the official answer or an alias.
     - Whether the Describer had a violation.
     - Whether the Guesser had a violation.
     - Number of questions.
-    - Number of rejects (from V2), summed from the game's JSONL record [R13]
+    - Number of rejects (from V2): the length of the game's rejected-descriptions list in the JSONL record [R13].
     - Number of forced passes (from V2) [R13].
-    - Token count of the memory part (V3).
-- Guesses given
-    - Attempt number.
-    - Confidence score.
+    - Token count of the memory part (V3): the tokens of the memory text alone; M6 decides how it is counted.
+- Per model call (every call of nodes B, D, E, and H, listed in the JSONL record)
+    - Ordinal of the call within the game; (round, role, attempt) alone is not unique [R26].
+    - Node (B, D, E, or H), role, round (for H, the game's last round), attempt number [R26] (the tool-bound calls of one try share that try's attempt), and kind (text, structured output, or tool-bound).
     - Latency: the end-to-end delay from sending the prompt to getting the full response, not the model's Thinking mode. It includes thinking time when thinking is on.
-    - Token count.
+    - Input and output token counts; when thinking is on, the output count includes the thinking tokens, and the record does not separate them.
+- Per guess
+    - Confidence score [R48]; it belongs to the guess, not to the call list.
+    - Whether the guess was right, and if so whether it equals the official name or an alias; whether it was non-Chinese [R5]; for V0, whether it was out of corpus.
 
 ## Implementation
 
@@ -387,8 +390,8 @@ No LangGraph checkpoints are used; recovery works from files.
     - The parameters for the command that runs one game include: the model and num_ctx for each of the three roles, where the forty cards are, which card to run, where the corpus is, where to write experiment results, the variant, temperature, thinking on/off, and where the memory file is (V3).
     - The command that runs a whole batch of experiments just runs forty commands; it is just a script.
 - **Experiment result format**:
-    - One JSONL record per game, which also contains for each round the description/answer, question/guess, full Challenger verdict text, corpus lookup and results (from V1). The memory summary at game end (V3).
-    - Four batch manifests (models, variant, card set, card order, num_ctx, temperature, thinking on/off).
+    - One JSONL record per game: the card id and the variant; the game result (one of the four F outcomes) and the counters at the end (rounds, questions, forced passes); for each round, the description or answer, the guess with its confidence, or the question, every rejected description with its fail reason, every output the program sent back with the reason it was sent back (a description or answer with Chinese characters [R11], an invalid question [R17], a fail reason with Chinese characters [R40]), every verdict (pass or fail, with the reason on a fail [R40]), and every corpus lookup with its arguments, status, and results (from V1); the list of every model call of the game with the per-call values in Metrics (so the record stands without the trace); and, at game end, the memory summary, each role's redo count under the Check rule, and the memory token count (V3)
+    - Four batch manifests (models, the Ollama server version, variant, card set, card order, num_ctx, temperature, thinking on/off).
     - In M1 the order of the forty cards will be decided and written into the manifest, and all four variants share the same order.
 
 ## Milestones
@@ -443,7 +446,7 @@ No LangGraph checkpoints are used; recovery works from files.
 - Build node H: the Describer and the Guesser each make one call that returns a memory entry and, from game six on, the updated rolling summary; the prompts follow the Disclosure and Write rules.
 - Build the check rule: Chinese-character check on both roles' output, answer, alias, and English-name check on the Guesser's, up to two redos, and on failure copy the previous game's file.
 - Build the memory files: one JSON file per role, numbered by game, read into State at game start and written back after H; keep the last five entries plus one rolling summary; each batch starts empty.
-- Add the memory summary to the JSONL record.
+- Add the memory summary, each role's redo count, and the memory token count to the JSONL record.
 - Check the num_ctx warning log for V3 and adjust num_ctx if needed.
 - Done when a V3 game reads the previous game's memory files, the memory appears in the Describer's and Guesser's prompts, and new files are written at game end.
 
@@ -493,3 +496,4 @@ Terms whose meaning in this spec is narrower than everyday use.
 | tool loop | First half of node E |
 | search tool / corpus lookup | The Guesser's only tool |
 | thinking on/off | Not "toggle", to avoid confusion with the three variant toggles |
+| hit | A right guess [R20]; not the same as a win, since a Describer violation is a win without a hit |
