@@ -58,8 +58,8 @@ def test_a_file_is_read_once_per_path(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("role", "names"),
     [
-        ("describer", ["prompt", "task: description", "task: answer", "fixed message [R11]",
-                       "conventions"]),
+        ("describer", ["prompt", "challenger rules", "challenger context", "task: description",
+                       "task: answer", "fixed message [R11]", "conventions"]),
         ("challenger", ["prompt", "re-ask [R40]", "fixed message [R40]", "conventions"]),
         ("guesser", ["prompt", "search", "task: question or guess", "task: guess only",
                      "fixed message [R17]", "blocked lookup result", "conventions"]),

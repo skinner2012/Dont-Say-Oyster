@@ -114,16 +114,26 @@ def _prompt(model: Recording, call: int) -> str:
 # The prompt file
 
 
-def test_the_prompt_section_braces_are_exactly_the_slots_each_once() -> None:
-    # build_prompt fills the section with str.format_map, so a stray brace would raise in a game.
-    prompt = SECTIONS["prompt"]
-    slots = [
-        "official_name", "aliases", "english_names", "forbidden_words", "round",
-        "earlier_descriptions_and_answers", "earlier_guesses_and_questions",
-        "latest_guess_or_question", "latest_verdict", "rejected_descriptions", "task",
-    ]
-    assert re.findall(r"\{[^}]*\}", prompt) == ["{" + slot + "}" for slot in slots]
-    assert prompt.count("{") == prompt.count("}") == len(slots)
+@pytest.mark.parametrize(
+    ("section", "slots"),
+    [
+        ("prompt", [
+            "official_name", "aliases", "english_names", "forbidden_words", "challenger rules",
+            "round", "earlier_descriptions_and_answers", "earlier_guesses_and_questions",
+            "latest_guess_or_question", "challenger context", "task",
+        ]),
+        ("challenger rules", []),
+        ("challenger context", ["latest_verdict", "rejected_descriptions"]),
+    ],
+)
+def test_the_section_braces_are_exactly_the_slots_each_once(
+    section: str, slots: list[str]
+) -> None:
+    # build_prompt fills these sections with str.format_map, so a stray brace would raise in a
+    # game.
+    text = SECTIONS[section]
+    assert re.findall(r"\{[^}]*\}", text) == ["{" + slot + "}" for slot in slots]
+    assert text.count("{") == text.count("}") == len(slots)
 
 
 def test_the_conventions_never_reach_the_model(round_1: State) -> None:
@@ -158,8 +168,9 @@ def test_round_1_prints_every_empty_slot_as_none_and_asks_for_a_description(
     assert SECTIONS["task: answer"] not in prompt
 
 
-def test_isolation_the_prompt_holds_the_describer_items_and_no_others() -> None:
-    state: State = {
+def _every_item() -> State:
+    """A State with a marked value in every field the Describer may or may not see."""
+    return {
         "card_id": "S-card-id",
         "names": ["S-official-name", "S-alias-1", "S-alias-2"],
         "english_names": ["S-english-name"],
@@ -209,20 +220,72 @@ def test_isolation_the_prompt_holds_the_describer_items_and_no_others() -> None:
         "guess_only": False,
         "d_route": "B",
     }
-    messages = build_messages(state, SECTIONS)
+
+
+# The Describer's items of Information isolation, apart from the Challenger's, and the State
+# fields the Describer never sees.
+SHOWN = (
+    "S-official-name", "S-alias-1", "S-alias-2", "S-english-name", "S-forbidden-1",
+    "S-forbidden-2", "S-earlier-text", "S-earlier-guess", "S-latest-question",
+    "This is round 7 of ten.",
+)
+CHALLENGER_ITEMS = ("S-verdict-reason", "S-rejected", "S-rejected-reason")
+HIDDEN = (
+    "S-card-id", "S-attribute", "S-distractor", "S-guesser-input", "S-description-row",
+    "S-answer-row", "S-lookup", "S-matched-name", "0.3", "41", "42", "43", "44",
+)
+
+
+def test_isolation_the_prompt_holds_the_describer_items_and_no_others() -> None:
+    messages = build_messages(_every_item(), SECTIONS)
     assert len(messages) == 1
     prompt = messages[0].text
-    shown = (
-        "S-official-name", "S-alias-1", "S-alias-2", "S-english-name", "S-forbidden-1",
-        "S-forbidden-2", "S-earlier-text", "S-earlier-guess", "S-latest-question",
-        "S-verdict-reason", "S-rejected", "S-rejected-reason", "This is round 7 of ten.",
+    assert [s for s in (*SHOWN, *CHALLENGER_ITEMS) if s not in prompt] == []
+    assert [s for s in HIDDEN if s in prompt] == []
+
+
+# The Challenger toggle (SPEC.md Ablation Design): the Challenger's text in the prompt.
+
+
+def test_with_the_challenger_off_the_prompt_never_mentions_a_reject_or_a_verdict() -> None:
+    state = _every_item()
+    messages = build_messages(state, SECTIONS, challenger=False)
+    assert len(messages) == 1
+    prompt = messages[0].text
+    assert SECTIONS["challenger rules"] not in prompt
+    assert "The verdict on your most recent description:" not in prompt
+    assert "Descriptions rejected in this game" not in prompt
+    assert "reject" not in prompt.lower() and "verdict" not in prompt.lower()
+    assert "{" not in prompt and "}" not in prompt
+    assert [s for s in SHOWN if s not in prompt] == []
+    assert [s for s in (*CHALLENGER_ITEMS, *HIDDEN) if s in prompt] == []
+    assert prompt.endswith(SECTIONS["task: description"])
+    answer = build_prompt({**state, "owes": "answer"}, SECTIONS, challenger=False)
+    assert answer.endswith(SECTIONS["task: answer"])
+    assert "reject" not in answer.lower() and "verdict" not in answer.lower()
+
+
+def test_with_the_challenger_on_the_prompt_is_the_off_prompt_with_both_sections_in_place(
+    round_1: State,
+) -> None:
+    on = build_prompt(round_1, SECTIONS)
+    off = build_prompt(round_1, SECTIONS, challenger=False)
+    rules = SECTIONS["challenger rules"]
+    context = (
+        "The verdict on your most recent description:\n(none)\n\n"
+        "Descriptions rejected in this game, each with its reason:\n(none)"
     )
-    hidden = (
-        "S-card-id", "S-attribute", "S-distractor", "S-guesser-input", "S-description-row",
-        "S-answer-row", "S-lookup", "S-matched-name", "0.3", "41", "42", "43", "44",
-    )
-    assert [s for s in shown if s not in prompt] == []
-    assert [s for s in hidden if s in prompt] == []
+    assert on == build_prompt(round_1, SECTIONS, challenger=True)
+    assert on.count(rules) == on.count(context) == 1
+    assert "{" not in on and "}" not in on
+    # The rules sit after the "Responding to what came before" bullets, the verdict and the
+    # rejected descriptions after the latest guess or question; nothing else differs.
+    assert "- After a question, answer that question and nothing else. Do not give a new " \
+        "description in the same reply.\n\n" + rules + "\n\nOutput format:" in on
+    assert "The Guesser's latest guess or question:\n(none)\n\n" + context + "\n\n" \
+        + SECTIONS["task: description"] in on
+    assert on.replace(rules, "", 1).replace(context, "", 1) == off
+    assert on.count(NONE) == 5 and off.count(NONE) == 3
 
 
 def test_a_fail_verdict_and_two_rejected_descriptions_are_in_the_prompt(round_1: State) -> None:

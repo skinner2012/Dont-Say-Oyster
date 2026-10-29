@@ -119,10 +119,11 @@ def build_graph(
     toggles: Toggles = V2,
 ) -> CompiledStateGraph[State, None, State, State]:
     """The compiled graph for `toggles` with the model nodes bound to `settings`, `corpus`, and
-    `client_for`; C and its route are bound to the Challenger toggle, E to the lookup toggle."""
+    `client_for`; B, C, and C's route are bound to the Challenger toggle, E to the lookup
+    toggle."""
 
     def b(state: State) -> State:
-        return node_b(state, settings.describer, client_for)
+        return node_b(state, settings.describer, client_for, challenger=toggles.challenger)
 
     def c(state: State) -> State:
         return node_c(state, toggles.challenger)

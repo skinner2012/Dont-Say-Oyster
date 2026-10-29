@@ -23,7 +23,7 @@ from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-from dont_say_oyster import guesser, play, tracing
+from dont_say_oyster import describer, guesser, play, tracing
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, Card, load_cards
 from dont_say_oyster.challenger import REJECT_LIMIT
 from dont_say_oyster.corpus import CorpusEntry, load_corpus
@@ -35,7 +35,7 @@ from dont_say_oyster.graph import (
     play_game,
 )
 from dont_say_oyster.guesser import INVALID_QUESTION_LIMIT, PROMPT_PATH
-from dont_say_oyster.llm import ModelSettings, call_structured
+from dont_say_oyster.llm import ModelSettings, call_structured, call_text
 from dont_say_oyster.play import (
     CORPUS_PATH,
     KEEP_ALIVE_CHALLENGER,
@@ -396,6 +396,58 @@ def test_a_v0_game_has_no_challenger_no_tool_loop_and_no_search_text_in_the_prom
     assert capsys.readouterr().out.strip() == (
         "Guesser wins (right guess): round 3, questions 1, rejects 0, forced passes 0"
     )
+
+
+@pytest.fixture
+def describer_prompts(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """The prompt (the first message) of every call the Describer made, in order."""
+    prompts: list[str] = []
+
+    def recording(settings: Any, messages: Any, *args: Any, **kwargs: Any) -> Any:
+        prompts.append(messages[0].text)
+        return call_text(settings, messages, *args, **kwargs)
+
+    monkeypatch.setattr(describer, "call_text", recording)
+    return prompts
+
+
+@pytest.mark.parametrize("variant", ["V0", "V1"])
+def test_without_the_challenger_the_describer_is_never_told_about_rejects(
+    tmp_path: Path,
+    in_memory_tracing: InMemorySpanExporter,
+    describer_prompts: list[str],
+    variant: str,
+) -> None:
+    """Round 1: a description sent back once for Chinese, then a clean one, guessed wrong; round
+    2: a description guessed right. With the Challenger off no Describer prompt mentions a
+    reject or a verdict, and every slot is filled."""
+    guesser_replies = [guess(WRONG), guess(RIGHT)]
+    if variant == "V1":
+        guesser_replies = [*guesser_turn(guess(WRONG)), *guesser_turn(guess(RIGHT))]
+    models = Models(describer=[text(CHINESE), text(CLEAN), text(CLEAN_2)], guesser=guesser_replies)
+    code, output = run(tmp_path, models, variant=variant)
+    assert code == 0
+    assert (final_state(output)["result"], final_state(output)["round"]) == ("right guess", 2)
+    assert len(describer_prompts) == 3
+    for prompt in describer_prompts:
+        assert "reject" not in prompt.lower() and "verdict" not in prompt.lower()
+        assert "{" not in prompt and "}" not in prompt
+        assert "Official name (Chinese): 烤蚵仔\n" in prompt
+
+
+def test_with_the_challenger_on_the_describer_prompt_holds_the_challenger_text(
+    tmp_path: Path, in_memory_tracing: InMemorySpanExporter, describer_prompts: list[str]
+) -> None:
+    models = Models(
+        describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
+    )
+    code, _ = run(tmp_path, models, variant="V2")
+    assert code == 0
+    (prompt,) = describer_prompts
+    describer_sections = sections(describer.PROMPT_PATH)
+    assert describer_sections["challenger rules"] in prompt
+    assert "The verdict on your most recent description:\n(none)\n" in prompt
+    assert "{" not in prompt and "}" not in prompt
 
 
 def test_a_v1_game_has_no_challenger_but_a_tool_loop_with_the_search_text_in_the_prompt(
