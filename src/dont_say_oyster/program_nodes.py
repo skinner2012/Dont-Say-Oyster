@@ -1,5 +1,7 @@
 """The program nodes A, G, F, and C (Full flow of one game) and the routing of F and C. Each
-node takes the State and returns a new State; none calls a model.
+node takes the State and returns a new State; none calls a model. C and its route take the
+Challenger toggle (`SPEC.md` Ablation Design): on, a clean description goes to D; off, C fills
+the Guesser's row itself and routes to E. The toggle defaults to on, V2's value.
 
 Readings settled with the author on 2026-10-20:
 - F's route is the pure function `route_after_f` over `result`; State has no route key.
@@ -15,6 +17,8 @@ from dont_say_oyster.oracle import check_describer, check_guess
 from dont_say_oyster.state import (
     QUESTION_LIMIT,
     ROUNDS,
+    Answer,
+    Description,
     State,
     card_from_state,
     describer_output,
@@ -74,11 +78,33 @@ def route_after_f(state: State) -> Literal["G", "end"]:
 SEND_BACKS = 2  # [R11]
 
 
-def node_c(state: State) -> State:
+def _to_guesser(
+    state: State, kind: Literal["description", "answer"], text: str, output: Description | Answer
+) -> State:
+    """Fill the row the Guesser reads with `output`'s metrics and append `text` to the earlier
+    descriptions and answers (State schema, the note under the table)."""
+    return {
+        **state,
+        "guesser_input": {
+            "kind": kind,
+            "text": text,
+            "latency": output["latency"],
+            "input_tokens": output["input_tokens"],
+            "output_tokens": output["output_tokens"],
+            "attempt": output["attempt"],
+        },
+        "earlier_texts": [*state["earlier_texts"], {"round": state["round"], "kind": kind,
+                                                    "text": text}],
+    }
+
+
+def node_c(state: State, challenger: bool = True) -> State:
     """C: the name check first [R21], so a reply with a card name is a violation even when it
     also has Chinese; then Chinese characters send the reply back to B, twice at most, and the
     third is a violation [R11]; a clean answer fills the Guesser's row and is appended to the
-    earlier descriptions and answers [R12]; a clean description is left for D."""
+    earlier descriptions and answers [R12]. A clean description is left for D when the
+    Challenger is on (`SPEC.md` Ablation Design, V2); with it off, C fills the row and appends
+    the description itself, as D does on a pass, since no node stands between C and E."""
     text = describer_output(state)
     if check_describer(text, card_from_state(state)).violation:
         return {**state, "violation": "Describer"}
@@ -88,29 +114,19 @@ def node_c(state: State) -> State:
         return {**state, "describer_send_backs": state["describer_send_backs"] + 1}
     answer = state["answer"]
     if state["owes"] == "answer" and answer is not None:
-        return {
-            **state,
-            "guesser_input": {
-                "kind": "answer",
-                "text": answer["answer"],
-                "latency": answer["latency"],
-                "input_tokens": answer["input_tokens"],
-                "output_tokens": answer["output_tokens"],
-                "attempt": answer["attempt"],
-            },
-            "earlier_texts": [
-                *state["earlier_texts"],
-                {"round": state["round"], "kind": "answer", "text": answer["answer"]},
-            ],
-        }
+        return _to_guesser(state, "answer", answer["answer"], answer)
+    description = state["description"]
+    if not challenger and description is not None:
+        return _to_guesser(state, "description", description["description"], description)
     return state
 
 
-def route_after_c(state: State) -> Literal["B", "D", "E", "F"]:
+def route_after_c(state: State, challenger: bool = True) -> Literal["B", "D", "E", "F"]:
     """C's route: F on a violation; B when the reply has Chinese (a send-back); E for an answer,
-    skipping the Challenger [R12]; D for a description (for now a description always goes to D)."""
+    skipping the Challenger [R12]; for a description, D when the Challenger is on and E when it
+    is off (Full flow of one game, Transitions that differ between variants)."""
     if state["violation"] == "Describer":
         return "F"
     if has_chinese_characters(describer_output(state)):
         return "B"
-    return "E" if state["owes"] == "answer" else "D"
+    return "E" if state["owes"] == "answer" or not challenger else "D"

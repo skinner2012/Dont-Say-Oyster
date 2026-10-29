@@ -412,6 +412,58 @@ def test_every_reply_carries_latency_token_counts_and_attempt(round_1: State) ->
     assert isinstance(answer["answer"]["latency"], float)
 
 
+# The Challenger toggle (SPEC.md Ablation Design): C with the Challenger off.
+
+
+def test_with_the_challenger_off_c_fills_the_guessers_row_and_routes_a_description_to_e(
+    round_1: State,
+) -> None:
+    state = node_b(round_1, SETTINGS, Clients(recording(CLEAN)))
+    on, off = node_c(state), node_c(state, challenger=False)
+    assert (route_after_c(on), route_after_c(off, challenger=False)) == ("D", "E")
+    assert route_after_c(on, challenger=True) == "D"
+    # With the Challenger on, C leaves the description for D.
+    assert on["guesser_input"] is None and on["earlier_texts"] == []
+    # With it off, C does what D does on a pass: the row and the earlier list.
+    assert off["description"] is not None
+    assert off["guesser_input"] == {
+        "kind": "description",
+        "text": CLEAN,
+        "latency": off["description"]["latency"],
+        "input_tokens": 900,
+        "output_tokens": 60,
+        "attempt": 1,
+    }
+    assert off["earlier_texts"] == [{"round": 1, "kind": "description", "text": CLEAN}]
+    assert (off["rejects"], off["forced_passes"], off["d_route"], off["verdict"]) == (
+        0, 0, None, None
+    )
+    assert off["violation"] is None
+
+
+def test_with_the_challenger_off_c_still_sends_back_and_still_finds_violations(
+    round_1: State,
+) -> None:
+    sent_back = node_c(node_b(round_1, SETTINGS, Clients(recording(CHINESE))), challenger=False)
+    assert route_after_c(sent_back, challenger=False) == "B"
+    assert sent_back["guesser_input"] is None and sent_back["describer_send_backs"] == 1
+    violation = node_c(
+        node_b(round_1, SETTINGS, Clients(recording("Some call it 烤牡蠣 at the stalls."))),
+        challenger=False,
+    )
+    assert route_after_c(violation, challenger=False) == "F"
+    assert violation["violation"] == "Describer" and violation["guesser_input"] is None
+
+
+def test_with_the_challenger_off_an_answer_is_handled_as_before(round_1: State) -> None:
+    state = node_b(_question(round_1), SETTINGS, Clients(recording("Yes.")))
+    answer = node_c(state, challenger=False)
+    assert route_after_c(answer, challenger=False) == "E"
+    assert answer["guesser_input"] is not None
+    assert (answer["guesser_input"]["kind"], answer["guesser_input"]["text"]) == ("answer", "Yes.")
+    assert answer["earlier_texts"][-1] == {"round": 2, "kind": "answer", "text": "Yes."}
+
+
 def test_c_without_the_owed_output_raises(round_1: State) -> None:
     with pytest.raises(ValueError, match="no description"):
         node_c(round_1)

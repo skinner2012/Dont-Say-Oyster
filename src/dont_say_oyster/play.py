@@ -1,10 +1,12 @@
 """The one-game command `play-game`: builds the three roles' settings from its parameters, runs
-one V2 game on one card through the graph (`graph.play_game`), writes the final State as one
-JSON file to the output path, and prints the outcome with the round, question, reject, and
-forced pass counts.
+one game of the given variant on one card through the graph (`graph.play_game`), writes the
+final State as one JSON file to the output path, and prints the outcome with the round,
+question, reject, and forced pass counts.
 
-Parameters (`SPEC.md` Implementation, Commands, without the variant and the memory file, which
-are not built yet): the card id and the output path; the cards and corpus paths; the model and
+Parameters (`SPEC.md` Implementation, Commands, without the memory file, which is not built
+yet): the card id and the output path; the variant, required with no default, so a game's
+variant is always the caller's and never a silent default that a manifest could disagree with
+(V3 is not a choice until its memory toggle exists); the cards and corpus paths; the model and
 num_ctx per role; the temperature; thinking on or off per role. The Ollama endpoint comes from
 `.env` through `llm.ollama_client`. keep_alive is not a parameter (`SPEC.md` Implementation,
 Models): the Challenger gets 0, so it is unloaded after each call, and the Describer and the Guesser
@@ -40,7 +42,7 @@ from pathlib import Path
 from dont_say_oyster import tracing
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, CardFileError, load_cards
 from dont_say_oyster.corpus import CorpusError, load_corpus
-from dont_say_oyster.graph import RoleSettings, play_game
+from dont_say_oyster.graph import TOGGLES, VARIANTS, RoleSettings, play_game
 from dont_say_oyster.llm import (
     ClientFor,
     KeepAlive,
@@ -117,11 +119,17 @@ def outcome_line(state: State) -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="play-game", description="Play one V2 game on one card and write its final State."
+        prog="play-game", description="Play one game on one card and write its final State."
     )
     parser.add_argument("card_id", help="the id of the card to play, from the cards file")
     parser.add_argument(
         "output", type=Path, help="path of the JSON file to write the final State to"
+    )
+    parser.add_argument(
+        "--variant",
+        choices=VARIANTS,
+        required=True,
+        help="the ablation variant to play (required; V3 is not built yet)",
     )
     parser.add_argument(
         "--cards",
@@ -198,14 +206,15 @@ def main(argv: Sequence[str] | None = None, client_for: ClientFor | None = None)
         print(f"cannot write the output file: {e}", file=sys.stderr)
         return 1
     settings = role_settings(args)
+    toggles = TOGGLES[args.variant]
     factory = ollama_client if client_for is None else client_for
     tracer = tracing.build_client()
     try:
         if tracer is None:
-            state = play_game(args.card_id, cards, corpus, settings, factory)
+            state = play_game(args.card_id, cards, corpus, settings, factory, None, toggles)
         else:
             with tracing.game_span(tracer, args.card_id, tracing.session_id(args.output)):
-                state = play_game(args.card_id, cards, corpus, settings, factory, tracer)
+                state = play_game(args.card_id, cards, corpus, settings, factory, tracer, toggles)
     except LLMError as e:
         print(f"the game stopped on a model error: {e}", file=sys.stderr)
         return 1

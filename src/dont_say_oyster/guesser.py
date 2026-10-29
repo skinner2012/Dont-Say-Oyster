@@ -2,8 +2,13 @@
 tool loop with the search tool bound [R43], [R49], the separate structured call for a question
 or a guess [R47], [R48], the invalid-question loop [R17], and E's routing.
 
-E is a plain `State -> State` function taking its ModelSettings, the loaded corpus, and the
-client factory as parameters; no model tag is fixed here (`play.py` passes the constants).
+E is a plain `State -> State` function taking its ModelSettings, the loaded corpus, the
+client factory, and the corpus-lookup toggle (`SPEC.md` Ablation Design) as parameters; no
+model tag is fixed here (`play.py` passes the constants). With the toggle off (V0), E makes the
+structured call alone, with no tool bound and no tool-loop call, and the `{search}` slot of the
+prompt is left empty, so the model is never told that a catalogue or a search tool exists
+(Self-checks: the information each agent gets is clean); on (V1–V2), the slot is filled from
+the `search` section. The toggle defaults to on, V2's value.
 
 Readings settled on 2026-10-21:
 - The prompt file is parsed by its `=== name ===` sections; the model gets the `prompt`
@@ -127,9 +132,10 @@ def _earlier_guesses(state: State) -> str:
     return "\n".join(lines) or NONE
 
 
-def build_prompt(state: State) -> str:
+def build_prompt(state: State, lookup: bool = True) -> str:
     """The Guesser's prompt for this round, from the `prompt` section and the task section
-    matching the schema (guess only when G set the flag [R16])."""
+    matching the schema (guess only when G set the flag [R16]); the `{search}` slot holds the
+    `search` section when the Guesser can look up the corpus [R42] and nothing otherwise."""
     texts = prompt_sections.sections(PROMPT_PATH)
     task = texts["task: guess only"] if state["guess_only"] else texts["task: question or guess"]
     current = state["guesser_input"]
@@ -139,6 +145,7 @@ def build_prompt(state: State) -> str:
         "{earlier_descriptions_and_answers}": _earlier_texts(state),
         "{earlier_guesses_and_questions}": _earlier_guesses(state),
         "{description_or_answer}": current["text"] if current is not None else NONE,
+        "{search}": texts["search"] if lookup else "",
         "{task}": task,
     }
     prompt = texts["prompt"]
@@ -207,20 +214,21 @@ def node_e(
     settings: ModelSettings,
     corpus: Sequence[CorpusEntry],
     client_for: ClientFor = ollama_client,
+    lookup: bool = True,
 ) -> State:
-    """E: the tool loop, then the structured call for a question or a guess, repeated with the
-    fixed message on an invalid question [R17]; writes the Guesser's output, the lookups, the
-    counters, `owes`, and on the third invalid question `violation`."""
+    """E: the tool loop when `lookup` is on, then the structured call for a question or a
+    guess, repeated with the fixed message on an invalid question [R17]; writes the Guesser's
+    output, the lookups, the counters, `owes`, and on the third invalid question `violation`.
+    With `lookup` off there is no tool loop [R47]: the lookups and the lookup counter are left
+    as they are (empty and zero in a game without lookups)."""
     texts = prompt_sections.sections(PROMPT_PATH)
-    messages: list[BaseMessage] = [HumanMessage(build_prompt(state))]
+    messages: list[BaseMessage] = [HumanMessage(build_prompt(state, lookup))]
     invalid = state["invalid_questions"]
     attempt = invalid + 1
-    lookup_count, lookups = _tool_loop(state, settings, corpus, client_for, messages, attempt)
-    after_loop: State = {
-        **state,
-        "lookup_count": lookup_count,
-        "lookups": [*state["lookups"], *lookups],
-    }
+    after_loop: State = state
+    if lookup:
+        count, lookups = _tool_loop(state, settings, corpus, client_for, messages, attempt)
+        after_loop = {**state, "lookup_count": count, "lookups": [*state["lookups"], *lookups]}
     schema = GUESS_ONLY_SCHEMA if state["guess_only"] else QUESTION_OR_GUESS_SCHEMA
     card = card_from_state(state)
     while True:

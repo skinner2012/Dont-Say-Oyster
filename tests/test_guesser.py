@@ -39,6 +39,7 @@ SETTINGS = ModelSettings("Guesser", "gemma4:26b-a4b-it-q4_K_M", 16384, 0.7, Fals
 SECTIONS = sections(PROMPT_PATH)
 FIXED = SECTIONS["fixed message [R17]"]
 BLOCKED = SECTIONS["blocked lookup result"]
+SEARCH = SECTIONS["search"]
 DESCRIPTION = "A seafood snack cooked over open fire at night-market stalls."
 INVALID = "Is it like an oyster omelet?"  # 蚵仔煎 is a distractor; its English names include it
 VALID = "Is it eaten with a dipping sauce?"
@@ -228,6 +229,7 @@ def found(lookup: Lookup) -> dict[str, Any]:
 def test_sections_are_parsed_from_the_prompt_file() -> None:
     assert set(SECTIONS) == {
         "prompt",
+        "search",
         "task: question or guess",
         "task: guess only",
         "fixed message [R17]",
@@ -236,6 +238,7 @@ def test_sections_are_parsed_from_the_prompt_file() -> None:
     }
     assert FIXED.startswith("Your question was not accepted")
     assert BLOCKED.startswith("This search was not run")
+    assert "{search}" in SECTIONS["prompt"] and "search tool" in SEARCH
 
 
 def test_the_prompt_holds_only_the_guessers_items(start: State) -> None:
@@ -328,6 +331,22 @@ def test_with_the_guess_only_flag_the_task_says_guess_only(start: State) -> None
     prompt = build_prompt({**start, "guess_only": True})
     assert prompt.rstrip().endswith(SECTIONS["task: guess only"])
     assert SECTIONS["task: question or guess"] not in prompt
+
+
+def test_the_search_slot_holds_the_search_section_only_when_lookup_is_on(start: State) -> None:
+    """With lookup on (V1–V2) the `{search}` slot is the `search` section; with it off (V0)
+    the slot is empty and the prompt never names the catalogue or the search tool
+    (Self-checks). Neither prompt has an unfilled slot."""
+    with_lookup = build_prompt(start)
+    assert with_lookup == build_prompt(start, lookup=True)
+    assert SEARCH in with_lookup
+    without = build_prompt(start, lookup=False)
+    assert SEARCH not in without
+    assert "catalogue" not in without and "search" not in without
+    for prompt in (with_lookup, without):
+        assert "{" not in prompt and "}" not in prompt
+        assert prompt.rstrip().endswith(SECTIONS["task: question or guess"])
+    assert without == with_lookup.replace(SEARCH, "")
 
 
 def test_the_prompt_file_is_the_committed_one() -> None:
@@ -489,6 +508,41 @@ def test_lookups_from_earlier_rounds_are_kept_and_the_counter_is_this_rounds(
     )
     assert state["lookups"][0] == earlier
     assert len(state["lookups"]) == 2 and state["lookup_count"] == 1
+
+
+# Lookup off (V0): no tool loop.
+
+
+def test_with_lookup_off_e_makes_the_structured_call_alone_with_no_tool_bound(
+    start: State, corpus: list[CorpusEntry], spy: Spy, invocations: list[Any]
+) -> None:
+    clients = Clients(scripted(guess("烤蚵仔")))
+    state = node_e(start, SETTINGS, corpus, clients, lookup=False)
+    assert spy.kinds == ["structured"]
+    assert invocations == []
+    assert clients.model.requests == [{"format": QUESTION_OR_GUESS_SCHEMA}]
+    assert state["lookups"] == [] and state["lookup_count"] == 0
+    assert route_after_e(state) == "F"
+    assert state["guesser_output"] is not None
+    assert (state["guesser_output"]["kind"], state["guesser_output"]["text"]) == (
+        "guess", "烤蚵仔"
+    )
+    (structured,) = spy.structured
+    assert [type(m).__name__ for m in structured.messages] == ["HumanMessage"]
+    assert structured.messages[0].text == build_prompt(start, lookup=False)
+    assert SEARCH not in structured.messages[0].text
+
+
+def test_with_lookup_off_an_invalid_question_repeats_the_structured_call_only(
+    start: State, corpus: list[CorpusEntry], spy: Spy
+) -> None:
+    clients = Clients(scripted(question(INVALID), question(VALID)))
+    state = node_e(start, SETTINGS, corpus, clients, lookup=False)
+    assert spy.kinds == ["structured", "structured"]
+    assert spy.attempts == [1, 2]
+    assert all("tools" not in request for request in clients.model.requests)
+    assert state["questions"] == 1 and route_after_e(state) == "G"
+    assert state["lookups"] == [] and state["lookup_count"] == 0
 
 
 # The structured call [R47], [R48] and its outcomes.

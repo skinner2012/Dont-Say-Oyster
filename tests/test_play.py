@@ -1,5 +1,6 @@
-"""Whole V2 games through the `play-game` command on the committed card 烤蚵仔 and the committed
-corpus, with one scripted model per role injected through `main(argv, client_for=...)`; the
+"""Whole games through the `play-game` command on the committed card 烤蚵仔 and the committed
+corpus, with one scripted model per role injected through `main(argv, client_for=...)`: V2 games
+for the loops, and one V0 and one V1 game for the toggles (no D node; no tool loop in V0); the
 recursion limit and its arithmetic; the settings the command builds; the errors; `--help`. Every
 test traces into memory (`in_memory_tracing`): none reads the developer's Langfuse keys or reaches
 the stack."""
@@ -22,7 +23,7 @@ from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-from dont_say_oyster import play, tracing
+from dont_say_oyster import guesser, play, tracing
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, Card, load_cards
 from dont_say_oyster.challenger import REJECT_LIMIT
 from dont_say_oyster.corpus import CorpusEntry, load_corpus
@@ -33,8 +34,8 @@ from dont_say_oyster.graph import (
     build_graph,
     play_game,
 )
-from dont_say_oyster.guesser import INVALID_QUESTION_LIMIT
-from dont_say_oyster.llm import ModelSettings
+from dont_say_oyster.guesser import INVALID_QUESTION_LIMIT, PROMPT_PATH
+from dont_say_oyster.llm import ModelSettings, call_structured
 from dont_say_oyster.play import (
     CORPUS_PATH,
     KEEP_ALIVE_CHALLENGER,
@@ -43,8 +44,10 @@ from dont_say_oyster.play import (
     role_settings,
 )
 from dont_say_oyster.program_nodes import SEND_BACKS, node_a
+from dont_say_oyster.prompt_sections import sections
 from dont_say_oyster.state import PROGRAM_ONLY, ROUNDS, State
 from dont_say_oyster.tracing import TracingClient
+from tests.test_guesser import tool_reply
 from tests.test_llm import Scripted, raising, reply, scripted
 
 CARD_ID = "card-5ed17f8f"  # 烤蚵仔
@@ -128,11 +131,12 @@ class Models:
 
 
 def run(
-    tmp_path: Path, models: Models, *extra: str, card_id: str = CARD_ID
+    tmp_path: Path, models: Models, *extra: str, card_id: str = CARD_ID, variant: str = "V2"
 ) -> tuple[int, Path]:
-    """Run the command on `card_id` with `models`; return the exit code and the output path."""
+    """Run the command on `card_id` with `models` in `variant`; return the exit code and the
+    output path."""
     output = tmp_path / "game.json"
-    code = main([card_id, str(output), *extra], client_for=models)
+    code = main([card_id, str(output), "--variant", variant, *extra], client_for=models)
     return code, output
 
 
@@ -309,6 +313,148 @@ def test_ten_wrong_guesses_lose_in_round_10_with_no_eleventh_round(
     )
 
 
+# The toggles (SPEC.md Ablation Design): V0 and V1 games.
+
+OBSERVATION_TYPE = "langfuse.observation.type"
+KIND = "langfuse.observation.metadata.kind"  # JSON-encoded
+SEARCH_SECTION = sections(PROMPT_PATH)["search"]
+
+
+def span_names(exporter: InMemorySpanExporter) -> set[str]:
+    return {span.name for span in exporter.get_finished_spans()}
+
+
+def observation_types(exporter: InMemorySpanExporter) -> list[str]:
+    return [str((s.attributes or {}).get(OBSERVATION_TYPE)) for s in exporter.get_finished_spans()]
+
+
+def generation_kinds(exporter: InMemorySpanExporter) -> set[str]:
+    """The `kind` of every generation span: text, structured, or tools."""
+    return {
+        json.loads(str(s.attributes[KIND]))
+        for s in exporter.get_finished_spans()
+        if s.attributes is not None and s.attributes.get(OBSERVATION_TYPE) == "generation"
+    }
+
+
+@pytest.fixture
+def guesser_prompts(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """The prompt (the first message) of every structured call the Guesser made, in order."""
+    prompts: list[str] = []
+
+    def recording(settings: Any, messages: Any, *args: Any, **kwargs: Any) -> Any:
+        prompts.append(messages[0].text)
+        return call_structured(settings, messages, *args, **kwargs)
+
+    monkeypatch.setattr(guesser, "call_structured", recording)
+    return prompts
+
+
+def test_a_v0_game_has_no_challenger_no_tool_loop_and_no_search_text_in_the_prompt(
+    tmp_path: Path,
+    in_memory_tracing: InMemorySpanExporter,
+    guesser_prompts: list[str],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Round 1: a description reaches the Guesser straight from C, which asks a question; round
+    2: the answer, with no Challenger call [R12]; round 3: a description, guessed right. Every
+    E visit is one structured call: no tool-loop reply is scripted."""
+    models = Models(
+        describer=[text(CLEAN), text(ANSWER), text(CLEAN_2)],
+        guesser=[question(VALID), guess(WRONG), guess(RIGHT)],
+    )
+    code, output = run(tmp_path, models, variant="V0")
+    assert code == 0
+    state = final_state(output)
+    assert (state["result"], state["round"], state["questions"]) == ("right guess", 3, 1)
+    assert [models.calls(role) for role in ROLES] == [3, 0, 3]
+    # C filled the Guesser's row and the earlier descriptions and answers for each description.
+    assert state["guesser_input"] is not None
+    assert (state["guesser_input"]["kind"], state["guesser_input"]["text"]) == (
+        "description", CLEAN_2
+    )
+    assert state["earlier_texts"] == [
+        {"round": 1, "kind": "description", "text": CLEAN},
+        {"round": 2, "kind": "answer", "text": ANSWER},
+        {"round": 3, "kind": "description", "text": CLEAN_2},
+    ]
+    assert (state["rejects"], state["forced_passes"], state["rejected"]) == (0, 0, [])
+    assert state["verdict"] is None and state["d_route"] is None
+    assert state["lookups"] == [] and state["lookup_count"] == 0
+    # No D span, no tool span, no tool-bound generation span.
+    names = span_names(in_memory_tracing)
+    assert {"G", "B", "C", "E", "F"} <= names and "D" not in names
+    assert "tool" not in observation_types(in_memory_tracing)
+    assert generation_kinds(in_memory_tracing) == {"text", "structured"}
+    # The prompt never mentions the catalogue or the search tool (Self-checks) and has no
+    # unfilled slot.
+    assert len(guesser_prompts) == 3
+    for prompt in guesser_prompts:
+        assert SEARCH_SECTION not in prompt
+        assert "catalogue" not in prompt and "search" not in prompt
+        assert "{" not in prompt and "}" not in prompt
+    assert capsys.readouterr().out.strip() == (
+        "Guesser wins (right guess): round 3, questions 1, rejects 0, forced passes 0"
+    )
+
+
+def test_a_v1_game_has_no_challenger_but_a_tool_loop_with_the_search_text_in_the_prompt(
+    tmp_path: Path,
+    in_memory_tracing: InMemorySpanExporter,
+    guesser_prompts: list[str],
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    models = Models(
+        describer=[text(CLEAN)],
+        guesser=[tool_reply({"keywords": ["oyster"]}), *guesser_turn(guess(RIGHT))],
+    )
+    code, output = run(tmp_path, models, variant="V1")
+    assert code == 0
+    state = final_state(output)
+    assert (state["result"], state["round"]) == ("right guess", 1)
+    assert [models.calls(role) for role in ROLES] == [1, 0, 3]
+    assert state["guesser_input"] is not None
+    assert (state["guesser_input"]["kind"], state["guesser_input"]["text"]) == (
+        "description", CLEAN
+    )
+    assert state["earlier_texts"] == [{"round": 1, "kind": "description", "text": CLEAN}]
+    assert (state["rejects"], state["forced_passes"], state["rejected"]) == (0, 0, [])
+    assert state["verdict"] is None and state["d_route"] is None
+    assert [(lookup["round"], lookup["status"]) for lookup in state["lookups"]] == [
+        (1, "success")
+    ]
+    names = span_names(in_memory_tracing)
+    assert {"G", "B", "C", "E", "F", "search"} <= names and "D" not in names
+    assert observation_types(in_memory_tracing).count("tool") == 1
+    assert generation_kinds(in_memory_tracing) == {"text", "tools", "structured"}
+    (prompt,) = guesser_prompts
+    assert SEARCH_SECTION in prompt
+    assert "{" not in prompt and "}" not in prompt
+    assert capsys.readouterr().out.strip() == (
+        "Guesser wins (right guess): round 1, questions 0, rejects 0, forced passes 0"
+    )
+
+
+@pytest.mark.parametrize("argv", [[], ["--variant", "V3"]], ids=["no-variant", "V3"])
+def test_no_variant_or_v3_exits_non_zero_before_any_model_call(
+    tmp_path: Path, argv: list[str], capsys: pytest.CaptureFixture[str]
+) -> None:
+    models = Models(
+        describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
+    )
+    output = tmp_path / "game.json"
+    with pytest.raises(SystemExit) as exit_info:
+        main([CARD_ID, str(output), *argv], client_for=models)
+    assert exit_info.value.code != 0
+    assert "--variant" in capsys.readouterr().err
+    assert not output.exists()
+    assert [models.calls(role) for role in ROLES] == [0, 0, 0]
+    assert models.settings == {role: [] for role in ROLES}
+
+
+# The recursion limit.
+
+
 def worst_case() -> Models:
     """The scripted worst case: in each of ten rounds, three descriptions each sent back twice,
     two rejects then a forced pass, and a wrong guess, preceded in rounds 1–9 by two invalid
@@ -378,7 +524,9 @@ def test_the_worst_case_arithmetic_is_exact(cards: list[Card], corpus: list[Corp
     limit above the visit count, so the limit at the count fails and one above passes."""
     assert RECURSION_LIMIT > WORST_CASE_STEPS
     assert WORST_CASE_STEPS == 240
-    settings = role_settings(play.build_parser().parse_args([CARD_ID, "out.json"]))
+    settings = role_settings(
+        play.build_parser().parse_args([CARD_ID, "out.json", "--variant", "V2"])
+    )
     (card,) = [c for c in cards if c.card_id == CARD_ID]
     with pytest.raises(GraphRecursionError):
         build_graph(settings, corpus, worst_case()).invoke(
@@ -448,7 +596,9 @@ def test_an_unknown_card_id_exits_non_zero_before_any_model_call(
 def test_node_a_raises_on_an_unknown_card_id_before_the_graph_runs(
     cards: list[Card], corpus: list[CorpusEntry]
 ) -> None:
-    settings = role_settings(play.build_parser().parse_args([CARD_ID, "out.json"]))
+    settings = role_settings(
+        play.build_parser().parse_args([CARD_ID, "out.json", "--variant", "V2"])
+    )
     models = Models()
     with pytest.raises(KeyError, match="card-00000000"):
         play_game("card-00000000", cards, corpus, settings, models)
@@ -469,7 +619,7 @@ def test_a_missing_output_directory_is_created_and_the_file_written(tmp_path: Pa
     )
     output = tmp_path / "runs" / "v2" / "game.json"
     assert not output.parent.exists()
-    code = main([CARD_ID, str(output)], client_for=models)
+    code = main([CARD_ID, str(output), "--variant", "V2"], client_for=models)
     assert code == 0
     assert final_state(output)["result"] == "right guess"
 
@@ -483,7 +633,7 @@ def test_an_unwritable_output_path_exits_non_zero_before_any_model_call(
     blocker = tmp_path / "not-a-directory"
     blocker.write_text("", encoding="utf-8")
     output = blocker / "game.json"  # the parent is a regular file
-    code = main([CARD_ID, str(output)], client_for=models)
+    code = main([CARD_ID, str(output), "--variant", "V2"], client_for=models)
     assert code != 0
     assert "not-a-directory" in capsys.readouterr().err
     assert [models.calls(role) for role in ROLES] == [0, 0, 0]
@@ -511,7 +661,7 @@ def test_the_default_settings_are_the_role_defaults_with_keep_alive_fixed_per_ro
 
 def test_the_parameters_set_each_roles_model_num_ctx_temperature_and_thinking() -> None:
     args = play.build_parser().parse_args([
-        CARD_ID, "out.json",
+        CARD_ID, "out.json", "--variant", "V2",
         "--describer-model", "qwen3.8:9b-q4_K_M", "--describer-num-ctx", "4096",
         "--challenger-model", "gemma4:4b-it-q4_K_M", "--challenger-num-ctx", "2048",
         "--guesser-model", "gemma4:12b-it-q4_K_M", "--guesser-num-ctx", "8192",
@@ -568,6 +718,7 @@ def test_help_lists_every_parameter(capsys: pytest.CaptureFixture[str]) -> None:
     for parameter in (
         "card_id",
         "output",
+        "--variant {V0,V1,V2}",
         "--cards",
         "--corpus",
         "--describer-model",
@@ -582,7 +733,7 @@ def test_help_lists_every_parameter(capsys: pytest.CaptureFixture[str]) -> None:
         "--temperature",
     ):
         assert parameter in out
-    for absent in ("--variant", "--memory", "keep-alive", "keep_alive"):
+    for absent in ("--memory", "keep-alive", "keep_alive"):
         assert absent not in out
 
 

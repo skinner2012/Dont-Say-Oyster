@@ -73,7 +73,7 @@ def run_traced(
     client, exporter = in_memory_client()
     monkeypatch.setattr(tracing, "build_client", lambda: client)
     output = tmp_path / SESSION / "game.json"
-    code = main([CARD_ID, str(output)], client_for=models)
+    code = main([CARD_ID, str(output), "--variant", "V2"], client_for=models)
     return code, output, list(exporter.get_finished_spans())
 
 
@@ -235,7 +235,7 @@ def run_with_the_real_build_client(
     )
     output = tmp_path / SESSION / "game.json"
     with caplog.at_level(logging.WARNING, logger=TRACING_LOGGER):
-        code = main([CARD_ID, str(output)], client_for=models)
+        code = main([CARD_ID, str(output), "--variant", "V2"], client_for=models)
     return code, output, built
 
 
