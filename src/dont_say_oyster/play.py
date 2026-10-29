@@ -1,7 +1,7 @@
 """The one-game command `play-game`: builds the three roles' settings from its parameters, runs
-one game of the given variant on one card through the graph (`graph.play_game`), writes the
-final State as one JSON file to the output path, and prints the outcome with the round,
-question, reject, and forced pass counts.
+one game of the given variant on one card through the graph (`graph.play_game`), appends the
+game's record (`record.py`) to the output path as one JSON line, and prints the outcome with the
+round, question, reject, and forced pass counts.
 
 Parameters (`SPEC.md` Implementation, Commands, without the memory file, which is not built
 yet): the card id and the output path; the variant, required with no default, so a game's
@@ -12,14 +12,18 @@ num_ctx per role; the temperature; thinking on or off per role. The Ollama endpo
 Models): the Challenger gets 0, so it is unloaded after each call, and the Describer and the Guesser
 get one fixed value, `KEEP_ALIVE_RESIDENT`, that keeps them loaded.
 
-Output: until the JSONL record exists, the output file is the final State as JSON, the
-program-only fields (`state.PROGRAM_ONLY`) included, since nothing else records them yet. The
-printed line gives the outcome (one of the four F results and who wins) and the counts; the
-reject count printed is the whole game's (the length of the earlier rejected descriptions row),
-since State's `rejects` counter is scoped to the round [R25]. num_ctx warnings (`llm.py`) go to
-stderr through `logging`, configured here. A model error (`LLMError`) stops the game
-(`SPEC.md` Recovery, forks, and replay, Model errors): the error goes to stderr, no output file
-is written, and the exit code is non-zero. An unknown card id, and an output path that cannot be
+Output: the output file is a JSONL file, and the game appends one line to it, its record
+(`SPEC.md` Implementation, Experiment result format; the format is `data/records/schema.json`),
+creating the file when it is missing; the final State is not written anywhere, since the record
+holds what the game left. The file name is the caller's, and a second game into the same file
+adds a second line; a batch is to write one file per game next to its manifest, so the file's
+directory names the session (Tracing, below). The printed line gives the outcome (one of the
+four F results and who wins) and the counts; the reject count printed is the whole game's (the
+length of the earlier rejected descriptions row), since State's `rejects` counter is scoped to
+the round [R25]. num_ctx warnings (`llm.py`) go to stderr through `logging`, configured here. A
+model error (`LLMError`) stops the game (`SPEC.md` Recovery, forks, and replay, Model errors):
+the error goes to stderr, no record is written (an output file that did not exist is not
+created), and the exit code is non-zero. An unknown card id, and an output path that cannot be
 written (its parent directory is created if missing), each exit non-zero before any model
 call.
 
@@ -33,7 +37,6 @@ keys the client is built and the exporter logs each rejected export. None of the
 the game (author, 2026-10-25)."""
 
 import argparse
-import json
 import logging
 import sys
 from collections.abc import Sequence
@@ -51,6 +54,7 @@ from dont_say_oyster.llm import (
     Thinking,
     ollama_client,
 )
+from dont_say_oyster.record import build_record, write_record
 from dont_say_oyster.state import State, winner
 
 CORPUS_PATH = REPO_ROOT / "data" / "corpus" / "corpus.json"
@@ -119,11 +123,13 @@ def outcome_line(state: State) -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="play-game", description="Play one game on one card and write its final State."
+        prog="play-game", description="Play one game on one card and append its record."
     )
     parser.add_argument("card_id", help="the id of the card to play, from the cards file")
     parser.add_argument(
-        "output", type=Path, help="path of the JSON file to write the final State to"
+        "output",
+        type=Path,
+        help="path of the JSONL file to append the game's record to (created when missing)",
     )
     parser.add_argument(
         "--variant",
@@ -221,7 +227,7 @@ def main(argv: Sequence[str] | None = None, client_for: ClientFor | None = None)
     finally:
         if tracer is not None:
             tracing.flush(tracer)
-    args.output.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_record(build_record(state, args.variant, settings), args.output)
     print(outcome_line(state))
     return 0
 

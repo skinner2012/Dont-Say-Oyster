@@ -3,19 +3,22 @@ corpus, with one scripted model per role injected through `main(argv, client_for
 for the loops, and one V0 and one V1 game for the toggles (no D node; no tool loop in V0); the
 recursion limit and its arithmetic; the settings the command builds; the errors; `--help`. Every
 test traces into memory (`in_memory_tracing`): none reads the developer's Langfuse keys or reaches
-the stack."""
+the stack. A game run through the command is read from its record, which every read validates
+against the schema; a program-only or card field the record does not hold is read from the final
+State of the same script run through `graph.play_game` directly (`play_directly`)."""
 
 import json
 import logging
 import tomllib
 from collections import Counter
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
 from uuid import uuid4
 
 import httpx
 import pytest
+from jsonschema import Draft202012Validator
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
@@ -30,8 +33,10 @@ from dont_say_oyster.challenger import REJECT_LIMIT
 from dont_say_oyster.corpus import CorpusEntry, load_corpus
 from dont_say_oyster.graph import (
     RECURSION_LIMIT,
+    TOGGLES,
     WORST_CASE_STEPS,
     RoleSettings,
+    Variant,
     build_graph,
     play_game,
 )
@@ -46,6 +51,7 @@ from dont_say_oyster.play import (
 )
 from dont_say_oyster.program_nodes import SEND_BACKS, node_a
 from dont_say_oyster.prompt_sections import sections
+from dont_say_oyster.record import SCHEMA_PATH
 from dont_say_oyster.state import PROGRAM_ONLY, ROUNDS, State
 from dont_say_oyster.tracing import TracingClient
 from tests.spans import METADATA, OBSERVATION_TYPE, metadata, of_type
@@ -137,15 +143,35 @@ def run(
 ) -> tuple[int, Path]:
     """Run the command on `card_id` with `models` in `variant`; return the exit code and the
     output path."""
-    output = tmp_path / "game.json"
+    output = tmp_path / "game.jsonl"
     code = main([card_id, str(output), "--variant", variant, *extra], client_for=models)
     return code, output
 
 
-def final_state(output: Path) -> State:
-    data = json.loads(output.read_text(encoding="utf-8"))
-    assert isinstance(data, dict)
-    return data  # type: ignore[return-value]
+RECORD_VALIDATOR = Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8")))
+
+
+def game_record(output: Path) -> dict[str, Any]:
+    """The record of the one game written to `output`: the file is one line, which validates
+    against `data/records/schema.json`."""
+    lines = output.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1
+    record = json.loads(lines[0])
+    RECORD_VALIDATOR.validate(record)
+    assert isinstance(record, dict)
+    return record
+
+
+def play_directly(
+    models: Models, variant: Variant = "V2", tracer: TracingClient | None = None
+) -> State:
+    """The final State of a game on `CARD_ID` run through `graph.play_game` directly, with the
+    settings the command builds by default: for the program-only and card fields the record
+    does not hold. Given `tracer`, the caller opens the game span, as `play.main` does."""
+    corpus = load_corpus(CORPUS_PATH)
+    cards = load_cards(CARDS_PATH, corpus)
+    args = play.build_parser().parse_args([CARD_ID, "out.jsonl", "--variant", variant])
+    return play_game(CARD_ID, cards, corpus, role_settings(args), models, tracer, TOGGLES[variant])
 
 
 def in_memory_client() -> tuple[TracingClient, InMemorySpanExporter]:
@@ -183,12 +209,11 @@ def cards(corpus: list[CorpusEntry]) -> list[Card]:
 
 
 def assert_calls_are_the_requests_and_the_spans(
-    state: State, models: Models, exporter: InMemorySpanExporter
+    calls: Sequence[Mapping[str, Any]], models: Models, exporter: InMemorySpanExporter
 ) -> None:
     """One wrapper call is one `calls` entry and one generation span: as many entries as the
     scripted models received requests, ordinals 1..n, and the same (round, role, attempt, kind)
     multiset as the exporter's generation spans."""
-    calls = state["calls"]
     assert len(calls) == sum(models.calls(role) for role in ROLES)
     assert [entry["ordinal"] for entry in calls] == list(range(1, len(calls) + 1))
     generations = of_type(list(exporter.get_finished_spans()), "generation")
@@ -204,35 +229,39 @@ def assert_calls_are_the_requests_and_the_spans(
 # Whole games.
 
 
-def test_a_right_guess_in_round_1_wins_and_writes_the_final_state(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    models = Models(
+def right_guess_in_round_1() -> Models:
+    return Models(
         describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
     )
+
+
+def test_a_right_guess_in_round_1_wins_and_writes_the_record(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    models = right_guess_in_round_1()
     code, output = run(tmp_path, models)
     assert code == 0
-    state = final_state(output)
-    assert (state["result"], state["matched_name"], state["round"]) == ("right guess", RIGHT, 1)
-    assert state["card_id"] == CARD_ID and state["names"][0] == "烤蚵仔"
-    assert state["description"] is not None and state["description"]["description"] == CLEAN
-    assert state["guesser_output"] is not None and state["guesser_output"]["text"] == RIGHT
-    assert state["earlier_texts"] == [{"round": 1, "kind": "description", "text": CLEAN}]
-    assert state["earlier_guesses"] == [
-        {"round": 1, "kind": "guess", "text": RIGHT, "confidence": 0.8}
-    ]
-    assert PROGRAM_ONLY <= state.keys()
+    record = game_record(output)
+    assert (record["result"], record["matched_name"], record["counters"]["rounds"]) == (
+        "right guess", RIGHT, 1
+    )
+    assert (record["card_id"], record["official_name"], record["variant"]) == (
+        CARD_ID, "烤蚵仔", "V2"
+    )
+    (entry,) = record["rounds"]
+    assert (entry["owed"], entry["reached_text"]) == ("description", CLEAN)
+    assert entry["guesser_output"] == {"kind": "guess", "text": RIGHT, "confidence": 0.8}
     line = capsys.readouterr().out.strip()
     assert line == "Guesser wins (right guess): round 1, questions 0, rejects 0, forced passes 0"
     assert [models.calls(role) for role in ROLES] == [1, 1, 2]
+    # The final State the record was built from still holds the program-only fields.
+    assert PROGRAM_ONLY <= play_directly(right_guess_in_round_1()).keys()
 
 
-def test_a_game_through_send_back_reject_question_answer_and_wrong_guess(
-    tmp_path: Path, in_memory_tracing: InMemorySpanExporter, capsys: pytest.CaptureFixture[str]
-) -> None:
-    models = Models(
-        # Round 1: Chinese, sent back; clean, rejected; clean, passed. Round 2: the answer.
-        # Round 3: a description.
+def mixed_game() -> Models:
+    """Round 1: Chinese, sent back; clean, rejected; clean, passed; a valid question. Round 2:
+    the answer, guessed wrong. Round 3: a description, guessed right."""
+    return Models(
         describer=[text(CHINESE), text(CLEAN), text(CLEAN_2), text(ANSWER), text(CLEAN_3)],
         challenger=[verdict("fail", FAIL_REASON), verdict("pass"), verdict("pass")],
         guesser=[
@@ -241,24 +270,30 @@ def test_a_game_through_send_back_reject_question_answer_and_wrong_guess(
             *guesser_turn(guess(RIGHT)),  # round 3
         ],
     )
+
+
+def test_a_game_through_send_back_reject_question_answer_and_wrong_guess(
+    tmp_path: Path, in_memory_tracing: InMemorySpanExporter, capsys: pytest.CaptureFixture[str]
+) -> None:
+    models = mixed_game()
     code, output = run(tmp_path, models)
     assert code == 0
-    state = final_state(output)
-    assert state["result"] == "right guess"
-    assert (state["round"], state["questions"], state["forced_passes"]) == (3, 1, 0)
-    assert state["rejects"] == 0  # this round's [R25]
-    assert state["rejected"] == [{"round": 1, "description": CLEAN, "reason": FAIL_REASON}]
-    assert state["earlier_texts"] == [
-        {"round": 1, "kind": "description", "text": CLEAN_2},
-        {"round": 2, "kind": "answer", "text": ANSWER},
-        {"round": 3, "kind": "description", "text": CLEAN_3},
+    record = game_record(output)  # one line, valid against the schema
+    assert record["result"] == "right guess"
+    assert record["counters"] == {"rounds": 3, "questions": 1, "forced_passes": 0}
+    rounds = record["rounds"]
+    assert [entry["round"] for entry in rounds] == [1, 2, 3]
+    assert [r["rejected"] for r in rounds] == [
+        [{"description": CLEAN, "reason": FAIL_REASON}], [], []
     ]
-    assert [(g["round"], g["kind"], g["text"]) for g in state["earlier_guesses"]] == [
-        (1, "question", VALID),
-        (2, "guess", WRONG),
-        (3, "guess", RIGHT),
+    assert [(r["owed"], r["reached_text"]) for r in rounds] == [
+        ("description", CLEAN_2), ("answer", ANSWER), ("description", CLEAN_3)
     ]
-    assert state["answer"] is not None and state["answer"]["answer"] == ANSWER
+    assert [r["guesser_output"] for r in rounds] == [
+        {"kind": "question", "text": VALID, "confidence": None},
+        {"kind": "guess", "text": WRONG, "confidence": 0.8},
+        {"kind": "guess", "text": RIGHT, "confidence": 0.8},
+    ]
     # The Challenger judged the two descriptions of round 1 and the one of round 3, never the
     # answer [R12].
     assert [models.calls(role) for role in ROLES] == [5, 3, 6]
@@ -267,9 +302,10 @@ def test_a_game_through_send_back_reject_question_answer_and_wrong_guess(
     )
     # Every call kept as the game ran: round 1 is B (sent back), B, D (fail), B, D (pass), E's
     # tool-loop call and its question; round 2 is B's answer and E; round 3 is B, D, and E.
-    assert_calls_are_the_requests_and_the_spans(state, models, in_memory_tracing)
+    assert len(record["calls"]) == 14
+    assert_calls_are_the_requests_and_the_spans(record["calls"], models, in_memory_tracing)
     assert [(c["node"], c["round"], c["attempt"], c["kind"], c["call"]) for c in
-            state["calls"]] == [
+            record["calls"]] == [
         ("B", 1, 1, "text", None), ("B", 1, 2, "text", None), ("D", 1, 1, "structured", None),
         ("B", 1, 1, "text", None), ("D", 1, 1, "structured", None), ("E", 1, 1, "tools", 1),
         ("E", 1, 1, "structured", None),
@@ -277,15 +313,20 @@ def test_a_game_through_send_back_reject_question_answer_and_wrong_guess(
         ("B", 3, 1, "text", None), ("D", 3, 1, "structured", None), ("E", 3, 1, "tools", 1),
         ("E", 3, 1, "structured", None),
     ]
-    assert state["sent_back"] == [
-        {"round": 1, "node": "C", "kind": "description", "text": CHINESE, "ordinal": 1,
-         "reason": "Chinese characters", "replaced": False},
+    assert [r["sent_back"] for r in rounds] == [
+        [{"node": "C", "kind": "description", "text": CHINESE, "ordinal": 1,
+          "reason": "Chinese characters", "replaced": False}],
+        [],
+        [],
     ]
-    assert state["verdicts"] == [
-        {"round": 1, "verdict": "fail", "reason": FAIL_REASON, "ordinal": 3},
-        {"round": 1, "verdict": "pass", "reason": None, "ordinal": 5},
-        {"round": 3, "verdict": "pass", "reason": None, "ordinal": 12},
+    assert [r["verdicts"] for r in rounds] == [
+        [{"verdict": "fail", "reason": FAIL_REASON, "ordinal": 3},
+         {"verdict": "pass", "reason": None, "ordinal": 5}],
+        [],
+        [{"verdict": "pass", "reason": None, "ordinal": 12}],
     ]
+    # The reject counter is this round's [R25], so zero at the end.
+    assert play_directly(mixed_game())["rejects"] == 0
 
 
 def test_a_forbidden_word_in_round_2_is_a_describer_violation(
@@ -298,12 +339,11 @@ def test_a_forbidden_word_in_round_2_is_a_describer_violation(
     )
     code, output = run(tmp_path, models)
     assert code == 0
-    state = final_state(output)
-    assert (state["result"], state["violation"], state["round"]) == (
-        "Describer violation",
-        "Describer",
-        2,
-    )
+    record = game_record(output)
+    assert (record["result"], record["counters"]["rounds"]) == ("Describer violation", 2)
+    assert [(r["reached_text"], r["violating_text"]) for r in record["rounds"]] == [
+        (CLEAN, None), (None, FORBIDDEN)
+    ]
     assert capsys.readouterr().out.startswith("Guesser wins (Describer violation): round 2")
     assert [models.calls(role) for role in ROLES] == [2, 1, 2]
 
@@ -318,41 +358,44 @@ def test_three_invalid_questions_are_a_guesser_violation(
     )
     code, output = run(tmp_path, models)
     assert code == 0
-    state = final_state(output)
-    assert (state["result"], state["violation"], state["questions"]) == (
-        "Guesser violation",
-        "Guesser",
-        0,
+    record = game_record(output)
+    assert (record["result"], record["counters"]["questions"]) == ("Guesser violation", 0)
+    (entry,) = record["rounds"]
+    assert (entry["guesser_output"], entry["violating_question"]) == (None, INVALID)
+    assert [sent["text"] for sent in entry["sent_back"]] == [INVALID] * (
+        INVALID_QUESTION_LIMIT - 1
     )
-    assert state["earlier_guesses"] == []
     assert capsys.readouterr().out.startswith("Guesser loses (Guesser violation): round 1")
     assert [models.calls(role) for role in ROLES] == [1, 1, 1 + INVALID_QUESTION_LIMIT]
+
+
+def ten_wrong_guesses() -> Models:
+    return Models(
+        describer=[text(CLEAN)] * ROUNDS,
+        challenger=[verdict("pass")] * ROUNDS,
+        guesser=[m for _ in range(ROUNDS) for m in guesser_turn(guess(WRONG))],
+    )
 
 
 def test_ten_wrong_guesses_lose_in_round_10_with_no_eleventh_round(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    models = Models(
-        describer=[text(CLEAN)] * ROUNDS,
-        challenger=[verdict("pass")] * ROUNDS,
-        guesser=[m for _ in range(ROUNDS) for m in guesser_turn(guess(WRONG))],
-    )
+    models = ten_wrong_guesses()
     code, output = run(tmp_path, models)
     assert code == 0
-    state = final_state(output)
-    assert (state["result"], state["round"], state["guess_only"]) == (
-        "wrong guess in round 10",
-        ROUNDS,
-        True,
-    )
-    assert [g["round"] for g in state["earlier_guesses"]] == list(range(1, ROUNDS + 1))
-    assert [t["round"] for t in state["earlier_texts"]] == list(range(1, ROUNDS + 1))
+    record = game_record(output)
+    assert (record["result"], record["counters"]["rounds"]) == ("wrong guess in round 10", ROUNDS)
+    assert [r["round"] for r in record["rounds"]] == list(range(1, ROUNDS + 1))
+    assert [
+        (r["reached_text"], r["guesser_output"]["text"]) for r in record["rounds"]
+    ] == [(CLEAN, WRONG)] * ROUNDS
     # Every scripted reply was used and none was asked for beyond them.
     assert [models.calls(role) for role in ROLES] == [ROUNDS, ROUNDS, 2 * ROUNDS]
     assert capsys.readouterr().out.strip() == (
         "Guesser loses (wrong guess in round 10): round 10, questions 0, rejects 0, "
         "forced passes 0"
     )
+    assert play_directly(ten_wrong_guesses())["guess_only"] is True  # round 10 [R16]
 
 
 # The toggles (SPEC.md Ablation Design): V0 and V1 games.
@@ -391,6 +434,13 @@ def guesser_prompts(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     return prompts
 
 
+def v0_game() -> Models:
+    return Models(
+        describer=[text(CLEAN), text(ANSWER), text(CLEAN_2)],
+        guesser=[question(VALID), guess(WRONG), guess(RIGHT)],
+    )
+
+
 def test_a_v0_game_has_no_challenger_no_tool_loop_and_no_search_text_in_the_prompt(
     tmp_path: Path,
     in_memory_tracing: InMemorySpanExporter,
@@ -400,38 +450,32 @@ def test_a_v0_game_has_no_challenger_no_tool_loop_and_no_search_text_in_the_prom
     """Round 1: a description reaches the Guesser straight from C, which asks a question; round
     2: the answer, with no Challenger call [R12]; round 3: a description, guessed right. Every
     E visit is one structured call: no tool-loop reply is scripted."""
-    models = Models(
-        describer=[text(CLEAN), text(ANSWER), text(CLEAN_2)],
-        guesser=[question(VALID), guess(WRONG), guess(RIGHT)],
-    )
+    models = v0_game()
     code, output = run(tmp_path, models, variant="V0")
     assert code == 0
-    state = final_state(output)
-    assert (state["result"], state["round"], state["questions"]) == ("right guess", 3, 1)
-    assert [models.calls(role) for role in ROLES] == [3, 0, 3]
-    # C filled the Guesser's row and the earlier descriptions and answers for each description.
-    assert state["guesser_input"] is not None
-    assert (state["guesser_input"]["kind"], state["guesser_input"]["text"]) == (
-        "description", CLEAN_2
+    record = game_record(output)
+    assert record["variant"] == "V0"
+    assert (record["result"], record["counters"]) == (
+        "right guess", {"rounds": 3, "questions": 1, "forced_passes": 0}
     )
-    assert state["earlier_texts"] == [
-        {"round": 1, "kind": "description", "text": CLEAN},
-        {"round": 2, "kind": "answer", "text": ANSWER},
-        {"round": 3, "kind": "description", "text": CLEAN_2},
+    assert [models.calls(role) for role in ROLES] == [3, 0, 3]
+    # C sent each description and the answer on to the Guesser.
+    assert [(r["owed"], r["reached_text"]) for r in record["rounds"]] == [
+        ("description", CLEAN), ("answer", ANSWER), ("description", CLEAN_2)
     ]
-    assert (state["rejects"], state["forced_passes"], state["rejected"]) == (0, 0, [])
-    assert state["verdict"] is None and state["d_route"] is None
-    assert state["lookups"] == [] and state["lookup_count"] == 0
+    for entry in record["rounds"]:
+        assert (entry["rejected"], entry["verdicts"], entry["lookups"], entry["sent_back"]) == (
+            [], [], [], []
+        )
     # No D span, no tool span, no tool-bound generation span.
     names = span_names(in_memory_tracing)
     assert {"G", "B", "C", "E", "F"} <= names and "D" not in names
     assert "tool" not in observation_types(in_memory_tracing)
     assert generation_kinds(in_memory_tracing) == {"text", "structured"}
-    assert_calls_are_the_requests_and_the_spans(state, models, in_memory_tracing)
-    assert [(c["node"], c["kind"], c["call"]) for c in state["calls"]] == [
+    assert_calls_are_the_requests_and_the_spans(record["calls"], models, in_memory_tracing)
+    assert [(c["node"], c["kind"], c["call"]) for c in record["calls"]] == [
         ("B", "text", None), ("E", "structured", None)
     ] * 3
-    assert (state["sent_back"], state["verdicts"]) == ([], [])
     # The prompt never mentions the catalogue or the search tool (Self-checks) and has no
     # unfilled slot.
     assert len(guesser_prompts) == 3
@@ -442,6 +486,15 @@ def test_a_v0_game_has_no_challenger_no_tool_loop_and_no_search_text_in_the_prom
     assert capsys.readouterr().out.strip() == (
         "Guesser wins (right guess): round 3, questions 1, rejects 0, forced passes 0"
     )
+    # C filled the row the Guesser reads, and D, the reject counter, and the lookup counter
+    # were never written.
+    state = play_directly(v0_game(), "V0")
+    assert state["guesser_input"] is not None
+    assert (state["guesser_input"]["kind"], state["guesser_input"]["text"]) == (
+        "description", CLEAN_2
+    )
+    assert (state["rejects"], state["verdict"], state["d_route"]) == (0, None, None)
+    assert state["lookup_count"] == 0
 
 
 @pytest.fixture
@@ -473,7 +526,8 @@ def test_without_the_challenger_the_describer_is_never_told_about_rejects(
     models = Models(describer=[text(CHINESE), text(CLEAN), text(CLEAN_2)], guesser=guesser_replies)
     code, output = run(tmp_path, models, variant=variant)
     assert code == 0
-    assert (final_state(output)["result"], final_state(output)["round"]) == ("right guess", 2)
+    record = game_record(output)
+    assert (record["result"], record["counters"]["rounds"]) == ("right guess", 2)
     assert len(describer_prompts) == 3
     for prompt in describer_prompts:
         assert "reject" not in prompt.lower() and "verdict" not in prompt.lower()
@@ -496,46 +550,55 @@ def test_with_the_challenger_on_the_describer_prompt_holds_the_challenger_text(
     assert "{" not in prompt and "}" not in prompt
 
 
+def v1_game() -> Models:
+    return Models(
+        describer=[text(CLEAN)],
+        guesser=[tool_reply({"keywords": ["oyster"]}), *guesser_turn(guess(RIGHT))],
+    )
+
+
 def test_a_v1_game_has_no_challenger_but_a_tool_loop_with_the_search_text_in_the_prompt(
     tmp_path: Path,
     in_memory_tracing: InMemorySpanExporter,
     guesser_prompts: list[str],
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    models = Models(
-        describer=[text(CLEAN)],
-        guesser=[tool_reply({"keywords": ["oyster"]}), *guesser_turn(guess(RIGHT))],
-    )
+    models = v1_game()
     code, output = run(tmp_path, models, variant="V1")
     assert code == 0
-    state = final_state(output)
-    assert (state["result"], state["round"]) == ("right guess", 1)
-    assert [models.calls(role) for role in ROLES] == [1, 0, 3]
-    assert state["guesser_input"] is not None
-    assert (state["guesser_input"]["kind"], state["guesser_input"]["text"]) == (
-        "description", CLEAN
+    record = game_record(output)
+    assert record["variant"] == "V1"
+    assert (record["result"], record["counters"]) == (
+        "right guess", {"rounds": 1, "questions": 0, "forced_passes": 0}
     )
-    assert state["earlier_texts"] == [{"round": 1, "kind": "description", "text": CLEAN}]
-    assert (state["rejects"], state["forced_passes"], state["rejected"]) == (0, 0, [])
-    assert state["verdict"] is None and state["d_route"] is None
-    assert [(lookup["round"], lookup["status"]) for lookup in state["lookups"]] == [
+    assert [models.calls(role) for role in ROLES] == [1, 0, 3]
+    (entry,) = record["rounds"]
+    assert entry["reached_text"] == CLEAN
+    assert (entry["rejected"], entry["verdicts"], entry["sent_back"]) == ([], [], [])
+    assert [(lookup["call"], lookup["status"]) for lookup in entry["lookups"]] == [
         (1, "success")
     ]
     names = span_names(in_memory_tracing)
     assert {"G", "B", "C", "E", "F", "search"} <= names and "D" not in names
     assert observation_types(in_memory_tracing).count("tool") == 1
     assert generation_kinds(in_memory_tracing) == {"text", "tools", "structured"}
-    assert_calls_are_the_requests_and_the_spans(state, models, in_memory_tracing)
-    assert [(c["node"], c["kind"], c["call"]) for c in state["calls"]] == [
+    assert_calls_are_the_requests_and_the_spans(record["calls"], models, in_memory_tracing)
+    assert [(c["node"], c["kind"], c["call"]) for c in record["calls"]] == [
         ("B", "text", None), ("E", "tools", 1), ("E", "tools", 2), ("E", "structured", None)
     ]
-    assert (state["sent_back"], state["verdicts"]) == ([], [])
     (prompt,) = guesser_prompts
     assert SEARCH_SECTION in prompt
     assert "{" not in prompt and "}" not in prompt
     assert capsys.readouterr().out.strip() == (
         "Guesser wins (right guess): round 1, questions 0, rejects 0, forced passes 0"
     )
+    # C filled the row the Guesser reads; D and the reject counter were never written.
+    state = play_directly(v1_game(), "V1")
+    assert state["guesser_input"] is not None
+    assert (state["guesser_input"]["kind"], state["guesser_input"]["text"]) == (
+        "description", CLEAN
+    )
+    assert (state["rejects"], state["verdict"], state["d_route"]) == (0, None, None)
 
 
 @pytest.mark.parametrize("argv", [[], ["--variant", "V3"]], ids=["no-variant", "V3"])
@@ -545,7 +608,7 @@ def test_no_variant_or_v3_exits_non_zero_before_any_model_call(
     models = Models(
         describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
     )
-    output = tmp_path / "game.json"
+    output = tmp_path / "game.jsonl"
     with pytest.raises(SystemExit) as exit_info:
         main([CARD_ID, str(output), *argv], client_for=models)
     assert exit_info.value.code != 0
@@ -607,7 +670,13 @@ def test_the_worst_case_game_reaches_f_without_hitting_the_recursion_limit(
     models = worst_case()
     code, output = run(tmp_path, models)
     assert code == 0
-    assert_worst_case_outcome(final_state(output))
+    record = game_record(output)
+    assert (record["result"], record["counters"]) == (
+        "wrong guess in round 10", {"rounds": ROUNDS, "questions": 0, "forced_passes": ROUNDS}
+    )
+    rounds = record["rounds"]
+    assert [len(r["rejected"]) for r in rounds] == [REJECT_LIMIT] * ROUNDS
+    assert [r["guesser_output"]["text"] for r in rounds] == [WRONG] * ROUNDS
     # The one invoke: the limit, and the tracing handler the game's config carries.
     (config,) = configs
     assert set(config) == {"recursion_limit", "callbacks"}
@@ -623,16 +692,17 @@ def test_the_worst_case_game_reaches_f_without_hitting_the_recursion_limit(
         "Guesser loses (wrong guess in round 10): round 10, questions 0, rejects 20, "
         "forced passes 10"
     )
-    state = final_state(output)
-    assert_calls_are_the_requests_and_the_spans(state, models, in_memory_tracing)
-    assert len(state["calls"]) == 158  # 90 Describer, 30 Challenger, 38 Guesser
+    calls = record["calls"]
+    assert_calls_are_the_requests_and_the_spans(calls, models, in_memory_tracing)
+    assert len(calls) == 158  # 90 Describer, 30 Challenger, 38 Guesser
     # The sent-back outputs: each description's two Chinese replies [R11] (the third reply of
     # each is clean), and in rounds 1–9 the two invalid questions before the guess [R17].
-    by_node = Counter(entry["node"] for entry in state["sent_back"])
+    sent_back = [{"round": r["round"], **entry} for r in rounds for entry in r["sent_back"]]
+    by_node = Counter(entry["node"] for entry in sent_back)
     assert by_node == {"C": ROUNDS * (REJECT_LIMIT + 1) * SEND_BACKS,
                        "E": (ROUNDS - 1) * (INVALID_QUESTION_LIMIT - 1)}
-    ordinals = {c["ordinal"]: c for c in state["calls"]}
-    for entry in state["sent_back"]:
+    ordinals = {c["ordinal"]: c for c in calls}
+    for entry in sent_back:
         made = ordinals[entry["ordinal"]]
         assert (made["node"], made["round"]) == ({"C": "B", "E": "E"}[entry["node"]],
                                                  entry["round"])
@@ -645,17 +715,16 @@ def test_the_worst_case_game_reaches_f_without_hitting_the_recursion_limit(
                 "question", INVALID, "structured"
             )
             assert entry["reason"] == "the distractors' English names: Oyster Omelet (蚵仔煎)"
-    assert [entry["round"] for entry in state["sent_back"] if entry["node"] == "E"] == [
+    assert [entry["round"] for entry in sent_back if entry["node"] == "E"] == [
         r for r in range(1, ROUNDS) for _ in range(INVALID_QUESTION_LIMIT - 1)
     ]
     # Every verdict: two rejects and the forced pass in each round, each with its reason, at
     # the ordinal of the Challenger call that gave it.
-    assert [(v["round"], v["verdict"], v["reason"]) for v in state["verdicts"]] == [
+    verdicts = [{"round": r["round"], **entry} for r in rounds for entry in r["verdicts"]]
+    assert [(v["round"], v["verdict"], v["reason"]) for v in verdicts] == [
         (r, "fail", FAIL_REASON) for r in range(1, ROUNDS + 1) for _ in range(REJECT_LIMIT + 1)
     ]
-    assert [v["ordinal"] for v in state["verdicts"]] == [
-        c["ordinal"] for c in state["calls"] if c["node"] == "D"
-    ]
+    assert [v["ordinal"] for v in verdicts] == [c["ordinal"] for c in calls if c["node"] == "D"]
 
 
 def test_the_worst_case_arithmetic_is_exact(cards: list[Card], corpus: list[CorpusEntry]) -> None:
@@ -758,11 +827,11 @@ def test_a_missing_output_directory_is_created_and_the_file_written(tmp_path: Pa
     models = Models(
         describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
     )
-    output = tmp_path / "runs" / "v2" / "game.json"
+    output = tmp_path / "runs" / "v2" / "game.jsonl"
     assert not output.parent.exists()
     code = main([CARD_ID, str(output), "--variant", "V2"], client_for=models)
     assert code == 0
-    assert final_state(output)["result"] == "right guess"
+    assert game_record(output)["result"] == "right guess"
 
 
 def test_an_unwritable_output_path_exits_non_zero_before_any_model_call(
@@ -773,7 +842,7 @@ def test_an_unwritable_output_path_exits_non_zero_before_any_model_call(
     )
     blocker = tmp_path / "not-a-directory"
     blocker.write_text("", encoding="utf-8")
-    output = blocker / "game.json"  # the parent is a regular file
+    output = blocker / "game.jsonl"  # the parent is a regular file
     code = main([CARD_ID, str(output), "--variant", "V2"], client_for=models)
     assert code != 0
     assert "not-a-directory" in capsys.readouterr().err

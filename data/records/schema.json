@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Game record",
+  "description": "One line of a game's JSONL record, written by play-game (src/dont_say_oyster/record.py). Fields: SPEC.md, Implementation, Experiment result format, and Evaluation, Metrics. Every object lists every one of its fields as required and allows no other, so a record is complete when it validates; a key that does not apply is present with null or an empty list. The two exceptions are a lookup's arguments and result, which are what the model sent and what the search tool returned.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["card_id", "official_name", "variant", "result", "matched_name", "counters", "rounds", "calls", "settings"],
+  "properties": {
+    "card_id": { "type": "string", "minLength": 1 },
+    "official_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The card's official name, in Chinese, so matched_name reads as the official name or an alias."
+    },
+    "variant": { "enum": ["V0", "V1", "V2"] },
+    "result": {
+      "enum": ["right guess", "wrong guess in round 10", "Guesser violation", "Describer violation"],
+      "description": "One of the four F outcomes."
+    },
+    "matched_name": {
+      "type": ["string", "null"],
+      "description": "The card name a right guess equals [R20]; null otherwise."
+    },
+    "counters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rounds", "questions", "forced_passes"],
+      "properties": {
+        "rounds": { "type": "integer", "minimum": 1, "description": "Rounds begun: the round counter as F left it." },
+        "questions": { "type": "integer", "minimum": 0 },
+        "forced_passes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "rounds": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/round" },
+      "description": "One entry per round begun, in order."
+    },
+    "calls": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/call" },
+      "description": "Every model call of the game, in order (SPEC.md Metrics, Per model call)."
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["describer", "challenger", "guesser", "temperature"],
+      "properties": {
+        "describer": { "$ref": "#/$defs/role_settings" },
+        "challenger": { "$ref": "#/$defs/role_settings" },
+        "guesser": { "$ref": "#/$defs/role_settings" },
+        "temperature": { "type": "number" }
+      },
+      "description": "The settings play-game resolved for the game."
+    }
+  },
+  "$defs": {
+    "round": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["round", "owed", "reached_text", "rejected", "verdicts", "sent_back", "lookups", "guesser_output", "violating_question", "violating_text"],
+      "properties": {
+        "round": { "type": "integer", "minimum": 1 },
+        "owed": {
+          "enum": ["description", "answer"],
+          "description": "What the Describer was asked for [R10]."
+        },
+        "reached_text": {
+          "type": ["string", "null"],
+          "description": "The description or answer that reached the Guesser; null when the round ended in C [R14]."
+        },
+        "rejected": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["description", "reason"],
+            "properties": {
+              "description": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          },
+          "description": "The round's rejected descriptions with their fail reasons [R13]."
+        },
+        "verdicts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["verdict", "reason", "ordinal"],
+            "properties": {
+              "verdict": { "enum": ["pass", "fail"] },
+              "reason": { "type": ["string", "null"], "description": "Null on a pass [R40]." },
+              "ordinal": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "sent_back": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["node", "kind", "text", "ordinal", "reason", "replaced"],
+            "properties": {
+              "node": { "enum": ["C", "D", "E"] },
+              "kind": { "enum": ["description", "answer", "question", "reason"] },
+              "text": { "type": "string" },
+              "ordinal": { "type": "integer", "minimum": 1 },
+              "reason": { "type": "string" },
+              "replaced": { "type": "boolean" }
+            }
+          },
+          "description": "Every output the program sent back [R11], [R17], [R40], and the [R40] second reason the fixed message replaced (replaced true)."
+        },
+        "lookups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["call", "name", "arguments", "status", "result"],
+            "properties": {
+              "call": { "type": "integer", "minimum": 1, "description": "The round's tool-loop call index, the call key of its calls entry." },
+              "name": { "type": "string" },
+              "arguments": { "type": "object", "description": "The arguments as the model sent them." },
+              "status": { "enum": ["success", "error"] },
+              "result": {
+                "type": ["object", "string"],
+                "description": "The search result, or the message for a call that was not searched."
+              }
+            }
+          },
+          "description": "The round's corpus lookups (V1 on) [R43]."
+        },
+        "guesser_output": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "text", "confidence"],
+              "properties": {
+                "kind": { "enum": ["guess", "question"] },
+                "text": { "type": "string" },
+                "confidence": { "type": ["number", "null"], "description": "Null on a question [R48]." }
+              }
+            },
+            { "type": "null" }
+          ],
+          "description": "The guess or valid question; null when the round ended before one."
+        },
+        "violating_question": {
+          "type": ["string", "null"],
+          "description": "The third invalid question when the round ended in a Guesser violation [R17]."
+        },
+        "violating_text": {
+          "type": ["string", "null"],
+          "description": "The description or answer when the round ended in a Describer violation [R11], [R21]."
+        }
+      }
+    },
+    "call": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ordinal", "node", "role", "round", "attempt", "kind", "call", "latency", "input_tokens", "output_tokens"],
+      "properties": {
+        "ordinal": { "type": "integer", "minimum": 1 },
+        "node": { "enum": ["B", "D", "E"] },
+        "role": { "enum": ["Describer", "Challenger", "Guesser"] },
+        "round": { "type": "integer", "minimum": 1 },
+        "attempt": { "type": "integer", "minimum": 1 },
+        "kind": { "enum": ["text", "structured", "tools"] },
+        "call": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "The round's tool-loop call index on a tool-bound call; null otherwise."
+        },
+        "latency": { "type": "number", "minimum": 0 },
+        "input_tokens": { "type": ["integer", "null"], "minimum": 0 },
+        "output_tokens": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "role_settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "num_ctx", "thinking", "keep_alive"],
+      "properties": {
+        "model": { "type": "string", "minLength": 1 },
+        "num_ctx": { "type": "integer", "minimum": 1 },
+        "thinking": { "type": ["boolean", "string"], "description": "Ollama's think value." },
+        "keep_alive": { "type": ["integer", "string"], "description": "Ollama's keep_alive." }
+      }
+    }
+  }
+}

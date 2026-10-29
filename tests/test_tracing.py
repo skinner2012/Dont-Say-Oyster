@@ -5,8 +5,10 @@ id from the output path; and `build_client` with a variable missing, which retur
 one warning, so the game runs untraced. The per-call values on the spans: the role,
 attempt, and kind on every generation span, with the token counts and the latency of the
 wrapper's Reply; the round, call, and lookup on every tool span; the send-backs, re-asks, and a
-reply with no tool call, each as its own span; and State's call list matched one to one with the
-generation spans, with its send-backs and verdicts. No test needs the stack or Ollama."""
+reply with no tool call, each as its own span; and the record's call list matched one to one with
+the generation spans, with its send-backs and verdicts. A game run through the command is read
+from its record; a test that needs a program-only field and the spans runs `graph.play_game`
+inside `tracing.game_span` itself, as `play.main` does. No test needs the stack or Ollama."""
 
 import json
 import logging
@@ -39,11 +41,12 @@ from tests.test_play import (
     VALID,
     WRONG,
     Models,
-    final_state,
+    game_record,
     guess,
     guesser_turn,
     in_memory_client,
     no_tool_calls,
+    play_directly,
     question,
     text,
     verdict,
@@ -68,11 +71,11 @@ OUTPUT = "langfuse.observation.output"
 def run_traced(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, models: Models
 ) -> tuple[int, Path, list[ReadableSpan]]:
-    """Run the command into `tmp_path / SESSION / game.json` with an in-memory client; return
+    """Run the command into `tmp_path / SESSION / game.jsonl` with an in-memory client; return
     the exit code, the output path, and the exported spans."""
     client, exporter = in_memory_client()
     monkeypatch.setattr(tracing, "build_client", lambda: client)
-    output = tmp_path / SESSION / "game.json"
+    output = tmp_path / SESSION / "game.jsonl"
     code = main([CARD_ID, str(output), "--variant", "V2"], client_for=models)
     return code, output, list(exporter.get_finished_spans())
 
@@ -105,10 +108,10 @@ def test_a_scripted_game_is_one_trace_of_the_expected_spans(
     )
     code, output, spans = run_traced(tmp_path, monkeypatch, models)
     assert code == 0
-    state = final_state(output)
-    assert state["result"] == "right guess"
-    assert [(lookup["round"], lookup["status"]) for lookup in state["lookups"]] == [
-        (1, "success")
+    record = game_record(output)
+    assert record["result"] == "right guess"
+    assert [[lookup["status"] for lookup in r["lookups"]] for r in record["rounds"]] == [
+        ["success"], []
     ]
     assert [models.calls(role) for role in ROLES] == [2, 1, 5]
 
@@ -225,7 +228,7 @@ def run_with_the_real_build_client(
     models = Models(
         describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
     )
-    output = tmp_path / SESSION / "game.json"
+    output = tmp_path / SESSION / "game.jsonl"
     with caplog.at_level(logging.WARNING, logger=TRACING_LOGGER):
         code = main([CARD_ID, str(output), "--variant", "V2"], client_for=models)
     return code, output, built
@@ -239,7 +242,7 @@ def test_without_keys_the_game_runs_untraced_after_one_warning(
     environment(monkeypatch, "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY")
     code, output, built = run_with_the_real_build_client(tmp_path, monkeypatch, caplog)
     assert code == 0
-    assert final_state(output)["result"] == "right guess"
+    assert game_record(output)["result"] == "right guess"
     assert built == [None]
     assert tracing_warnings(caplog) == [
         "LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY not set: the game runs untraced"
@@ -255,7 +258,7 @@ def test_without_a_base_url_the_game_runs_untraced_after_one_warning(
     environment(monkeypatch, "LANGFUSE_BASE_URL")
     code, output, built = run_with_the_real_build_client(tmp_path, monkeypatch, caplog)
     assert code == 0
-    assert final_state(output)["result"] == "right guess"
+    assert game_record(output)["result"] == "right guess"
     assert built == [None]
     assert tracing_warnings(caplog) == [
         "LANGFUSE_BASE_URL not set: the game runs untraced (with no base URL the SDK would fall "
@@ -294,34 +297,31 @@ class Replies:
 
 
 class Game:
-    """The traced game of `every_event_game`: its final State, its spans, and its Replies."""
+    """The traced game of `every_event_game`: its record, its spans, and its Replies; `lookups`
+    are the record's lookups of every round, in order, each with its round."""
 
     def __init__(
-        self, state: Any, spans: list[ReadableSpan], replies: list[tuple[str, Reply[Any]]]
+        self,
+        record: dict[str, Any],
+        spans: list[ReadableSpan],
+        replies: list[tuple[str, Reply[Any]]],
     ) -> None:
-        self.state = state
+        self.record = record
         self.spans = spans
         self.replies = replies
         self.generations = in_order(of_type(spans, "generation"))
         self.tools = in_order(of_type(spans, "tool"))
+        self.lookups = [
+            {"round": r["round"], **lookup} for r in record["rounds"] for lookup in r["lookups"]
+        ]
 
     def generations_of(self, role: str) -> list[ReadableSpan]:
         return [s for s in self.generations if metadata(s, "role") == role]
 
 
-@pytest.fixture
-def every_event_game(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Game:
-    """One scripted two-round game holding every kind of event the trace records.
-
-    Round 1: a description with Chinese, sent back once [R11], then a clean one, which the
-    Challenger fails with a Chinese reason and is re-asked for an English one [R40]; rejected,
-    so a new description, passed. The Guesser's tool loop: call 1 carries two searches, a valid
-    one (lookup 1) and one the schema rejects (lookup 2); call 2 names an unknown tool (lookup
-    3); call 3 carries three searches, so lookups 4 and 5 run and the sixth is blocked [R43].
-    The structured call asks an invalid question, re-asked once with the fixed message [R17],
-    then a valid one. Round 2: the answer, no Challenger [R12]; the tool loop's one reply makes
-    no tool call; the Guesser guesses right."""
-    models = Models(
+def every_event_models() -> Models:
+    """The script of `every_event_game`."""
+    return Models(
         describer=[text(CHINESE), text(CLEAN), text(CLEAN_2), text(ANSWER)],
         challenger=[
             verdict("fail", CHINESE_REASON), verdict("fail", ENGLISH_REASON), verdict("pass")
@@ -336,15 +336,32 @@ def every_event_game(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Game:
             guess(RIGHT),
         ],
     )
+
+
+@pytest.fixture
+def every_event_game(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Game:
+    """One scripted two-round game holding every kind of event the trace records.
+
+    Round 1: a description with Chinese, sent back once [R11], then a clean one, which the
+    Challenger fails with a Chinese reason and is re-asked for an English one [R40]; rejected,
+    so a new description, passed. The Guesser's tool loop: call 1 carries two searches, a valid
+    one (lookup 1) and one the schema rejects (lookup 2); call 2 names an unknown tool (lookup
+    3); call 3 carries three searches, so lookups 4 and 5 run and the sixth is blocked [R43].
+    The structured call asks an invalid question, re-asked once with the fixed message [R17],
+    then a valid one. Round 2: the answer, no Challenger [R12]; the tool loop's one reply makes
+    no tool call; the Guesser guesses right."""
+    models = every_event_models()
     for model in models.models.values():
         model.delay = DELAY
     replies = Replies(monkeypatch)
     code, output, spans = run_traced(tmp_path, monkeypatch, models)
     assert code == 0
-    state = final_state(output)
-    assert (state["result"], state["round"], state["questions"]) == ("right guess", 2, 1)
+    record = game_record(output)
+    assert (record["result"], record["counters"]["rounds"], record["counters"]["questions"]) == (
+        "right guess", 2, 1
+    )
     assert [models.calls(role) for role in ROLES] == [4, 3, 7]
-    return Game(state, spans, replies.replies)
+    return Game(record, spans, replies.replies)
 
 
 def test_every_generation_span_carries_its_role_attempt_kind_tokens_and_latency(
@@ -393,7 +410,7 @@ def test_a_challenger_reask_gives_two_d_generations_with_attempts_1_and_2(
     first, second, _ = challenger_spans
     assert first.parent is not None and second.parent is not None
     assert first.parent.span_id == second.parent.span_id
-    assert every_event_game.state["rejected"][0]["reason"] == ENGLISH_REASON
+    assert every_event_game.record["rounds"][0]["rejected"][0]["reason"] == ENGLISH_REASON
 
 
 def test_a_question_reasked_once_gives_two_structured_e_generations_with_attempts_1_and_2(
@@ -426,8 +443,8 @@ def test_a_reply_with_two_tool_calls_gives_two_tool_spans_with_its_round_and_cal
         generation.parent.span_id
     ] * 2
     assert parent_name(generation, game.spans) == "E"
-    # Each tool span names its Lookup entry: the round's entries in counter order.
-    lookups = [entry for entry in game.state["lookups"] if entry["round"] == 1]
+    # Each tool span names its lookup entry: the round's entries in counter order.
+    lookups = [entry for entry in game.lookups if entry["round"] == 1]
     for span in game.tools:
         entry = lookups[metadata(span, "lookup") - 1]
         assert (entry["round"], entry["call"]) == key(span)
@@ -441,7 +458,7 @@ def test_a_call_the_schema_rejects_gives_a_tool_span_whose_output_is_the_validat
 ) -> None:
     game = every_event_game
     (span,) = [s for s in game.tools if metadata(s, "lookup") == 2]
-    rejected = game.state["lookups"][1]
+    rejected = game.lookups[1]
     assert rejected["status"] == "error" and isinstance(rejected["result"], str)
     assert rejected["result"].startswith("The search was not run; the tool's schema rejects")
     assert json.loads(attribute(span, OUTPUT))["content"] == rejected["result"]
@@ -451,22 +468,30 @@ def test_a_call_naming_an_unknown_tool_gives_a_generation_span_and_no_tool_span(
     every_event_game: Game,
 ) -> None:
     game = every_event_game
-    assert game.state["lookups"][2]["name"] == "lookup"
+    assert game.lookups[2]["name"] == "lookup"
     assert [key(s) for s in game.generations if key(s) == (1, 2)] == [(1, 2)]
     assert [s for s in game.tools if key(s) == (1, 2)] == []
     assert 3 not in [metadata(s, "lookup") for s in game.tools]
 
 
-def test_the_sixth_lookup_gives_no_tool_span(every_event_game: Game) -> None:
-    game = every_event_game
+def test_the_sixth_lookup_gives_no_tool_span() -> None:
+    """The every-event game run through `graph.play_game` inside the game span, as `play.main`
+    runs it, since the lookup counter is not in the record."""
+    client, exporter = in_memory_client()
+    with tracing.game_span(client, CARD_ID, SESSION):
+        state = play_directly(every_event_models(), tracer=client)
+    tracing.flush(client)
+    spans = list(exporter.get_finished_spans())
+    generations = of_type(spans, "generation")
+    tools = in_order(of_type(spans, "tool"))
     # Call 3 carried three searches; the third was blocked [R43].
-    (generation,) = [s for s in game.generations if key(s) == (1, 3)]
+    (generation,) = [s for s in generations if key(s) == (1, 3)]
     assert len(json.loads(attribute(generation, OUTPUT))["tool_calls"]) == 3
-    assert [metadata(s, "lookup") for s in game.tools if key(s) == (1, 3)] == [4, 5]
-    assert game.state["lookup_count"] == 0  # G zeroed it for round 2
-    assert len(game.state["lookups"]) == 5
+    assert [metadata(s, "lookup") for s in tools if key(s) == (1, 3)] == [4, 5]
+    assert state["lookup_count"] == 0  # G zeroed it for round 2
+    assert len(state["lookups"]) == 5
     # Every search run is one tool span: lookups 1, 2, 4, 5 (3 named an unknown tool).
-    assert [(key(s), metadata(s, "lookup")) for s in game.tools] == [
+    assert [(key(s), metadata(s, "lookup")) for s in tools] == [
         ((1, 1), 1), ((1, 1), 2), ((1, 3), 4), ((1, 3), 5)
     ]
 
@@ -479,17 +504,17 @@ def test_a_tool_bound_reply_with_no_tool_call_gives_a_generation_span_and_no_too
     assert metadata(generation, "kind") == "tools"
     assert json.loads(attribute(generation, OUTPUT)).get("tool_calls") in (None, [])
     assert [s for s in game.tools if metadata(s, "round") == 2] == []
-    assert [entry for entry in game.state["lookups"] if entry["round"] == 2] == []
+    assert game.record["rounds"][1]["lookups"] == []
 
 
-# The calls, send-backs, and verdicts State keeps, against the spans.
+# The calls, send-backs, and verdicts of the record, against the spans.
 
 
 def test_each_call_entry_is_one_generation_span_in_the_same_order(
     every_event_game: Game,
 ) -> None:
     game = every_event_game
-    calls = game.state["calls"]
+    calls = game.record["calls"]
     assert [entry["ordinal"] for entry in calls] == list(range(1, 15))
     assert len(calls) == len(game.generations) == len(game.replies)
     for entry, span, (role, result) in zip(calls, game.generations, game.replies, strict=True):
@@ -504,7 +529,7 @@ def test_each_call_entry_is_one_generation_span_in_the_same_order(
         )
     # Each lookup joins its call by (round, call), as a tool span joins its generation span.
     tool_bound = {(c["round"], c["call"]): c["ordinal"] for c in calls if c["kind"] == "tools"}
-    assert [tool_bound[(entry["round"], entry["call"])] for entry in game.state["lookups"]] == [
+    assert [tool_bound[(entry["round"], entry["call"])] for entry in game.lookups] == [
         7, 7, 8, 9, 9
     ]
 
@@ -514,16 +539,17 @@ def test_the_send_backs_and_verdicts_of_every_kind_are_kept_as_the_model_wrote_t
 ) -> None:
     """Ordinals: round 1 is B 1–2, D 3–4 (the re-ask), B 5, D 6, E's tool-loop calls 7–9, and
     its structured calls 10–11; round 2 is B 12 and E 13–14."""
-    game = every_event_game
-    assert game.state["sent_back"] == [
-        {"round": 1, "node": "C", "kind": "description", "text": CHINESE, "ordinal": 1,
+    first, second = every_event_game.record["rounds"]
+    assert first["sent_back"] == [
+        {"node": "C", "kind": "description", "text": CHINESE, "ordinal": 1,
          "reason": "Chinese characters", "replaced": False},
-        {"round": 1, "node": "D", "kind": "reason", "text": CHINESE_REASON, "ordinal": 3,
+        {"node": "D", "kind": "reason", "text": CHINESE_REASON, "ordinal": 3,
          "reason": "Chinese characters", "replaced": False},
-        {"round": 1, "node": "E", "kind": "question", "text": INVALID, "ordinal": 10,
+        {"node": "E", "kind": "question", "text": INVALID, "ordinal": 10,
          "reason": "the distractors' English names: Oyster Omelet (蚵仔煎)", "replaced": False},
     ]
-    assert game.state["verdicts"] == [
-        {"round": 1, "verdict": "fail", "reason": ENGLISH_REASON, "ordinal": 3},
-        {"round": 1, "verdict": "pass", "reason": None, "ordinal": 6},
+    assert first["verdicts"] == [
+        {"verdict": "fail", "reason": ENGLISH_REASON, "ordinal": 3},
+        {"verdict": "pass", "reason": None, "ordinal": 6},
     ]
+    assert (second["sent_back"], second["verdicts"]) == ([], [])
