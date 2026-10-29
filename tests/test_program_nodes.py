@@ -110,6 +110,7 @@ def test_a_starts_with_no_result_and_zero_counters(start: State) -> None:
         "describer_send_backs", "invalid_questions", "reason_reasks",
     ):
         assert start[counter] == 0, counter
+    assert (start["calls"], start["sent_back"], start["verdicts"]) == ([], [], [])
 
 
 def test_a_state_is_json(start: State) -> None:
@@ -126,6 +127,7 @@ def test_langgraph_takes_state_with_one_plain_channel_per_field() -> None:
 def test_program_only_fields_are_state_fields() -> None:
     assert PROGRAM_ONLY <= get_type_hints(State).keys()
     assert {"violation", "matched_name", "guess_only", "owes"} <= PROGRAM_ONLY
+    assert {"calls", "sent_back", "verdicts"} <= PROGRAM_ONLY
     assert not {"result", "round", "rejects", "lookup_count", "card_id"} & PROGRAM_ONLY
 
 

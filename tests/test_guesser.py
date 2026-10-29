@@ -292,6 +292,13 @@ def test_the_prompt_holds_only_the_guessers_items(start: State) -> None:
         "round": 3,
         "questions": 1,
         "guess_only": False,
+        "calls": [{"ordinal": 1, "node": "E", "role": "SENTINEL-call-role", "round": 2,
+                   "attempt": 1, "kind": "structured", "call": None, "latency": 1.0,
+                   "input_tokens": 1, "output_tokens": 1}],
+        "sent_back": [{"round": 2, "node": "E", "kind": "question", "text": "SENTINEL-sent-back",
+                       "ordinal": 1, "reason": "SENTINEL-send-back-reason", "replaced": False}],
+        "verdicts": [{"round": 2, "verdict": "fail", "reason": "SENTINEL-verdicts-reason",
+                      "ordinal": 1}],
     }
     prompt = build_prompt(state)
     for shown in (
@@ -309,6 +316,8 @@ def test_the_prompt_holds_only_the_guessers_items(start: State) -> None:
         "SENTINEL-forbidden", "SENTINEL-attribute", "SENTINEL-distractor",
         "SENTINEL-description-row", "SENTINEL-answer-row", "SENTINEL-last-output",
         "SENTINEL-verdict", "SENTINEL-rejected", "SENTINEL-reason", "SENTINEL-lookup",
+        "SENTINEL-call-role", "SENTINEL-sent-back", "SENTINEL-send-back-reason",
+        "SENTINEL-verdicts-reason",
     ):
         assert hidden not in prompt
     assert prompt.count("SENTINEL-this-round") == 1  # this round's item is not in the earlier list
@@ -824,3 +833,100 @@ def test_no_tool_call_at_all_goes_straight_to_the_structured_call(
     assert spy.kinds == ["tools", "structured"]
     assert state["lookups"] == [] and state["lookup_count"] == 0
     assert [type(m).__name__ for m in spy.structured[0].messages] == ["HumanMessage", "AIMessage"]
+
+
+# The calls and send-backs E appends to State.
+
+PRIOR_CALL: Any = {
+    "ordinal": 1, "node": "B", "role": "Describer", "round": 1, "attempt": 1, "kind": "text",
+    "call": None, "latency": 1.0, "input_tokens": 900, "output_tokens": 60,
+}
+CHINESE_QUESTION = "Is it 好吃?"
+
+
+def test_e_appends_each_tool_loop_call_with_its_index_and_each_structured_call_without(
+    start: State, corpus: list[CorpusEntry], spy: Spy
+) -> None:
+    """Two tool-loop calls (the first with two lookups, one entry), then three structured
+    calls: two invalid questions sent back [R17], then a valid one."""
+    state, _ = run(
+        {**start, "calls": [PRIOR_CALL]}, corpus,
+        tool_reply({"keywords": ["oyster"]}, {"keywords": ["squid"]}), tool_reply(),
+        question(INVALID), question(CHINESE_QUESTION), question(VALID),
+    )
+    assert route_after_e(state) == "G"
+    latencies = [call.result.latency for call in spy.calls if call.result is not None]
+    assert state["calls"] == [
+        PRIOR_CALL,
+        *[
+            {
+                "ordinal": ordinal, "node": "E", "role": SETTINGS.role, "round": 1,
+                "attempt": attempt, "kind": kind, "call": index, "latency": latency,
+                "input_tokens": tokens_in, "output_tokens": tokens_out,
+            }
+            for ordinal, attempt, kind, index, latency, tokens_in, tokens_out in zip(
+                [2, 3, 4, 5, 6],
+                [1, 1, 1, 2, 3],
+                ["tools", "tools", "structured", "structured", "structured"],
+                [1, 2, None, None, None],
+                latencies,
+                [300, 300, 400, 400, 400],
+                [20, 20, 15, 15, 15],
+                strict=True,
+            )
+        ],
+    ]
+    # A lookup joins its call by (round, call), as in the trace.
+    tool_bound = {(c["round"], c["call"]): c for c in state["calls"] if c["kind"] == "tools"}
+    assert [tool_bound[(entry["round"], entry["call"])]["ordinal"] for entry in
+            state["lookups"]] == [2, 2]
+    assert state["sent_back"] == [
+        {"round": 1, "node": "E", "kind": "question", "text": INVALID, "ordinal": 4,
+         "reason": "the distractors' English names: Oyster Omelet (蚵仔煎)", "replaced": False},
+        {"round": 1, "node": "E", "kind": "question", "text": CHINESE_QUESTION, "ordinal": 5,
+         "reason": "Chinese characters", "replaced": False},
+    ]
+
+
+def test_an_invalid_questions_reason_names_every_check_it_failed(
+    start: State, corpus: list[CorpusEntry]
+) -> None:
+    both = "Is it 蚵仔, a grilled oyster, or an oyster omelet?"
+    state, _ = run(start, corpus, tool_reply(), question(both), guess("烤蚵仔"))
+    (entry,) = state["sent_back"]
+    assert entry["reason"] == (
+        "Chinese characters; the card's English names: Grilled oyster; "
+        "the distractors' English names: Oyster Omelet (蚵仔煎)"
+    )
+
+
+def test_the_third_invalid_question_is_a_violation_and_not_a_send_back(
+    start: State, corpus: list[CorpusEntry]
+) -> None:
+    state, _ = run(start, corpus, tool_reply(), *[question(INVALID)] * 3)
+    assert state["violation"] == "Guesser"
+    assert [(s["ordinal"], s["text"]) for s in state["sent_back"]] == [(2, INVALID),
+                                                                       (3, INVALID)]
+    assert [(c["ordinal"], c["kind"], c["attempt"]) for c in state["calls"]] == [
+        (1, "tools", 1), (2, "structured", 1), (3, "structured", 2), (4, "structured", 3)
+    ]
+
+
+def test_a_guess_and_a_valid_question_append_their_call_and_no_send_back(
+    start: State, corpus: list[CorpusEntry]
+) -> None:
+    for structured in (guess("烤蚵仔"), question(VALID)):
+        state, _ = run(start, corpus, tool_reply(), structured)
+        assert [c["kind"] for c in state["calls"]] == ["tools", "structured"]
+        assert state["sent_back"] == []
+
+
+def test_with_lookup_off_e_appends_only_its_structured_calls(
+    start: State, corpus: list[CorpusEntry]
+) -> None:
+    clients = Clients(scripted(question(INVALID), question(VALID)))
+    state = node_e(start, SETTINGS, corpus, clients, lookup=False)
+    assert [(c["ordinal"], c["kind"], c["call"], c["attempt"]) for c in state["calls"]] == [
+        (1, "structured", None, 1), (2, "structured", None, 2)
+    ]
+    assert [(s["ordinal"], s["text"]) for s in state["sent_back"]] == [(1, INVALID)]

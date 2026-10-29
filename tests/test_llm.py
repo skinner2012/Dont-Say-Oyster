@@ -175,6 +175,23 @@ def test_each_call_carries_the_role_the_attempt_and_its_kind_in_its_run_metadata
     ]
 
 
+def test_each_reply_carries_the_kind_of_call_its_run_metadata_names() -> None:
+    call = {"name": "search", "args": {"keywords": ["boba"]}, "id": "c1", "type": "tool_call"}
+    model = scripted(
+        reply("A chewy drink."),
+        reply(json.dumps({"guess": "珍珠奶茶", "confidence": 0.8})),
+        reply("", tool_calls=[call]),
+    )
+    clients = Clients(model)
+    replies = [
+        call_text(SETTINGS, MESSAGES, attempt=1, client_for=clients),
+        call_structured(SETTINGS, MESSAGES, SCHEMA, attempt=1, client_for=clients),
+        call_tools(SETTINGS, MESSAGES, [TOOL], attempt=1, client_for=clients),
+    ]
+    assert [r.kind for r in replies] == ["text", "structured", "tools"]
+    assert [r.kind for r in replies] == [m["kind"] for m in model.run_metadata]
+
+
 def test_the_callers_metadata_is_merged_and_cannot_override_role_attempt_or_kind() -> None:
     model = scripted(reply(""), reply("x"), reply(json.dumps({"guess": "x", "confidence": 1})))
     clients = Clients(model)

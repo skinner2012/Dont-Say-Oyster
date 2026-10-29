@@ -4,9 +4,9 @@ game span ended in error after a model error, the spans before it still exported
 id from the output path; and `build_client` with a variable missing, which returns None after
 one warning, so the game runs untraced. The per-call values on the spans: the role,
 attempt, and kind on every generation span, with the token counts and the latency of the
-wrapper's Reply; the round, call, and lookup on every tool span; and the events State does not
-keep (send-backs, re-asks, a reply with no tool call), each as its own span. No test needs the
-stack or Ollama."""
+wrapper's Reply; the round, call, and lookup on every tool span; the send-backs, re-asks, and a
+reply with no tool call, each as its own span; and State's call list matched one to one with the
+generation spans, with its send-backs and verdicts. No test needs the stack or Ollama."""
 
 import json
 import logging
@@ -24,6 +24,7 @@ from dont_say_oyster import challenger, describer, guesser, tracing
 from dont_say_oyster.llm import Reply
 from dont_say_oyster.play import main
 from dont_say_oyster.tracing import NODE_A_SPAN, VARIABLES, TracingClient, session_id
+from tests.spans import OBSERVATION_TYPE, attribute, in_order, key, metadata, of_type
 from tests.test_guesser import tool_reply
 from tests.test_llm import Scripted
 from tests.test_play import (
@@ -55,12 +56,11 @@ PRESENT = {
     "LANGFUSE_BASE_URL": "http://127.0.0.1:9",  # never reached by any test
 }
 TRACING_LOGGER = "dont_say_oyster.tracing"
-# The SDK's attribute keys, read off the exported spans of the smoke test, not from its code.
-OBSERVATION_TYPE = "langfuse.observation.type"
+# The SDK's attribute keys, read off the exported spans of the smoke test, not from its code
+# (the observation type and the run metadata prefix are in `tests/spans.py`).
 SESSION_ID = "session.id"
 TRACE_NAME = "langfuse.trace.name"
 TRACE_METADATA_CARD_ID = "langfuse.trace.metadata.card_id"
-METADATA = "langfuse.observation.metadata."  # + the run metadata key; values JSON-encoded
 USAGE = "langfuse.observation.usage_details"  # JSON: {"input": n, "output": n, "total": n}
 OUTPUT = "langfuse.observation.output"
 
@@ -79,14 +79,6 @@ def run_traced(
 
 def by_name(spans: list[ReadableSpan]) -> Counter[str]:
     return Counter(span.name for span in spans)
-
-
-def of_type(spans: list[ReadableSpan], observation_type: str) -> list[ReadableSpan]:
-    return [s for s in spans if attribute(s, OBSERVATION_TYPE) == observation_type]
-
-
-def attribute(span: ReadableSpan, key: str) -> Any:
-    return (span.attributes or {}).get(key)
 
 
 def parent_name(span: ReadableSpan, spans: list[ReadableSpan]) -> str | None:
@@ -276,20 +268,6 @@ def test_without_a_base_url_the_game_runs_untraced_after_one_warning(
 CHINESE_REASON = "The batter (麵糊) also fits a fried oyster fritter."
 ENGLISH_REASON = "The batter also fits a fried oyster fritter."
 DELAY = 0.01  # every scripted reply, so a span's duration has something to match
-
-
-def metadata(span: ReadableSpan, key: str) -> Any:
-    """A run metadata value on `span`, decoded; None when the span does not carry it."""
-    value = attribute(span, METADATA + key)
-    return None if value is None else json.loads(value)
-
-
-def key(span: ReadableSpan) -> tuple[Any, Any]:
-    return metadata(span, "round"), metadata(span, "call")
-
-
-def in_order(spans: list[ReadableSpan]) -> list[ReadableSpan]:
-    return sorted(spans, key=lambda s: s.start_time or 0)
 
 
 class Replies:
@@ -502,3 +480,50 @@ def test_a_tool_bound_reply_with_no_tool_call_gives_a_generation_span_and_no_too
     assert json.loads(attribute(generation, OUTPUT)).get("tool_calls") in (None, [])
     assert [s for s in game.tools if metadata(s, "round") == 2] == []
     assert [entry for entry in game.state["lookups"] if entry["round"] == 2] == []
+
+
+# The calls, send-backs, and verdicts State keeps, against the spans.
+
+
+def test_each_call_entry_is_one_generation_span_in_the_same_order(
+    every_event_game: Game,
+) -> None:
+    game = every_event_game
+    calls = game.state["calls"]
+    assert [entry["ordinal"] for entry in calls] == list(range(1, 15))
+    assert len(calls) == len(game.generations) == len(game.replies)
+    for entry, span, (role, result) in zip(calls, game.generations, game.replies, strict=True):
+        assert entry["node"] == parent_name(span, game.spans)
+        assert (entry["round"], entry["role"], entry["attempt"], entry["kind"], entry["call"]) == (
+            metadata(span, "round"), metadata(span, "role"), metadata(span, "attempt"),
+            metadata(span, "kind"), metadata(span, "call"),
+        )
+        assert entry["role"] == role
+        assert (entry["latency"], entry["input_tokens"], entry["output_tokens"]) == (
+            result.latency, result.input_tokens, result.output_tokens
+        )
+    # Each lookup joins its call by (round, call), as a tool span joins its generation span.
+    tool_bound = {(c["round"], c["call"]): c["ordinal"] for c in calls if c["kind"] == "tools"}
+    assert [tool_bound[(entry["round"], entry["call"])] for entry in game.state["lookups"]] == [
+        7, 7, 8, 9, 9
+    ]
+
+
+def test_the_send_backs_and_verdicts_of_every_kind_are_kept_as_the_model_wrote_them(
+    every_event_game: Game,
+) -> None:
+    """Ordinals: round 1 is B 1–2, D 3–4 (the re-ask), B 5, D 6, E's tool-loop calls 7–9, and
+    its structured calls 10–11; round 2 is B 12 and E 13–14."""
+    game = every_event_game
+    assert game.state["sent_back"] == [
+        {"round": 1, "node": "C", "kind": "description", "text": CHINESE, "ordinal": 1,
+         "reason": "Chinese characters", "replaced": False},
+        {"round": 1, "node": "D", "kind": "reason", "text": CHINESE_REASON, "ordinal": 3,
+         "reason": "Chinese characters", "replaced": False},
+        {"round": 1, "node": "E", "kind": "question", "text": INVALID, "ordinal": 10,
+         "reason": "the distractors' English names: Oyster Omelet (蚵仔煎)", "replaced": False},
+    ]
+    assert game.state["verdicts"] == [
+        {"round": 1, "verdict": "fail", "reason": ENGLISH_REASON, "ordinal": 3},
+        {"round": 1, "verdict": "pass", "reason": None, "ordinal": 6},
+    ]

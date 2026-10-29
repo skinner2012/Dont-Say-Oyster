@@ -41,6 +41,7 @@ from dont_say_oyster.state import (
     RejectedDescription,
     State,
     describer_output,
+    with_call,
 )
 
 PROMPT_PATH = REPO_ROOT / "prompts" / "describer.txt"
@@ -132,9 +133,9 @@ def node_b(
     sections: dict[str, str] | None = None,
     challenger: bool = True,
 ) -> State:
-    """B: one call for the description or answer `owes` names, written into its row as given.
-    `challenger` is the Challenger toggle (`SPEC.md` Ablation Design); it defaults to on, V2's
-    value."""
+    """B: one call for the description or answer `owes` names, written into its row as given
+    and appended to the game's calls. `challenger` is the Challenger toggle (`SPEC.md` Ablation
+    Design); it defaults to on, V2's value."""
     sections = prompt_sections.sections(PROMPT_PATH) if sections is None else sections
     reply = call_text(
         settings,
@@ -143,6 +144,7 @@ def node_b(
         client_for=client_for,
         metadata={"round": state["round"]},
     )
+    calls = with_call(state["calls"], "B", settings, state["round"], reply)
     if state["owes"] == "answer":
         answer: Answer = {
             "answer": reply.output,
@@ -151,7 +153,7 @@ def node_b(
             "output_tokens": reply.output_tokens,
             "attempt": reply.attempt,
         }
-        return {**state, "answer": answer}
+        return {**state, "answer": answer, "calls": calls}
     description: Description = {
         "description": reply.output,
         "latency": reply.latency,
@@ -159,4 +161,4 @@ def node_b(
         "output_tokens": reply.output_tokens,
         "attempt": reply.attempt,
     }
-    return {**state, "description": description}
+    return {**state, "description": description, "calls": calls}

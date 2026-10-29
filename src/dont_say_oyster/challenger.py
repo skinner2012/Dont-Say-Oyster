@@ -13,6 +13,11 @@ Readings settled with the author on 2026-10-21:
 - Both calls pass the round in their run metadata, so each span says which round it belongs to
   without reading its neighbours in the trace (`SPEC.md` Goals, Evaluation and observability).
 
+Every visit appends its one or two calls to `calls` and its verdict, as the verdict row shows
+it, to `verdicts`; a re-asked fail reason [R40] is appended to `sent_back` with why it was
+re-asked (Chinese characters, or empty), and so is the second reason when the fixed message
+replaces it, marked `replaced`, since the record shows what validation caught.
+
 Implementer's readings, for the audit:
 - A reason of only whitespace counts as empty.
 - The re-ask shows the model its first reply as the parsed object written back as JSON; the
@@ -29,7 +34,15 @@ from dont_say_oyster import prompt_sections
 from dont_say_oyster.cards import REPO_ROOT
 from dont_say_oyster.llm import ClientFor, ModelSettings, call_structured, ollama_client
 from dont_say_oyster.matching import has_chinese_characters
-from dont_say_oyster.state import State, Verdict
+from dont_say_oyster.state import (
+    CHINESE_CHARACTERS,
+    EMPTY,
+    SentBack,
+    State,
+    Verdict,
+    VerdictEntry,
+    with_call,
+)
 
 PROMPT_PATH = REPO_ROOT / "prompts" / "challenger.txt"
 PROMPT = "prompt"
@@ -66,9 +79,29 @@ def build_prompt(state: State, template: str) -> str:
     )
 
 
-def _shown(reason: str) -> bool:
-    """Whether a fail's reason can go into the verdict row as it is [R40]."""
-    return bool(reason.strip()) and not has_chinese_characters(reason)
+def _caught(reason: str) -> str | None:
+    """Why a fail's reason cannot go into the verdict row as it is [R40], or None when it
+    can."""
+    if not reason.strip():
+        return EMPTY
+    if has_chinese_characters(reason):
+        return CHINESE_CHARACTERS
+    return None
+
+
+def _sent_back(
+    state: State, reason: str, ordinal: int, caught: str, replaced: bool
+) -> SentBack:
+    """The `sent_back` entry for a fail reason as the model wrote it [R40]."""
+    return {
+        "round": state["round"],
+        "node": "D",
+        "kind": "reason",
+        "text": reason,
+        "ordinal": ordinal,
+        "reason": caught,
+        "replaced": replaced,
+    }
 
 
 def node_d(
@@ -83,20 +116,30 @@ def node_d(
     messages: list[BaseMessage] = [HumanMessage(build_prompt(state, texts[PROMPT]))]
     round_key = {"round": state["round"]}
     first = call_structured(settings, messages, SCHEMA, 1, client_for, metadata=round_key)
+    calls = with_call(state["calls"], "D", settings, state["round"], first)
+    ordinal = calls[-1]["ordinal"]
+    sent_back = list(state["sent_back"])
     reason: str | None = None  # only a fail keeps a reason [R40]
     reasks = 0
     if first.output["verdict"] == "fail":
         reason = first.output["reason"]
-        if not _shown(reason):
+        caught = _caught(reason)
+        if caught is not None:
             reasks = 1
+            sent_back.append(_sent_back(state, reason, ordinal, caught, replaced=False))
             reask = [
                 *messages,
                 AIMessage(json.dumps(first.output, ensure_ascii=False)),
                 HumanMessage(texts[REASK]),
             ]
             second = call_structured(settings, reask, SCHEMA, 2, client_for, metadata=round_key)
+            calls = with_call(calls, "D", settings, state["round"], second)
             reason = second.output["reason"]
-            if not _shown(reason):
+            caught = _caught(reason)
+            if caught is not None:
+                sent_back.append(
+                    _sent_back(state, reason, calls[-1]["ordinal"], caught, replaced=True)
+                )
                 reason = texts[FIXED_MESSAGE]
     verdict: Verdict = {
         "verdict": first.output["verdict"],
@@ -106,7 +149,20 @@ def node_d(
         "output_tokens": first.output_tokens,
         "attempt": first.attempt,
     }
-    state = {**state, "verdict": verdict, "reason_reasks": reasks}
+    entry: VerdictEntry = {
+        "round": state["round"],
+        "verdict": verdict["verdict"],
+        "reason": reason,
+        "ordinal": ordinal,
+    }
+    state = {
+        **state,
+        "verdict": verdict,
+        "reason_reasks": reasks,
+        "calls": calls,
+        "sent_back": sent_back,
+        "verdicts": [*state["verdicts"], entry],
+    }
     if reason is not None and state["rejects"] < REJECT_LIMIT:
         return {
             **state,

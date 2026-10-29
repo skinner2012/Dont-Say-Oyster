@@ -18,11 +18,12 @@ need no code: the handler reads the same `usage_metadata` this wrapper reads, an
 duration is the latency around the same `invoke`.
 
 Each call returns its output with the latency (wall time around the one request, thinking and
-any model load included; `SPEC.md` Metrics, Latency) and the input and output token counts
-Ollama reports, kept apart. Ollama reports the whole prompt as input tokens, cached tokens
-included (seen in the server log of a live check on 2026-10-19), so the input count is the prompt's
-size for the num_ctx warning: when it is over 90% of num_ctx, a WARNING naming the role, the prompt
-tokens, and num_ctx goes through `logging` (`SPEC.md` Implementation, Models).
+any model load included; `SPEC.md` Metrics, Latency), the input and output token counts
+Ollama reports, kept apart, and the kind of call it made. Ollama reports the whole prompt as
+input tokens, cached tokens included (seen in the server log of a live check on 2026-10-19), so
+the input count is the prompt's size for the num_ctx warning: when it is over 90% of num_ctx, a
+WARNING naming the role, the prompt tokens, and num_ctx goes through `logging` (`SPEC.md`
+Implementation, Models).
 
 Nothing is retried (`SPEC.md` Recovery, forks, and replay, Model errors): a connection error,
 an error response from Ollama, a reply langchain-ollama cannot read, or a structured reply that
@@ -79,13 +80,15 @@ class ModelSettings:
 @dataclass(frozen=True)
 class Reply[T]:
     """A call's output with its latency in seconds, the token counts Ollama reported (None when
-    it reported none), and the attempt number passed in [R26]."""
+    it reported none), the attempt number passed in [R26], and the kind of call the wrapper
+    made (`SPEC.md` Metrics, Per model call), so no node restates it."""
 
     output: T
     latency: float
     input_tokens: int | None
     output_tokens: int | None
     attempt: int
+    kind: CallKind
 
 
 class LLMError(Exception):
@@ -173,7 +176,7 @@ def call_text(
     message, latency, tokens_in, tokens_out = _request(
         settings, client_for(settings), messages, attempt, "text", metadata
     )
-    return Reply(message.text, latency, tokens_in, tokens_out, attempt)
+    return Reply(message.text, latency, tokens_in, tokens_out, attempt, "text")
 
 
 def call_structured(
@@ -197,7 +200,7 @@ def call_structured(
         parsed = None
     if not isinstance(parsed, dict) or not Draft202012Validator(schema).is_valid(parsed):
         raise LLMError(f"{settings.role}: structured reply did not parse: {message.text}")
-    return Reply(parsed, latency, tokens_in, tokens_out, attempt)
+    return Reply(parsed, latency, tokens_in, tokens_out, attempt, "structured")
 
 
 def call_tools(
@@ -214,4 +217,4 @@ def call_tools(
     message, latency, tokens_in, tokens_out = _request(
         settings, runnable, messages, attempt, "tools", metadata
     )
-    return Reply(message, latency, tokens_in, tokens_out, attempt)
+    return Reply(message, latency, tokens_in, tokens_out, attempt, "tools")

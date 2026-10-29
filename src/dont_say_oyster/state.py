@@ -11,13 +11,20 @@ Readings settled with the author on 2026-10-20:
   (Guesser), since only F writes the game result.
 - There is no attempt-number field: each node computes the attempt number [R26] of its call from
   its own count (the [R11] count + 1, the [R17] count + 1, 2 for the [R40] re-ask).
-- A token count [R26] is the pair `input_tokens`, `output_tokens` the wrapper reports."""
+- A token count [R26] is the pair `input_tokens`, `output_tokens` the wrapper reports.
+
+The rows above keep latency, token counts, and attempt only for the last description, answer,
+guess, and verdict and for each lookup, and B and E overwrite a sent-back output when its retry
+arrives; so the per-call values (`SPEC.md` Metrics, Per model call) and what the program caught
+(`SPEC.md` Implementation, Experiment result format) are appended by the nodes as the game runs,
+into three program-only lists: `calls`, `sent_back`, and `verdicts`."""
 
 from dataclasses import asdict
 from typing import Any, Literal, TypedDict
 
 from dont_say_oyster.cards import Card
 from dont_say_oyster.corpus import Attributes
+from dont_say_oyster.llm import CallKind, ModelSettings, Reply
 
 ROUNDS = 10  # [R15]
 QUESTION_LIMIT = 3  # [R16]
@@ -121,6 +128,61 @@ class Lookup(TypedDict):
     attempt: int
 
 
+CallNode = Literal["B", "D", "E"]
+
+
+class Call(TypedDict):
+    """One wrapper call (`SPEC.md` Metrics, Per model call), appended by the node that made it.
+    `ordinal` is the entry's 1-based position in `calls`, since (round, role, attempt) alone is
+    not unique [R26]; `call` is the round's tool-loop call index on a tool-bound call, the index
+    its span and its `Lookup` entries carry, and None on any other call. A tool-bound call whose
+    reply made several lookups is one entry."""
+
+    ordinal: int
+    node: CallNode
+    role: str
+    round: int
+    attempt: int
+    kind: CallKind
+    call: int | None
+    latency: float
+    input_tokens: int | None
+    output_tokens: int | None
+
+
+CHINESE_CHARACTERS = "Chinese characters"  # why an output is sent back [R11], [R17], [R40]
+EMPTY = "empty"  # why a fail reason is re-asked (an empty reason is re-asked like Chinese [R40])
+
+
+class SentBack(TypedDict):
+    """One output the program sent back (`SPEC.md` Implementation, Experiment result format): a
+    description or answer with Chinese characters, by C [R11]; an invalid question, by E [R17];
+    a fail reason re-asked, by D [R40]. `text` is the output as the model wrote it, `ordinal`
+    the ordinal of the call that produced it, and `reason` why it was sent back. `replaced` is
+    true only for the [R40] second reason that the fixed message replaced: it was not sent back,
+    but it is kept because the record shows what validation caught. The last try that turns into
+    a violation [R11], [R17] is not a send-back and has no entry."""
+
+    round: int
+    node: Literal["C", "D", "E"]
+    kind: Literal["description", "answer", "question", "reason"]
+    text: str
+    ordinal: int
+    reason: str
+    replaced: bool
+
+
+class VerdictEntry(TypedDict):
+    """One D visit's verdict [R40]: `reason` as the verdict row shows it (None on a pass, the
+    shown reason or the fixed message on a fail); `ordinal` that of the call that gave the
+    verdict, the visit's first."""
+
+    round: int
+    verdict: Literal["pass", "fail"]
+    reason: str | None
+    ordinal: int
+
+
 class State(TypedDict):
     # The card [R9]
     card_id: str
@@ -158,12 +220,42 @@ class State(TypedDict):
     owes: Literal["description", "answer"]  # what the Describer is asked for [R10]
     guess_only: bool  # set by G [R16]
     d_route: Literal["B", "E"] | None  # D's route, written by D on every verdict [R13]
+    calls: list[Call]  # every model call of the game, in order
+    sent_back: list[SentBack]  # every output the program sent back, in order
+    verdicts: list[VerdictEntry]  # every verdict of the game, in order
 
 
 PROGRAM_ONLY = frozenset({
     "violation", "matched_name", "describer_send_backs", "invalid_questions", "reason_reasks",
-    "owes", "guess_only", "d_route",
+    "owes", "guess_only", "d_route", "calls", "sent_back", "verdicts",
 })
+
+
+def with_call(
+    calls: list[Call],
+    node: CallNode,
+    settings: ModelSettings,
+    round_: int,
+    reply: Reply[Any],
+    call: int | None = None,
+) -> list[Call]:
+    """`calls` with one entry appended for the wrapper call that returned `reply`, its ordinal
+    the next position; `call` is the tool-loop call index, given only on a tool-bound call."""
+    return [
+        *calls,
+        {
+            "ordinal": len(calls) + 1,
+            "node": node,
+            "role": settings.role,
+            "round": round_,
+            "attempt": reply.attempt,
+            "kind": reply.kind,
+            "call": call,
+            "latency": reply.latency,
+            "input_tokens": reply.input_tokens,
+            "output_tokens": reply.output_tokens,
+        },
+    ]
 
 
 def winner(outcome: Outcome) -> Winner:
@@ -231,4 +323,7 @@ def initial_state(card: Card) -> State:
         "owes": "description",
         "guess_only": False,
         "d_route": None,
+        "calls": [],
+        "sent_back": [],
+        "verdicts": [],
     }

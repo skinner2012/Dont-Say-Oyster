@@ -219,6 +219,13 @@ def _every_item() -> State:
         "owes": "description",
         "guess_only": False,
         "d_route": "B",
+        "calls": [{"ordinal": 1, "node": "B", "role": "S-call-role", "round": 1, "attempt": 1,
+                   "kind": "text", "call": None, "latency": 1.0, "input_tokens": 1,
+                   "output_tokens": 1}],
+        "sent_back": [{"round": 1, "node": "C", "kind": "description", "text": "S-sent-back",
+                       "ordinal": 1, "reason": "S-send-back-reason", "replaced": False}],
+        "verdicts": [{"round": 1, "verdict": "fail", "reason": "S-verdicts-reason",
+                      "ordinal": 2}],
     }
 
 
@@ -233,6 +240,7 @@ CHALLENGER_ITEMS = ("S-verdict-reason", "S-rejected", "S-rejected-reason")
 HIDDEN = (
     "S-card-id", "S-attribute", "S-distractor", "S-guesser-input", "S-description-row",
     "S-answer-row", "S-lookup", "S-matched-name", "0.3", "41", "42", "43", "44",
+    "S-call-role", "S-sent-back", "S-send-back-reason", "S-verdicts-reason",
 )
 
 
@@ -530,3 +538,71 @@ def test_with_the_challenger_off_an_answer_is_handled_as_before(round_1: State) 
 def test_c_without_the_owed_output_raises(round_1: State) -> None:
     with pytest.raises(ValueError, match="no description"):
         node_c(round_1)
+
+
+# The calls and send-backs B and C append to State.
+
+
+def test_b_appends_one_call_per_visit_with_its_attempt_and_the_next_ordinal(
+    round_1: State,
+) -> None:
+    state, route, _ = _run(round_1, recording(CHINESE, CHINESE, CLEAN))
+    assert route == "D"
+    latencies = [entry["latency"] for entry in state["calls"]]
+    assert all(isinstance(latency, float) for latency in latencies)
+    assert state["calls"] == [
+        {
+            "ordinal": n, "node": "B", "role": SETTINGS.role, "round": 1, "attempt": n,
+            "kind": "text", "call": None, "latency": latencies[n - 1], "input_tokens": 900,
+            "output_tokens": 60,
+        }
+        for n in (1, 2, 3)
+    ]
+    answer = node_b(_question(state), SETTINGS, Clients(recording("Yes.")))
+    assert [(c["ordinal"], c["round"], c["attempt"]) for c in answer["calls"]][-1] == (4, 2, 1)
+
+
+def test_c_appends_each_chinese_send_back_with_the_text_and_ordinal_of_bs_call(
+    round_1: State,
+) -> None:
+    again = CHINESE + " Again 夜市."
+    state, route, _ = _run(round_1, recording(CHINESE, again, CLEAN))
+    assert route == "D"
+    assert state["sent_back"] == [
+        {"round": 1, "node": "C", "kind": "description", "text": CHINESE, "ordinal": 1,
+         "reason": "Chinese characters", "replaced": False},
+        {"round": 1, "node": "C", "kind": "description", "text": again, "ordinal": 2,
+         "reason": "Chinese characters", "replaced": False},
+    ]
+
+
+def test_a_chinese_answer_is_appended_as_an_answer(round_1: State) -> None:
+    state = node_c(node_b(_question(round_1), SETTINGS, Clients(recording("Yes, 好吃."))))
+    assert state["sent_back"] == [
+        {"round": 2, "node": "C", "kind": "answer", "text": "Yes, 好吃.", "ordinal": 1,
+         "reason": "Chinese characters", "replaced": False},
+    ]
+
+
+def test_the_third_chinese_reply_is_a_violation_and_not_a_send_back(round_1: State) -> None:
+    state, route, _ = _run(round_1, recording(CHINESE, CHINESE, CHINESE))
+    assert (route, state["violation"]) == ("F", "Describer")
+    assert [entry["ordinal"] for entry in state["sent_back"]] == [1, 2]
+    assert len(state["calls"]) == 3
+
+
+def test_a_name_violation_and_a_clean_reply_append_no_send_back(round_1: State) -> None:
+    violation, route, _ = _run(round_1, recording("Some call it 烤牡蠣 at the stalls."))
+    assert route == "F" and violation["sent_back"] == []
+    clean = node_c(node_b(round_1, SETTINGS, Clients(recording(CLEAN))), challenger=False)
+    assert clean["sent_back"] == []
+
+
+def test_c_with_chinese_and_no_call_from_b_raises(round_1: State) -> None:
+    state: State = {
+        **round_1,
+        "description": {"description": CHINESE, "latency": 1.0, "input_tokens": 1,
+                        "output_tokens": 1, "attempt": 1},
+    }
+    with pytest.raises(ValueError, match="no call from B"):
+        node_c(state)

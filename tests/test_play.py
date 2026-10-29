@@ -8,6 +8,7 @@ the stack."""
 import json
 import logging
 import tomllib
+from collections import Counter
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any, cast
@@ -47,6 +48,7 @@ from dont_say_oyster.program_nodes import SEND_BACKS, node_a
 from dont_say_oyster.prompt_sections import sections
 from dont_say_oyster.state import PROGRAM_ONLY, ROUNDS, State
 from dont_say_oyster.tracing import TracingClient
+from tests.spans import METADATA, OBSERVATION_TYPE, metadata, of_type
 from tests.test_guesser import tool_reply
 from tests.test_llm import Scripted, raising, reply, scripted
 
@@ -180,6 +182,25 @@ def cards(corpus: list[CorpusEntry]) -> list[Card]:
     return load_cards(CARDS_PATH, corpus)
 
 
+def assert_calls_are_the_requests_and_the_spans(
+    state: State, models: Models, exporter: InMemorySpanExporter
+) -> None:
+    """One wrapper call is one `calls` entry and one generation span: as many entries as the
+    scripted models received requests, ordinals 1..n, and the same (round, role, attempt, kind)
+    multiset as the exporter's generation spans."""
+    calls = state["calls"]
+    assert len(calls) == sum(models.calls(role) for role in ROLES)
+    assert [entry["ordinal"] for entry in calls] == list(range(1, len(calls) + 1))
+    generations = of_type(list(exporter.get_finished_spans()), "generation")
+    assert len(generations) == len(calls)
+    assert Counter(
+        (entry["round"], entry["role"], entry["attempt"], entry["kind"]) for entry in calls
+    ) == Counter(
+        tuple(metadata(span, name) for name in ("round", "role", "attempt", "kind"))
+        for span in generations
+    )
+
+
 # Whole games.
 
 
@@ -207,7 +228,7 @@ def test_a_right_guess_in_round_1_wins_and_writes_the_final_state(
 
 
 def test_a_game_through_send_back_reject_question_answer_and_wrong_guess(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, in_memory_tracing: InMemorySpanExporter, capsys: pytest.CaptureFixture[str]
 ) -> None:
     models = Models(
         # Round 1: Chinese, sent back; clean, rejected; clean, passed. Round 2: the answer.
@@ -244,6 +265,27 @@ def test_a_game_through_send_back_reject_question_answer_and_wrong_guess(
     assert capsys.readouterr().out.strip() == (
         "Guesser wins (right guess): round 3, questions 1, rejects 1, forced passes 0"
     )
+    # Every call kept as the game ran: round 1 is B (sent back), B, D (fail), B, D (pass), E's
+    # tool-loop call and its question; round 2 is B's answer and E; round 3 is B, D, and E.
+    assert_calls_are_the_requests_and_the_spans(state, models, in_memory_tracing)
+    assert [(c["node"], c["round"], c["attempt"], c["kind"], c["call"]) for c in
+            state["calls"]] == [
+        ("B", 1, 1, "text", None), ("B", 1, 2, "text", None), ("D", 1, 1, "structured", None),
+        ("B", 1, 1, "text", None), ("D", 1, 1, "structured", None), ("E", 1, 1, "tools", 1),
+        ("E", 1, 1, "structured", None),
+        ("B", 2, 1, "text", None), ("E", 2, 1, "tools", 1), ("E", 2, 1, "structured", None),
+        ("B", 3, 1, "text", None), ("D", 3, 1, "structured", None), ("E", 3, 1, "tools", 1),
+        ("E", 3, 1, "structured", None),
+    ]
+    assert state["sent_back"] == [
+        {"round": 1, "node": "C", "kind": "description", "text": CHINESE, "ordinal": 1,
+         "reason": "Chinese characters", "replaced": False},
+    ]
+    assert state["verdicts"] == [
+        {"round": 1, "verdict": "fail", "reason": FAIL_REASON, "ordinal": 3},
+        {"round": 1, "verdict": "pass", "reason": None, "ordinal": 5},
+        {"round": 3, "verdict": "pass", "reason": None, "ordinal": 12},
+    ]
 
 
 def test_a_forbidden_word_in_round_2_is_a_describer_violation(
@@ -315,8 +357,7 @@ def test_ten_wrong_guesses_lose_in_round_10_with_no_eleventh_round(
 
 # The toggles (SPEC.md Ablation Design): V0 and V1 games.
 
-OBSERVATION_TYPE = "langfuse.observation.type"
-KIND = "langfuse.observation.metadata.kind"  # JSON-encoded
+KIND = METADATA + "kind"  # JSON-encoded
 SEARCH_SECTION = sections(PROMPT_PATH)["search"]
 
 
@@ -386,6 +427,11 @@ def test_a_v0_game_has_no_challenger_no_tool_loop_and_no_search_text_in_the_prom
     assert {"G", "B", "C", "E", "F"} <= names and "D" not in names
     assert "tool" not in observation_types(in_memory_tracing)
     assert generation_kinds(in_memory_tracing) == {"text", "structured"}
+    assert_calls_are_the_requests_and_the_spans(state, models, in_memory_tracing)
+    assert [(c["node"], c["kind"], c["call"]) for c in state["calls"]] == [
+        ("B", "text", None), ("E", "structured", None)
+    ] * 3
+    assert (state["sent_back"], state["verdicts"]) == ([], [])
     # The prompt never mentions the catalogue or the search tool (Self-checks) and has no
     # unfilled slot.
     assert len(guesser_prompts) == 3
@@ -479,6 +525,11 @@ def test_a_v1_game_has_no_challenger_but_a_tool_loop_with_the_search_text_in_the
     assert {"G", "B", "C", "E", "F", "search"} <= names and "D" not in names
     assert observation_types(in_memory_tracing).count("tool") == 1
     assert generation_kinds(in_memory_tracing) == {"text", "tools", "structured"}
+    assert_calls_are_the_requests_and_the_spans(state, models, in_memory_tracing)
+    assert [(c["node"], c["kind"], c["call"]) for c in state["calls"]] == [
+        ("B", "text", None), ("E", "tools", 1), ("E", "tools", 2), ("E", "structured", None)
+    ]
+    assert (state["sent_back"], state["verdicts"]) == ([], [])
     (prompt,) = guesser_prompts
     assert SEARCH_SECTION in prompt
     assert "{" not in prompt and "}" not in prompt
@@ -540,7 +591,10 @@ def assert_worst_case_outcome(state: State) -> None:
 
 
 def test_the_worst_case_game_reaches_f_without_hitting_the_recursion_limit(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    in_memory_tracing: InMemorySpanExporter,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     configs: list[Any] = []
     real_invoke = CompiledStateGraph.invoke
@@ -569,6 +623,39 @@ def test_the_worst_case_game_reaches_f_without_hitting_the_recursion_limit(
         "Guesser loses (wrong guess in round 10): round 10, questions 0, rejects 20, "
         "forced passes 10"
     )
+    state = final_state(output)
+    assert_calls_are_the_requests_and_the_spans(state, models, in_memory_tracing)
+    assert len(state["calls"]) == 158  # 90 Describer, 30 Challenger, 38 Guesser
+    # The sent-back outputs: each description's two Chinese replies [R11] (the third reply of
+    # each is clean), and in rounds 1–9 the two invalid questions before the guess [R17].
+    by_node = Counter(entry["node"] for entry in state["sent_back"])
+    assert by_node == {"C": ROUNDS * (REJECT_LIMIT + 1) * SEND_BACKS,
+                       "E": (ROUNDS - 1) * (INVALID_QUESTION_LIMIT - 1)}
+    ordinals = {c["ordinal"]: c for c in state["calls"]}
+    for entry in state["sent_back"]:
+        made = ordinals[entry["ordinal"]]
+        assert (made["node"], made["round"]) == ({"C": "B", "E": "E"}[entry["node"]],
+                                                 entry["round"])
+        if entry["node"] == "C":
+            assert (entry["kind"], entry["text"], entry["reason"]) == (
+                "description", CHINESE, "Chinese characters"
+            )
+        else:
+            assert (entry["kind"], entry["text"], made["kind"]) == (
+                "question", INVALID, "structured"
+            )
+            assert entry["reason"] == "the distractors' English names: Oyster Omelet (蚵仔煎)"
+    assert [entry["round"] for entry in state["sent_back"] if entry["node"] == "E"] == [
+        r for r in range(1, ROUNDS) for _ in range(INVALID_QUESTION_LIMIT - 1)
+    ]
+    # Every verdict: two rejects and the forced pass in each round, each with its reason, at
+    # the ordinal of the Challenger call that gave it.
+    assert [(v["round"], v["verdict"], v["reason"]) for v in state["verdicts"]] == [
+        (r, "fail", FAIL_REASON) for r in range(1, ROUNDS + 1) for _ in range(REJECT_LIMIT + 1)
+    ]
+    assert [v["ordinal"] for v in state["verdicts"]] == [
+        c["ordinal"] for c in state["calls"] if c["node"] == "D"
+    ]
 
 
 def test_the_worst_case_arithmetic_is_exact(cards: list[Card], corpus: list[CorpusEntry]) -> None:
@@ -588,6 +675,8 @@ def test_the_worst_case_arithmetic_is_exact(cards: list[Card], corpus: list[Corp
         node_a(CARD_ID, [card]), RunnableConfig(recursion_limit=WORST_CASE_STEPS + 1)
     )
     assert_worst_case_outcome(cast(State, state))
+    # The final State, its three lists at their longest, is still JSON.
+    assert json.loads(json.dumps(state, ensure_ascii=False)) == state
 
 
 # Errors.

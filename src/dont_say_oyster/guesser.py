@@ -45,7 +45,12 @@ Readings settled on 2026-10-21:
 - The lookup record is one `Lookup` (state.py) per lookup run, in order; the tool-loop call's
   latency, token counts, and attempt number repeat across the lookups of one reply, which
   `call` tells apart from several calls. A tool-loop reply without a tool call leaves no
-  entry; its latency and tokens are only on the wrapper's Reply (the trace has them for every call).
+  `Lookup` entry; its latency and tokens are in its `calls` entry, as every call's are.
+
+Every call, tool-loop and structured, is appended to `calls`, a tool-loop call with its call
+index; each invalid question that is sent back is appended to `sent_back` as the model wrote it,
+with the reason `QuestionCheck` gives (Chinese characters, the card's English names it
+contains, the distractors' English names it contains) [R17]; the third, a violation, is not.
 
 Trace metadata (`SPEC.md` Goals, Evaluation and observability): every call carries `round` in
 its run metadata, so its span says which round it belongs to without reading its neighbours;
@@ -66,14 +71,18 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMe
 from dont_say_oyster import prompt_sections
 from dont_say_oyster.corpus import CorpusEntry
 from dont_say_oyster.llm import ClientFor, ModelSettings, call_structured, call_tools, ollama_client
-from dont_say_oyster.oracle import check_question
+from dont_say_oyster.oracle import QuestionCheck, check_question
 from dont_say_oyster.search import search_tool
 from dont_say_oyster.state import (
+    CHINESE_CHARACTERS,
+    Call,
     EarlierGuessOrQuestion,
     GuessOrQuestion,
     Lookup,
+    SentBack,
     State,
     card_from_state,
+    with_call,
 )
 
 PROMPT_PATH = Path(__file__).resolve().parents[2] / "prompts" / "guesser.txt"
@@ -161,18 +170,21 @@ def _tool_loop(
     client_for: ClientFor,
     messages: list[BaseMessage],
     attempt: int,
-) -> tuple[int, list[Lookup]]:
+) -> tuple[int, list[Lookup], list[Call]]:
     """Run the tool loop [R43] on `messages`, appending each reply and its tool results; return
-    this round's lookup counter and the lookups appended to State's record."""
+    this round's lookup counter, the lookups appended to State's record, and State's calls with
+    each tool-loop call appended."""
     tool = search_tool(corpus)
     blocked_text = prompt_sections.sections(PROMPT_PATH)["blocked lookup result"]
     count = state["lookup_count"]
     lookups: list[Lookup] = []
+    calls = state["calls"]
     call_index = 0
     while True:
         call_index += 1
         key = {"round": state["round"], "call": call_index}
         reply = call_tools(settings, messages, [tool], attempt, client_for, metadata=key)
+        calls = with_call(calls, "E", settings, state["round"], reply, call_index)
         messages.append(reply.output)
         blocked = False
         for call in reply.output.tool_calls:
@@ -206,7 +218,24 @@ def _tool_loop(
             })
             messages.append(result)
         if not reply.output.tool_calls or blocked:
-            return count, lookups
+            return count, lookups, calls
+
+
+def _invalid_reason(check: QuestionCheck) -> str:
+    """Why a question is invalid, from its check [R17]: Chinese characters, the card's English
+    names it contains, and the distractors' English names it contains, each with its distractor's
+    official name, as many of the three as apply."""
+    parts = []
+    if check.has_chinese:
+        parts.append(CHINESE_CHARACTERS)
+    if check.english_names:
+        parts.append("the card's English names: " + ", ".join(check.english_names))
+    if check.distractor_names:
+        parts.append(
+            "the distractors' English names: "
+            + ", ".join(f"{english} ({name})" for name, english in check.distractor_names)
+        )
+    return "; ".join(parts)
 
 
 def node_e(
@@ -226,15 +255,19 @@ def node_e(
     invalid = state["invalid_questions"]
     attempt = invalid + 1
     after_loop: State = state
+    calls = state["calls"]
     if lookup:
-        count, lookups = _tool_loop(state, settings, corpus, client_for, messages, attempt)
+        count, lookups, calls = _tool_loop(state, settings, corpus, client_for, messages, attempt)
         after_loop = {**state, "lookup_count": count, "lookups": [*state["lookups"], *lookups]}
+    sent_back: list[SentBack] = state["sent_back"]
     schema = GUESS_ONLY_SCHEMA if state["guess_only"] else QUESTION_OR_GUESS_SCHEMA
     card = card_from_state(state)
     while True:
         reply = call_structured(
             settings, messages, schema, attempt, client_for, metadata={"round": state["round"]}
         )
+        calls = with_call(calls, "E", settings, state["round"], reply)
+        after_loop = {**after_loop, "calls": calls, "sent_back": sent_back}
         kind: Literal["guess", "question"] = (
             "guess" if state["guess_only"] or reply.output["kind"] == "guess" else "question"
         )
@@ -262,7 +295,8 @@ def node_e(
                 "invalid_questions": invalid,
                 "owes": "description",
             }
-        if not check_question(text, card, corpus).invalid:
+        check = check_question(text, card, corpus)
+        if not check.invalid:
             return {
                 **after_loop,
                 "guesser_output": output,
@@ -279,6 +313,18 @@ def node_e(
                 "invalid_questions": invalid,
                 "violation": "Guesser",
             }
+        sent_back = [
+            *sent_back,
+            {
+                "round": state["round"],
+                "node": "E",
+                "kind": "question",
+                "text": text,
+                "ordinal": calls[-1]["ordinal"],
+                "reason": _invalid_reason(check),
+                "replaced": False,
+            },
+        ]
         messages.append(AIMessage(json.dumps(reply.output, ensure_ascii=False)))
         messages.append(HumanMessage(texts["fixed message [R17]"]))
         attempt += 1

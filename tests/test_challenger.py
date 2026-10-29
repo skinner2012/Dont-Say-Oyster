@@ -16,7 +16,7 @@ from dont_say_oyster.corpus import load_corpus
 from dont_say_oyster.llm import ModelSettings, Reply
 from dont_say_oyster.program_nodes import node_a, node_g
 from dont_say_oyster.prompt_sections import sections
-from dont_say_oyster.state import State
+from dont_say_oyster.state import Call, State
 from tests.test_llm import Scripted, reply
 
 CORPUS_PATH = REPO_ROOT / "data" / "corpus" / "corpus.json"
@@ -146,6 +146,13 @@ def test_the_prompt_holds_only_the_names_aliases_distractors_and_description(
         "lookup_count": 7773,
         "questions": 7774,
         "forced_passes": 7775,
+        "calls": [{"ordinal": 1, "node": "B", "role": "S-call-role", "round": 1, "attempt": 1,
+                   "kind": "text", "call": None, "latency": 1.0, "input_tokens": 1,
+                   "output_tokens": 1}],
+        "sent_back": [{"round": 1, "node": "C", "kind": "description", "text": "S-sent-back",
+                       "ordinal": 1, "reason": "S-send-back-reason", "replaced": False}],
+        "verdicts": [{"round": 1, "verdict": "fail", "reason": "S-verdicts-reason",
+                      "ordinal": 2}],
     }
     model = Challenger(monkeypatch, ("pass", ""))
     model.d(state)
@@ -159,7 +166,8 @@ def test_the_prompt_holds_only_the_names_aliases_distractors_and_description(
         assert shown in prompt
     for hidden in ("S-card-id", "S-english", "S-forbidden", "S-attribute", "S-guesser-input",
                    "S-answer", "S-guesser-output", "S-verdict", "S-earlier-text", "S-rejected",
-                   "S-earlier-guess", "S-lookup", "7771", "7772", "7773", "7774", "7775"):
+                   "S-earlier-guess", "S-lookup", "7771", "7772", "7773", "7774", "7775",
+                   "S-call-role", "S-sent-back", "S-send-back-reason", "S-verdicts-reason"):
         assert hidden not in prompt
     assert "===" not in prompt
     assert SECTIONS["re-ask [R40]"] not in prompt
@@ -388,3 +396,108 @@ def test_an_english_fail_reason_is_kept_without_a_reask(
 def test_d_without_a_description_raises(round_one: State) -> None:
     with pytest.raises(ValueError, match="no description"):
         node_d(round_one, SETTINGS, lambda settings: pytest.fail("no call expected"))
+
+
+# The calls, verdicts, and send-backs D appends to State.
+
+
+def prior_call(ordinal: int) -> Call:
+    """A call made before D's visit, as B leaves it in `calls`."""
+    return {
+        "ordinal": ordinal, "node": "B", "role": "Describer", "round": 1, "attempt": ordinal,
+        "kind": "text", "call": None, "latency": 1.0, "input_tokens": 900, "output_tokens": 70,
+    }
+
+
+def test_a_pass_appends_one_call_and_its_verdict_and_no_send_back(
+    round_one: State, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    model = Challenger(monkeypatch, ("pass", CHINESE))
+    after = model.d({**described(round_one, FIRST, attempt=2), "calls": [prior_call(1),
+                                                                        prior_call(2)]})
+    (first,) = model.replies
+    assert after["calls"] == [
+        prior_call(1),
+        prior_call(2),
+        {
+            "ordinal": 3, "node": "D", "role": SETTINGS.role, "round": 1, "attempt": 1,
+            "kind": "structured", "call": None, "latency": first.latency, "input_tokens": 400,
+            "output_tokens": 20,
+        },
+    ]
+    assert after["verdicts"] == [{"round": 1, "verdict": "pass", "reason": None, "ordinal": 3}]
+    assert after["sent_back"] == []
+
+
+def test_an_english_fail_appends_its_verdict_with_the_reason_and_no_send_back(
+    round_one: State, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    model = Challenger(monkeypatch, ("fail", ENGLISH))
+    after = model.d(described(round_one, FIRST))
+    assert [(c["ordinal"], c["attempt"]) for c in after["calls"]] == [(1, 1)]
+    assert after["verdicts"] == [{"round": 1, "verdict": "fail", "reason": ENGLISH, "ordinal": 1}]
+    assert after["sent_back"] == []
+
+
+@pytest.mark.parametrize(
+    ("bad", "why"), [(CHINESE, "Chinese characters"), ("", "empty"), ("  ", "empty")]
+)
+def test_a_reasked_reason_is_a_send_back_and_the_reask_a_second_call(
+    round_one: State, monkeypatch: pytest.MonkeyPatch, bad: str, why: str
+) -> None:
+    model = Challenger(monkeypatch, ("fail", bad), ("fail", ENGLISH))
+    after = model.d({**described(round_one, FIRST), "calls": [prior_call(1)]})
+    first, second = model.replies
+    assert after["calls"][1:] == [
+        {
+            "ordinal": 2, "node": "D", "role": SETTINGS.role, "round": 1, "attempt": 1,
+            "kind": "structured", "call": None, "latency": first.latency, "input_tokens": 400,
+            "output_tokens": 20,
+        },
+        {
+            "ordinal": 3, "node": "D", "role": SETTINGS.role, "round": 1, "attempt": 2,
+            "kind": "structured", "call": None, "latency": second.latency, "input_tokens": 401,
+            "output_tokens": 21,
+        },
+    ]
+    assert after["sent_back"] == [
+        {"round": 1, "node": "D", "kind": "reason", "text": bad, "ordinal": 2, "reason": why,
+         "replaced": False},
+    ]
+    # The verdict entry is the first call's, with the reason the verdict row shows [R40].
+    assert after["verdicts"] == [{"round": 1, "verdict": "fail", "reason": ENGLISH, "ordinal": 2}]
+
+
+@pytest.mark.parametrize(("bad", "again"), [(CHINESE, ""), ("", CHINESE)])
+def test_a_second_bad_reason_is_kept_as_replaced_and_the_verdict_shows_the_fixed_message(
+    round_one: State, monkeypatch: pytest.MonkeyPatch, bad: str, again: str
+) -> None:
+    model = Challenger(monkeypatch, ("fail", bad), ("fail", again))
+    after = model.d(described(round_one, FIRST))
+    reason = {CHINESE: "Chinese characters", "": "empty"}
+    assert after["sent_back"] == [
+        {"round": 1, "node": "D", "kind": "reason", "text": bad, "ordinal": 1,
+         "reason": reason[bad], "replaced": False},
+        {"round": 1, "node": "D", "kind": "reason", "text": again, "ordinal": 2,
+         "reason": reason[again], "replaced": True},
+    ]
+    assert after["verdicts"] == [{"round": 1, "verdict": "fail", "reason": FIXED, "ordinal": 1}]
+
+
+def test_every_visit_appends_its_verdict_the_forced_pass_included(
+    round_one: State, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    model = Challenger(monkeypatch, ("fail", ENGLISH), ("fail", CHINESE), ("fail", ENGLISH),
+                       ("fail", ENGLISH))
+    state = round_one
+    for text in (FIRST, SECOND, THIRD):
+        state = model.d(described(state, text))
+    assert route_after_d(state) == "E" and state["forced_passes"] == 1
+    assert state["verdicts"] == [
+        {"round": 1, "verdict": "fail", "reason": ENGLISH, "ordinal": 1},
+        {"round": 1, "verdict": "fail", "reason": ENGLISH, "ordinal": 2},
+        {"round": 1, "verdict": "fail", "reason": ENGLISH, "ordinal": 4},
+    ]
+    assert [(c["ordinal"], c["attempt"]) for c in state["calls"]] == [(1, 1), (2, 1), (3, 2),
+                                                                      (4, 1)]
+    assert [(s["text"], s["ordinal"]) for s in state["sent_back"]] == [(CHINESE, 2)]

@@ -15,10 +15,12 @@ from dont_say_oyster.cards import Card
 from dont_say_oyster.matching import has_chinese_characters
 from dont_say_oyster.oracle import check_describer, check_guess
 from dont_say_oyster.state import (
+    CHINESE_CHARACTERS,
     QUESTION_LIMIT,
     ROUNDS,
     Answer,
     Description,
+    SentBack,
     State,
     card_from_state,
     describer_output,
@@ -98,20 +100,43 @@ def _to_guesser(
     }
 
 
+def _last_b_ordinal(state: State) -> int:
+    """The ordinal of B's last call, the one whose reply C is checking. Raises ValueError when
+    B has made no call."""
+    for entry in reversed(state["calls"]):
+        if entry["node"] == "B":
+            return entry["ordinal"]
+    raise ValueError(f"C reached in round {state['round']} with no call from B")
+
+
 def node_c(state: State, challenger: bool = True) -> State:
     """C: the name check first [R21], so a reply with a card name is a violation even when it
-    also has Chinese; then Chinese characters send the reply back to B, twice at most, and the
-    third is a violation [R11]; a clean answer fills the Guesser's row and is appended to the
-    earlier descriptions and answers [R12]. A clean description is left for D when the
-    Challenger is on (`SPEC.md` Ablation Design, V2); with it off, C fills the row and appends
-    the description itself, as D does on a pass, since no node stands between C and E."""
+    also has Chinese; then Chinese characters send the reply back to B, twice at most, each
+    send-back appended to `sent_back`, and the third is a violation, not a send-back [R11]; a
+    clean answer fills the Guesser's row and is appended to the earlier descriptions and answers
+    [R12]. A clean description is left for D when the Challenger is on (`SPEC.md` Ablation
+    Design, V2); with it off, C fills the row and appends the description itself, as D does on a
+    pass, since no node stands between C and E."""
     text = describer_output(state)
     if check_describer(text, card_from_state(state)).violation:
         return {**state, "violation": "Describer"}
     if has_chinese_characters(text):
         if state["describer_send_backs"] >= SEND_BACKS:
             return {**state, "violation": "Describer"}
-        return {**state, "describer_send_backs": state["describer_send_backs"] + 1}
+        sent_back: SentBack = {
+            "round": state["round"],
+            "node": "C",
+            "kind": state["owes"],
+            "text": text,
+            "ordinal": _last_b_ordinal(state),
+            "reason": CHINESE_CHARACTERS,
+            "replaced": False,
+        }
+        return {
+            **state,
+            "describer_send_backs": state["describer_send_backs"] + 1,
+            "sent_back": [*state["sent_back"], sent_back],
+        }
     answer = state["answer"]
     if state["owes"] == "answer" and answer is not None:
         return _to_guesser(state, "answer", answer["answer"], answer)
