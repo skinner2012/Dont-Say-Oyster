@@ -47,7 +47,7 @@ T1 → T2 → T3 → T4 → T5, strictly in order: T1 adds the variant argument,
 - **Depends on:** T1
 
 ### T3 — The JSONL game record written by play-game
-- **Status:** todo
+- **Status:** done 79ecee0
 - **Produces:** `src/dont_say_oyster/record.py` with `build_record(state, variant, settings) -> dict` and the writer that appends one JSON line to the output path; `data/records/schema.json`, the record's JSON Schema; `play-game` writing the record instead of the final State.
 - **Consumes:** the final State with T2's lists; the variant from T1; `RoleSettings` from `graph.py` and `prepare_output` from `play.py`; the `jsonschema` validator the corpus loader uses.
 - **Detail:**
@@ -68,7 +68,7 @@ T1 → T2 → T3 → T4 → T5, strictly in order: T1 adds the variant argument,
 - **Consumes:** `play-game` with T1–T3; the running Langfuse stack (M3) and the Ollama shell server; the model tags and num_ctx that are `play.py`'s defaults; the committed cards and corpus; `data/records/schema.json`.
 - **Detail:**
   - From BACKLOG M4.3, M4.4, and M4.5, merged into one ticket with one record per variant (their Done when lines are the three records; one commit per record, in the order V0, V1, V2, so a fix found by one run lands before the next); BACKLOG M4.2's Done when (no D span in V0 and V1, no lookup in V0) is checked here on the traces. This is the M4 exit check. `SPEC.md` M4, [R42], [R49].
-  - **Settings** (author fills in): the card for each run (one card for all three, or one each); thinking off for all three roles and temperature 0.7 unless the author says otherwise; the models and num_ctx that are `play.py`'s defaults.
+  - **Settings** (author, 2026-10-29): card card-0a001d83 (牛肉麵) for all three runs, the card of M2's and M3's live games, so the three records compare with them; thinking off for all three roles, temperature 0.7, and the models and num_ctx that are `play.py`'s defaults, since M4 checks that each variant runs end to end and M5 is where settings are varied and compared.
   - Before any run: the Ollama server up as a shell server started with `OLLAMA_MAX_LOADED_MODELS=3`, the menu-bar app quit, no model loaded, `ollama --version` recorded; the Langfuse health endpoint answering `"status":"OK"`; the tree clean at a commit where the full test suite is green.
   - Each run, from the repo root, writes into `runs/m4-t4/` so the three games share the session `m4-t4`, one file per run named by variant and run number, since the record is appended and a second run into the same file would make two lines: `time uv run play-game --variant V0 <card> runs/m4-t4/v0-run1.jsonl 2> runs/m4-t4/v0-run1.stderr`, and the same for V1 and V2. A run stopped by a model error is rerun as a crash (`SPEC.md` Recovery, forks, and replay); a code error is debugged to its root cause (`CLAUDE.md`, Delegation) and fixed as an audit finding of the ticket that owns the code, then the run repeats; every run is recorded, not only the last. "Runs smoothly" is exit 0, F reached, the record valid; who wins and the quality of descriptions, verdicts, and guesses are M5's.
   - A V1 record must hold at least one lookup and a V2 record at least one verdict (BACKLOG M4.4, M4.5); a game that ends without one is run again on another card until one does, every run recorded.
@@ -131,4 +131,17 @@ Decisions made by the orchestrator in cutting these tickets, reviewed by the aut
 - T2 F12: `tests/test_guesser.py` types one fixture as `Any` to sidestep a name clash with the test's own `Call` spy class, so mypy does not check it. No change (author, 2026-10-29).
 - T2 F13: no milestone or ticket id in the added comments; citations are SPEC sections and rule ids. No change.
 - T2 F14: an empty or whitespace [R40] reason is recorded as re-asked with reason "empty", the reading settled on 2026-10-21 in `challenger.py`; consistent with the Detail. No change.
+- T3 F1: the test helpers that read a record file split it with `splitlines()`, which also splits on U+2028, U+2029, and U+0085, characters `json.dumps` leaves unescaped; the writer is right (one `\n` per record) and a file read line by line splits on `\n` alone, so only the scripted tests could misjudge a model text holding one of those characters. Deferred (author, 2026-10-29); M7's reader must split on `\n` only, as Python's file iteration does.
+- T3 F2: `build_record` raises when the three roles' temperatures differ, unreachable from `play-game`, which sets one temperature; if M5 sets temperatures per role, the record's `settings.temperature` and this check change together. No change; noted for M5 (author, 2026-10-29).
+- T3 F3: `minItems: 1` on `rounds` and `calls` never rejects a legitimate record, since a record exists only when F set a result, after at least one round and one call. No change.
+- T3 F4: `confidence` is unbounded in the record schema; the Guesser's structured schemas bound it to 0–1 at the call, and the record schema defines "complete", not validity. No change.
+- T3 F5: `calls` in the record is State's list object, not a copy; `build_record` mutates nothing. No change.
+- T3 F6: the schema-walk test visits all 13 object schemas, 11 closed and the two open ones exactly a lookup's `arguments` and `result`, no conditional branches; enums match `state.py`'s Literals and `graph.VARIANTS`. No change.
+- T3 F7: the writer appends in text mode, utf-8, `ensure_ascii=False`, one trailing newline, inner newlines escaped; `prepare_output` still probes the path before any model call. No change.
+- T3 F8: the dropped `violation` assertions are replaced by `result` with `violating_text` or `violating_question`, so the fact is still asserted. No change.
+- T3 F9: `record` imports `graph`, `llm`, `state`; `play` imports `record`; no cycle. No change.
+- T3 F10: three parser-only tests still name the output `out.json`; the path is never written. No change (author, 2026-10-29).
+- T3 F11: the record carries `official_name`, `matched_name`, and `settings`, which the SPEC's record list does not name; Q3 settles `settings`, and the two names serve Metrics' "official answer or an alias". No change.
+- T3 F12: no milestone or ticket id in the added lines; comments cite SPEC sections and rule ids. No change.
+- T3 F13: the ValueError for a Guesser violation with no Guesser output is unreachable in the graph and untested, like T2 F9. No change.
 
