@@ -116,7 +116,7 @@ class Lookup(TypedDict):
     searched (`status` "error")."""
 
     round: int
-    call: int  # the ordinal of the tool-loop call in the round
+    call: int  # the index of the tool-loop call in the round (the `call` key of `Call`)
     name: str
     arguments: dict[str, Any]
     result: dict[str, Any] | str
