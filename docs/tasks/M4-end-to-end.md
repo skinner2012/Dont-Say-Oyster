@@ -117,7 +117,7 @@ T1 → T2 → T3 → T4 → T5, strictly in order: T1 adds the variant argument,
 - **Depends on:** T1, T2, T3
 
 ### T5 — num_ctx check over the three games
-- **Status:** todo
+- **Status:** done 440028e
 - **Produces:** the decision, written down in this Detail: for each role, the largest prompt token count of any call in the three T4 records against its num_ctx, whether any warning was logged, and either "unchanged" or the new values with their reason; if changed, `DEFAULT_NUM_CTX` in `play.py` and its test.
 - **Consumes:** the per-role largest `input_tokens` and warning counts of the accepted run per variant in T4's record in this file (the files under `runs/m4-t4/` are not committed and serve the re-derivation only); `DEFAULT_NUM_CTX` in `play.py`; the batch manifests, which have no num_ctx field yet (M5 writes it).
 - **Detail:**
