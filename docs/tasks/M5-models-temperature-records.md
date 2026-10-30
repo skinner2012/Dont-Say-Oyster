@@ -1,0 +1,233 @@
+# M5 — run records (appendix to M5-models-temperature.md)
+
+This file holds the per-call tables and transcripts of M5's live runs, which `docs/tasks/M5-models-temperature.md` summarises run by run; the record files, stderr files, and server log under `runs/` are not committed. The record-validation command is in that file's "How to use these tickets", and the method by which each run was read is in its T1 Record.
+
+## T1
+
+### Run 1 — thinking off
+
+- Trace: id `154f8cf40b760cfbaafc2e5872e901f2`, name `card-753f27f6`, session `m5-t1` (the session's only root when read), 117 observations, all session `m5-t1`, read at 14:16:21 PDT. Levels: 116 DEFAULT and 1 ERROR, the round 3 `search` tool span whose arguments the schema rejected (its status message is the rejection the record's lookup holds). Node spans: A 1 (SPAN), G 10, B 10, C 10, E 10, F 7 (CHAIN; rounds 1–3 ended in questions, E → G); routers `route_c` 10, `route_after_e` 10, `route_after_f` 7; `LangGraph` 1; root 1. Tool spans: 5, all `search`, equal to the record's 5 lookups. Generation spans: 35, all `ChatOllama`, models gemma4:26b-a4b-it-q4_K_M 25 and qwen3.8:27b-q4_K_M 10; 35 equals the record's `calls` length; the multiset equals the record's (True), with tokens too (True), and the start-time order matches the ordinals (True).
+- Transcript:
+  - Round 1 (description): "This savory street food is served in a small, round bowl that is typically lined with a thin layer of the main ingredient. The base is topped with a thick, dark brown gravy that is rich in flavor. It is commonly garnished with chopped green onions and pieces of braised meat. You will often find it sold from mobile carts in the evening markets." Lookups: call 1 `search` {flavor: Savory; keywords: bowl, meat; occasion: Night Market; physical_form: Soup} → no result; call 2 {flavor: Savory; occasion: Night Market; physical_form: Soup} → 麻辣臭豆腐, 麻辣鴨血, 藥燉排骨, 豬血湯. Question: "Is the main ingredient a type of starch?"
+  - Round 2 (answer): "Yes, the main ingredient is a type of starch." Lookup: call 1 {cooking_method: all twelve values; dish_type: Snack; flavor: Savory; main_ingredients: Starch; occasion: Night Market; physical_form: Sauced, Soup, Thick Soup} → 蚵仔煎, 肉圓. Question: "Is the dish served with a sauce that is thick and sweet?"
+  - Round 3 (answer): "No, the sauce is savory and salty rather than sweet." Lookups: call 1 {cooking_method: Starch; dish_type: Snack; flavor: Savory; physical_form: Sauced} → status error, not searched: "cooking_method[0]: Input should be 'Deep-Fried', … or 'No Cooking' (got 'Starch')"; call 2 {dish_type: Snack; flavor: Savory; main_ingredients: Starch; physical_form: Sauced} → 蚵仔煎, 肉圓. Question: "Is the dish typically deep-fried?"
+  - Round 4 (answer): "No, it is prepared by boiling or simmering the ingredients in a liquid." No lookup (one tool-loop call, no tool call). Guess: text `蚵仔煎 0.8\n` (the confidence and a newline inside the guess text), confidence 0.8: wrong.
+  - Round 5 (description): "This dish is a soft, porridge-like mixture that is not fried or crisp. It is cooked in a cylindrical wooden mold rather than a flat pan or bowl. The texture is smooth and creamy, similar to a pudding, and is often sweet or mildly savory. It is traditionally eaten warm as a breakfast item or snack from a stall." No lookup. Guess: text `米糕 0.7`, confidence 0.7: wrong.
+  - Round 6 (description): "This traditional treat is formed in a long, hollow wooden cylinder that is split open after cooking to reveal the soft interior. It is often enjoyed with a spoon, as the mixture is thick and cohesive rather than solid. A common topping includes minced meat that has been slow-cooked in a rich broth until tender. The flavor profile is gentle and comforting, balancing the earthiness of the grain base with the umami of the garnish." No lookup. Guess: `米糕 0.9`, confidence 0.9: wrong.
+  - Round 7 (description): "It is a savory porridge that is cooked inside a wooden barrel rather than a pot. The liquid mixture is thick and creamy, resembling a cooked grain slurry. It is served hot in a small bowl and topped with a savory brown sauce. You will often see it being prepared in large wooden vessels at street stalls." No lookup. Guess: `米糕 1.0`, confidence 1.0: wrong.
+  - Round 8 (description): "The base is a soft, cohesive mixture of a white grain that has been cooked until it becomes a thick, pudding-like consistency. It is traditionally formed in a long, hollow wooden cylinder, which is split open to release the soft interior. A common topping consists of minced meat that has been slow-cooked in a rich broth until tender. The flavor profile is gentle and comforting, balancing the earthiness of the grain base with the umami of the garnish." (its last sentence equals round 6's). No lookup. Guess: `米糕 1.0`, confidence 1.0: wrong.
+  - Round 9 (description): word for word round 6's description. No lookup. Guess: `米糕 1.0`, confidence 1.0: wrong.
+  - Round 10 (description): "This savory breakfast staple is prepared by cooking a white grain slurry inside a long, hollow wooden barrel. The final product is a soft, cohesive mass that is scooped out with a spoon rather than sliced. It is typically served in a small bowl and topped with a rich, dark brown sauce. A common garnish includes minced meat that has been braised until tender, adding a savory depth to the mild base." No lookup. Guess: `米糕 1.0`, confidence 1.0: wrong; the Guesser loses [R23].
+  - On the six 米糕 guesses: 米糕 is the card's alias in the corpus, but each guess text carries its confidence after a space, and `matching.normalize` turns `米糕 1.0` into `米糕10` (and `米糕 0.7` into `米糕07`, `蚵仔煎 0.8\n` into `蚵仔煎08`), which equals no name on the card [R20], [R22]; so every guess of the game counted wrong, as the record's `result` and null `matched_name` say. The structured reply's `confidence` field carried the same number each time.
+- Per-call table (latency in seconds as the record gives it, `SPEC.md` Metrics, Per model call; "call" is the tool-loop call index; load inside from the server log as described above):
+
+  | # | node | role | round | kind | call | attempt | latency (s) | input | output | load inside |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | B | Describer | 1 | text | – | 1 | 13.688 | 612 | 73 | yes: 27B started 14:12:48.011 PDT (started in 2.01 s) |
+  | 2 | E | Guesser | 1 | tools | 1 | 1 | 6.331 | 2230 | 39 | yes: 26B started 14:13:01.720 PDT (started in 2.01 s) |
+  | 3 | E | Guesser | 1 | tools | 2 | 1 | 0.828 | 2286 | 33 | no |
+  | 4 | E | Guesser | 1 | tools | 3 | 1 | 1.091 | 2711 | 14 | no |
+  | 5 | E | Guesser | 1 | structured | – | 1 | 2.524 | 1142 | 30 | no |
+  | 6 | B | Describer | 2 | text | – | 1 | 8.189 | 709 | 12 | no |
+  | 7 | E | Guesser | 2 | tools | 1 | 1 | 4.118 | 2256 | 122 | no |
+  | 8 | E | Guesser | 2 | tools | 2 | 1 | 1.083 | 2608 | 22 | no |
+  | 9 | E | Guesser | 2 | structured | – | 1 | 2.094 | 1047 | 33 | no |
+  | 10 | B | Describer | 3 | text | – | 1 | 8.570 | 743 | 13 | no |
+  | 11 | E | Guesser | 3 | tools | 1 | 1 | 2.594 | 2295 | 41 | no |
+  | 12 | E | Guesser | 3 | tools | 2 | 1 | 1.150 | 2422 | 45 | no |
+  | 13 | E | Guesser | 3 | tools | 3 | 1 | 0.879 | 2697 | 17 | no |
+  | 14 | E | Guesser | 3 | structured | – | 1 | 2.234 | 1131 | 29 | no |
+  | 15 | B | Describer | 4 | text | – | 1 | 9.201 | 777 | 17 | no |
+  | 16 | E | Guesser | 4 | tools | 1 | 1 | 2.017 | 2335 | 8 | no |
+  | 17 | E | Guesser | 4 | structured | – | 1 | 1.590 | 760 | 23 | no |
+  | 18 | B | Describer | 5 | text | – | 1 | 13.263 | 802 | 69 | no |
+  | 19 | E | Guesser | 5 | tools | 1 | 1 | 2.083 | 2431 | 7 | no |
+  | 20 | E | Guesser | 5 | structured | – | 1 | 1.714 | 855 | 27 | no |
+  | 21 | B | Describer | 6 | text | – | 1 | 15.726 | 891 | 88 | no |
+  | 22 | E | Guesser | 6 | tools | 1 | 1 | 2.114 | 2543 | 7 | no |
+  | 23 | E | Guesser | 6 | structured | – | 1 | 1.752 | 967 | 20 | no |
+  | 24 | B | Describer | 7 | text | – | 1 | 15.143 | 999 | 65 | no |
+  | 25 | E | Guesser | 7 | tools | 1 | 1 | 2.088 | 2631 | 7 | no |
+  | 26 | E | Guesser | 7 | structured | – | 1 | 1.942 | 1055 | 20 | no |
+  | 27 | B | Describer | 8 | text | – | 1 | 18.294 | 1084 | 94 | no |
+  | 28 | E | Guesser | 8 | tools | 1 | 1 | 2.147 | 2750 | 7 | no |
+  | 29 | E | Guesser | 8 | structured | – | 1 | 2.320 | 1174 | 27 | no |
+  | 30 | B | Describer | 9 | text | – | 1 | 18.334 | 1198 | 88 | no |
+  | 31 | E | Guesser | 9 | tools | 1 | 1 | 2.170 | 2862 | 7 | no |
+  | 32 | E | Guesser | 9 | structured | – | 1 | 2.386 | 1286 | 21 | no |
+  | 33 | B | Describer | 10 | text | – | 1 | 18.223 | 1307 | 85 | no |
+  | 34 | E | Guesser | 10 | tools | 1 | 1 | 2.219 | 2970 | 7 | no |
+  | 35 | E | Guesser | 10 | structured | – | 1 | 2.407 | 1394 | 20 | no |
+
+- Loads and evictions: the server log shows two loads in this run, the 27B inside call 1 and the 26B inside call 2 (each "llama-server started in 2.01 seconds", loaded runners 1 then 2); no eviction line. `ollama ps` after the run: `gemma4:26b-a4b-it-q4_K_M` 5571076f3d70 1.5 GB 100% GPU context 16384 UNTIL Forever; `qwen3.8:27b-q4_K_M` 25b843619e94 16 GB 100% GPU context 8192 UNTIL Forever; the Challenger not loaded.
+
+### Run 2 — thinking on (crashed: model error)
+
+- The error, from the trace and the server log: the last call, the Guesser's round 5 structured call (call 34 below), had a prompt of 10108 tokens and returned 6276 output tokens in 145.5 s with an empty `content`; its `reasoning_content` (the thinking, in the span's output) ends in a loop of alternating lines "Wait, I'll try `米糕` 1.0." / "Actually, I'll try `筒仔米糕` 1.0." The server log's slot line for that request (task 21611, `n_ctx_slot = 16384`, `task.n_tokens = 10108`) ends `stop processing: n_tokens = 16383, truncated = 1`, the first of the log's three `truncated = 1` lines (runs 2 and 3 account for all three), followed by `[GIN] 2026/10/30 - 14:36:39 | 200 | 2m25s | POST "/api/chat"`: 10108 + 6276 = 16384, the Guesser's num_ctx, so generation stopped at the context window while still thinking, before any answer text; `llm.call_structured` then found empty text, not JSON, and raised `LLMError` ("did not parse"). This is a model error in the program's terms (Recovery, forks, and replay), not a code error: no traceback, the exit path is `play.main`'s `LLMError` branch. The prompt-only 90% warning of `llm.py` did not fire (10108 is 62% of 16384), since thinking tokens are output (this file's Q4).
+- Trace: id `3562af05e54163c1d5d63797249b5d17`, name `card-753f27f6`, session `m5-t1` (the session's second root), read at 14:36:45 PDT; 89 observations, all session `m5-t1`; levels 86 DEFAULT and 3 ERROR (the root span, `LangGraph`, and round 5's E, each with the `LLMError` message). The trace is incomplete, presumably by the batch the stderr's export error names: node spans read A 1, G 5, B 4, C 4, E 5, F 3 over five rounds, and there is no Describer generation span for round 4 (the gap between call 19's end at 14:27:20 and call 20's start at 14:27:49 PDT is where it ran; the server log has it, see the per-call table), and the lost batch also took round 4's B, C, and `route_c` spans; `SPEC.md` Recovery, forks, and replay (Trace loss). Tool spans: 20, all `search`, all DEFAULT. Generation spans: 34, all `ChatOllama`. Loads: the server log has no `starting llama-server` line during this run, so no call paid a load.
+- Transcript (from the trace, since there is no record; round 4's answer read from the Guesser's round 4 prompt):
+  - Round 1 (description): "A chewy grain is packed into a short bamboo cylinder and cooked with trapped heat and moisture alongside a slice of savory meat. Once done, it is sliced into thick rounds and drizzled with a sweet, soy-based glaze. You will find it at night-market stalls across the island, where vendors ladle on extra sauce and a spoonful of pickled mustard greens. The texture is dense and springy, and the flavor balances sweet, salty, and umami in every bite." Lookups: {keywords: bamboo; main_ingredients: Rice} → 竹筒飯; {main_ingredients: Rice, Pork} → 滷肉飯, 焢肉飯, 腿庫飯, 火雞肉飯, 鴨肉飯, 鵝肉飯, 油飯, 筒仔米糕, 蝦仁飯, 肉粽; a third tool-loop call with no tool call. Guess: text `筒仔米糕 0.95`, confidence 0.95: the official name followed by its confidence, which does not equal it after [R22] (the tail, as in the off run), so wrong.
+  - Round 2 (description): "The bamboo cylinder is split open with a knife after cooking to release the dense, white grain inside. A thick, fatty slice of braised meat sits nestled in the center, its juices having seeped into the surrounding grain. You will find it at school cafeteria windows and street carts, where a student can grab a serving for a few dollars. The oyster-sauce glaze is the signature finish, coating every slice in a glossy, savory-sweet sheen." Lookups: {keywords: bamboo} → 竹筒飯, 烤茭白筍, 竹筍湯; {cooking_method: Steamed; flavor: Savory; main_ingredients: Rice} → 油飯, 筒仔米糕, 肉粽, 豬血糕, 碗粿, 鹹粿, 肉粿, 芋粿巧, 客家菜包, 草仔粿; {cooking_method: Steamed; flavor: Savory; main_ingredients: Rice; physical_form: Sauced} → 筒仔米糕, 碗粿; {cooking_method: Grilled; main_ingredients: Rice; physical_form: Dry} → 大腸包小腸, 竹筒飯, 糯米腸; a fifth call with no tool call. Guess: `竹筒飯 0.85`, confidence 0.85: wrong.
+  - Round 3 (description): "Unlike loose grain packed into a hollow stalk, this is a firm, cohesive block where the grain is bound with mung bean paste and sweet potato into a single, cake-like mass. A knife slices it into neat, flat discs, each one cradling a folded piece of braised meat at its core. The cross-section is smooth and pale, almost like a dense custard, with a faint golden tint from the sweet potato mixed throughout. Vendors at breakfast carts cut a wedge and press it into a paper cone for a commuter to devour on the way to work." Lookups: {cooking_method: Steamed; main_ingredients: Rice, Beans and Seeds, Root Vegetables} → 油飯, 筒仔米糕, 肉粽, 豬血糕, 碗粿, 鹹粿, 肉粿, 芋粿巧, 客家菜包, 草仔粿; {cooking_method: Steamed; main_ingredients: Rice, Root Vegetables} → the same ten; {flavor: Savory; main_ingredients: Rice, Beans and Seeds} → 滷肉飯, 焢肉飯, 腿庫飯, 火雞肉飯, 鴨肉飯, 鵝肉飯, 油飯, 筒仔米糕, 蝦仁飯, 肉粽; {cooking_method: Steamed; main_ingredients: Root Vegetables} → 芋粿巧, 客家菜包, 排骨酥湯, 蘿蔔糕, 芋頭冰; a fifth call with no tool call. Question: "Is the dish's main ingredient a root vegetable?"
+  - Round 4 (answer): "No, the main ingredient is a grain, not a root vegetable." Lookups: {flavor: Savory; main_ingredients: Rice} → 滷肉飯, 焢肉飯, 腿庫飯, 火雞肉飯, 鴨肉飯, 鵝肉飯, 油飯, 筒仔米糕, 蝦仁飯, 肉粽; {main_ingredients: Beans and Seeds} → 菜粽, 麻醬麵, 豬血糕, 四神湯, 花生厚片, 花生湯, 紅豆湯, 綠豆湯, 薏仁湯, 銀耳蓮子湯; {main_ingredients: Root Vegetables} → 芋粿巧, 客家菜包, 甘梅薯條, 地瓜球, 炸芋頭球, 烤地瓜, 排骨酥湯, 菜頭排骨湯, 蘿蔔糕, 地瓜湯; {cooking_method: Steamed; main_ingredients: Rice} → 油飯, 筒仔米糕, 肉粽, 豬血糕, 碗粿, 鹹粿, 肉粿, 芋粿巧, 客家菜包, 草仔粿; {main_ingredients: Rice, Beans and Seeds, Root Vegetables} → 滷肉飯, 焢肉飯, 腿庫飯, 火雞肉飯, 鴨肉飯, 鵝肉飯, 油飯, 筒仔米糕, 蝦仁飯, 肉粽; a sixth tool call {main_ingredients: Rice, Pork}, past the five lookups of [R43], has no tool span. Guess: `碗粿`, confidence 0.7: wrong (no tail this time).
+  - Round 5 (description): "The key difference from a concave, bowl-shaped molded cake is that this is built from individual whole grains packed into a narrow cylindrical vessel, not from a batter of ground flour poured into a hollow mold. After cooking, the grain mass is cut into separate flat slices rather than served as one intact piece. Each slice reveals a single folded slab of braised meat running through its center, distinct from a ground-meat filling buried inside. The topping is a pourable oyster-sauce drizzle and a heap of pickled mustard greens, not a whole preserved fish or a single shrimp perched on top." Lookups: {keywords: rice} → 滷肉飯, 焢肉飯, 腿庫飯, 火雞肉飯, 鴨肉飯, 鵝肉飯, 油飯, 筒仔米糕, 蝦仁飯, 肉粽; {keywords: 竹筒飯} → no result; {keywords: bamboo} → 竹筒飯, 烤茭白筍, 竹筍湯; {keywords: 碗粿} → no result; {keywords: cake} → 筒仔米糕, 甜不辣, 豬血糕, 鹹粿, 肉粿, 芋粿巧, 草仔粿, 蘿蔔糕, 粉粿冰, 鳳梨酥; a sixth tool call {keywords: 米糕}, past [R43]'s five, has no tool span. The structured call then stopped at the context window as above: the game stopped.
+- Per-call table, from the trace's generation spans (no record exists, so the latency is the span's duration, end minus start, which wraps the same `invoke` as the record's latency but is not the program's number; round 4's Describer call is missing from the trace, and its row, marked "server log", is from the server log instead: its duration is the server's request time on the `[GIN]` line, not a span's, and its start column holds that line's time, which is the request's end, so the row sits between calls 19 and 20 without a span ordinal; start in PDT):
+
+  | # (span order) | start | node | role | round | kind | call | attempt | span duration (s) | input | output | load inside |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | 14:16:27 | B | Describer | 1 | text | – | 1 | 99.337 | 610 | 1230 | no |
+  | 2 | 14:18:06 | E | Guesser | 1 | tools | 1 | 1 | 21.361 | 2252 | 971 | no |
+  | 3 | 14:18:28 | E | Guesser | 1 | tools | 2 | 1 | 7.234 | 3323 | 368 | no |
+  | 4 | 14:18:35 | E | Guesser | 1 | tools | 3 | 1 | 19.047 | 4702 | 923 | no |
+  | 5 | 14:18:54 | E | Guesser | 1 | structured | – | 1 | 7.511 | 4047 | 39 | no |
+  | 6 | 14:19:01 | B | Describer | 2 | text | – | 1 | 153.252 | 721 | 1906 | no |
+  | 7 | 14:21:35 | E | Guesser | 2 | tools | 1 | 1 | 21.045 | 2367 | 1039 | no |
+  | 8 | 14:21:56 | E | Guesser | 2 | tools | 2 | 1 | 9.977 | 3670 | 506 | no |
+  | 9 | 14:22:06 | E | Guesser | 2 | tools | 3 | 1 | 19.301 | 5237 | 918 | no |
+  | 10 | 14:22:25 | E | Guesser | 2 | tools | 4 | 1 | 19.980 | 6381 | 1025 | no |
+  | 11 | 14:22:45 | E | Guesser | 2 | tools | 5 | 1 | 16.402 | 7717 | 813 | no |
+  | 12 | 14:23:01 | E | Guesser | 2 | structured | – | 1 | 13.616 | 6953 | 38 | no |
+  | 13 | 14:23:15 | B | Describer | 3 | text | – | 1 | 156.933 | 835 | 1936 | no |
+  | 14 | 14:25:52 | E | Guesser | 3 | tools | 1 | 1 | 17.069 | 2510 | 713 | no |
+  | 15 | 14:26:09 | E | Guesser | 3 | tools | 2 | 1 | 14.942 | 4285 | 696 | no |
+  | 16 | 14:26:24 | E | Guesser | 3 | tools | 3 | 1 | 10.980 | 6042 | 470 | no |
+  | 17 | 14:26:35 | E | Guesser | 3 | tools | 4 | 1 | 14.866 | 7523 | 664 | no |
+  | 18 | 14:26:50 | E | Guesser | 3 | tools | 5 | 1 | 14.718 | 8720 | 695 | no |
+  | 19 | 14:27:05 | E | Guesser | 3 | structured | – | 1 | 15.104 | 7837 | 39 | no |
+  | – (server log; no span) | 14:27:49 (`[GIN]` line, the request's end) | B | Describer | 4 | text | – | 1 | 28.87 (server log, task 5705; 12.50 tok/s) | 989 | 270 | no |
+  | 20 | 14:27:49 | E | Guesser | 4 | tools | 1 | 1 | 25.325 | 2549 | 1125 | no |
+  | 21 | 14:28:14 | E | Guesser | 4 | tools | 2 | 1 | 11.588 | 4686 | 505 | no |
+  | 22 | 14:28:26 | E | Guesser | 4 | tools | 3 | 1 | 8.369 | 6182 | 294 | no |
+  | 23 | 14:28:34 | E | Guesser | 4 | tools | 4 | 1 | 11.081 | 7472 | 472 | no |
+  | 24 | 14:28:45 | E | Guesser | 4 | tools | 5 | 1 | 14.996 | 9005 | 654 | no |
+  | 25 | 14:29:00 | E | Guesser | 4 | tools | 6 | 1 | 12.115 | 10670 | 504 | no |
+  | 26 | 14:29:12 | E | Guesser | 4 | structured | – | 1 | 33.681 | 9627 | 812 | no |
+  | 27 | 14:29:46 | B | Describer | 5 | text | – | 1 | 128.925 | 1007 | 1557 | no |
+  | 28 | 14:31:55 | E | Guesser | 5 | tools | 1 | 1 | 29.037 | 2691 | 1346 | no |
+  | 29 | 14:32:24 | E | Guesser | 5 | tools | 2 | 1 | 29.166 | 5049 | 1449 | no |
+  | 30 | 14:32:53 | E | Guesser | 5 | tools | 3 | 1 | 13.998 | 6542 | 586 | no |
+  | 31 | 14:33:07 | E | Guesser | 5 | tools | 4 | 1 | 21.101 | 7391 | 1064 | no |
+  | 32 | 14:33:28 | E | Guesser | 5 | tools | 5 | 1 | 3.121 | 8489 | 38 | no |
+  | 33 | 14:33:31 | E | Guesser | 5 | tools | 6 | 1 | 42.579 | 9612 | 2043 | no |
+  | 34 | 14:34:14 | E | Guesser | 5 | structured | – | 1 | 145.543 | 10108 | 6276 | no |
+
+### Run 3 — thinking on (crashed: model error)
+
+- The error: in round 1 the Guesser's first tool-loop call (prompt 2259 tokens) returned 14125 output tokens in 278.7 s with empty `content` and no tool call, its thinking ending in a repeated line "Is it **Rice Pudding**? No."; the server log's slot line for it (task 27898, `task.n_tokens = 2259`) ends `stop processing: n_tokens = 16383, truncated = 1` (2259 + 14125 = 16384), `[GIN] 14:44:24 | 200 | 4m38s | POST "/api/chat"`. A tool-loop reply with no tool call ends the loop, so the structured call followed with a prompt of 14809 tokens, whose input in the trace holds that reply's `reasoning_content` (the string "Rice Pudding" occurs 1049 times in the span's input, 0 times in the tool-loop call's input), against 1142 tokens for the same call in the off run's round 1; it returned 1575 output tokens in 60.8 s with empty `content`, thinking in the same loop ("\"Rice Pudding\" (no)."), and its slot line (task 42027, `task.n_tokens = 14809`) ends `n_tokens = 16383, truncated = 1` (14809 + 1575 = 16384), `[GIN] 14:45:25 | 200 | 1m0s`. `llm.call_structured` found empty text and raised `LLMError`. A model error in the program's terms, no traceback. So, as in run 2, generation stopped at the Guesser's num_ctx while thinking. The cut-off reply's thinking was re-sent in the structured call's prompt (the trace input shows it), and this is not particular to run 3: in every thinking-on Guesser round the earlier replies' `reasoning_content` is re-sent in the next tool-loop call's prompt and in the structured call's (seen in runs 2, 3, 4, and 5), because langchain-ollama 1.1.0 sends a message's `reasoning_content` back to Ollama as `thinking`. A tool-loop prompt grows call to call by about the previous call's output tokens plus the tool result (run 2, round 1: 2252 + 971 → 3323), and the structured call's prompt is the last tool-loop prompt plus its output minus the tool schema's ~1575 tokens (here 2259 + 14125 − 1575 = 14809).
+- Trace: id `d03df23d0b380ac33aad1ef085bc3cc9`, name `card-753f27f6`, session `m5-t1` (the session's third root), read at 14:45:47 PDT; 11 observations, all session `m5-t1`; levels 8 DEFAULT and 3 ERROR (root, `LangGraph`, round 1's E, each with the `LLMError` message). Node spans: A 1, G 1, B 1, C 1, E 1; `route_c` 1; tool spans 0; generation spans 3. The trace is complete for what ran (no export error in the stderr). Loads: no `starting llama-server` line during this run.
+- Transcript (from the trace): Round 1 (description): "A soft, tender batter is cooked in a cylindrical bamboo vessel using boiling water vapor, giving it a smooth, custard-like texture. It is topped with slices of braised meat, pickled vegetables, and a sweet, savory sauce drizzled over the top. You'll find it served from a street cart in a bamboo cup, a beloved late-night snack across Taiwan. The base is made from flour ground from a common grain, giving it a chewy, dense quality distinct from a typical sponge cake." No lookup (the one tool-loop call was cut off with no tool call); no guess or question (the structured call was cut off): the game stopped.
+- Per-call table, from the trace's generation spans (span duration, as for run 2; start in PDT):
+
+  | # (span order) | start | node | role | round | kind | call | attempt | span duration (s) | input | output | load inside |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | 14:37:24 | B | Describer | 1 | text | – | 1 | 141.426 | 610 | 1760 | no |
+  | 2 | 14:39:45 | E | Guesser | 1 | tools | 1 | 1 | 278.730 | 2259 | 14125 | no |
+  | 3 | 14:44:24 | E | Guesser | 1 | structured | – | 1 | 60.842 | 14809 | 1575 | no |
+
+### Run 4 — thinking on
+
+- Trace: id `749b294e5116d63702220d4c7b75f5bb`, name `card-753f27f6`, session `m5-t1` (the session's fourth root), 29 observations, all session `m5-t1`, all level DEFAULT, read at 14:51:10 PDT. Node spans: A 1 (SPAN), G 2, B 2, C 2, E 2, F 2 (CHAIN); routers `route_c` 2, `route_after_e` 2, `route_after_f` 2; `LangGraph` 1; root 1. Tool spans: 2, both `search`, equal to the record's 2 lookups. Generation spans: 8, all `ChatOllama`, models gemma4:26b-a4b-it-q4_K_M 6 and qwen3.8:27b-q4_K_M 2; 8 equals the record's `calls` length; the multiset equals the record's (True), with tokens too (True), and the start-time order matches the ordinals (True).
+- Transcript:
+  - Round 1 (description): "It is a street-vended treat cooked inside a hollow bamboo cylinder set upright in a pot of boiling water. The soft, chewy grain fills the cylinder and is topped with soy-braised meat slices and a drizzle of dark sauce. It is served held directly in the bamboo, eaten standing at a cart on a busy night market street. The texture is dense and yielding, with a savory-sweet flavor from the braised topping." Lookup: call 1 `search` {keywords: Bamboo} → 竹筒飯, 烤茭白筍, 竹筍湯; a second tool-loop call with no tool call. Guess: text `竹筒飯 1.0`, confidence 1.0: wrong.
+  - Round 2 (description): "It is a smooth, dense, cake-like mass rather than individual cooked grains, made from a fine milled grain batter that sets into a solid block. The cylinder it is cooked in is metal, not the hollow plant stem you might picture. A thick, sweet-savory soy sauce is poured over the top, followed by slices of slow-braised meat. You buy it from a small cart, lift it out of the metal canister, and eat it with a small fork while standing in line." Lookup: call 1 {keywords: Wanguo, Rice Cake} → 筒仔米糕, 豬血糕, 鹹粿, 肉粿, 芋粿巧, 草仔粿, 白糖粿, 年糕, 紅龜粿, 九層粿 (`more_results` false); a second tool-loop call with no tool call. Guess: `筒仔米糕` (no tail), confidence 0.95: the official name, the Guesser wins.
+- Per-call table (as for the off run):
+
+  | # | node | role | round | kind | call | attempt | latency (s) | input | output | load inside |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | B | Describer | 1 | text | – | 1 | 101.415 | 610 | 1264 | no |
+  | 2 | E | Guesser | 1 | tools | 1 | 1 | 9.406 | 2245 | 310 | no |
+  | 3 | E | Guesser | 1 | tools | 2 | 1 | 10.921 | 2819 | 565 | no |
+  | 4 | E | Guesser | 1 | structured | – | 1 | 3.593 | 1807 | 36 | no |
+  | 5 | B | Describer | 2 | text | – | 1 | 132.407 | 708 | 1621 | no |
+  | 6 | E | Guesser | 2 | tools | 1 | 1 | 20.734 | 2366 | 1016 | no |
+  | 7 | E | Guesser | 2 | tools | 2 | 1 | 24.750 | 4441 | 1167 | no |
+  | 8 | E | Guesser | 2 | structured | – | 1 | 7.547 | 4031 | 33 | no |
+
+- Loads and evictions: the server log has no `starting llama-server` line during this run (the only two in the log are the off run's) and no eviction line, so no call paid a load. `ollama ps` after the run: `gemma4:26b-a4b-it-q4_K_M` 5571076f3d70 1.5 GB 100% GPU context 16384 UNTIL Forever; `qwen3.8:27b-q4_K_M` 25b843619e94 16 GB 100% GPU context 8192 UNTIL Forever; the Challenger not loaded.
+
+### Run 5 — thinking on, fixed prompt f9121e7
+
+- Trace: id `49c924fcbdfecc39d05d5419c13d8f0d`, name `card-753f27f6`, session `m5-t1` (the session's fifth root), 39 observations, all session `m5-t1`, all level DEFAULT, read at 15:13:02 PDT. Node spans: A 1 (SPAN), G 2, B 2, C 2, E 2, F 2 (CHAIN); routers `route_c` 2, `route_after_e` 2, `route_after_f` 2; `LangGraph` 1; root 1. Tool spans: 7, all `search`, equal to the record's 7 lookups. Generation spans: 13, all `ChatOllama`, models gemma4:26b-a4b-it-q4_K_M 11 and qwen3.8:27b-q4_K_M 2; 13 equals the record's `calls` length; the multiset equals the record's (True), with tokens too (True), and the start-time order matches the ordinals (True).
+- Transcript:
+  - Round 1 (description): "It is a savory-sweet street food served in a short section of bamboo, a popular night-market treat in Taiwan. Inside the cylinder sits a soft, chewy grain base layered with seasoned, minced meat. A drizzle of black-pepper sauce is spooned over the top before it reaches your hands. The whole thing is cooked in a bath of boiling water until the grain puffs up to fill the bamboo." Lookups: call 1 `search` {keywords: bamboo} → 竹筒飯, 烤茭白筍, 竹筍湯; call 2 {cooking_method: Boiled; flavor: Savory} → 火雞肉飯, 鴨肉飯, 鵝肉飯, 鹽水鵝, 肉粽, 菜粽, 飯湯, 虱目魚粥, 海鮮粥, 香菇肉粥 (`more_results` true); call 3 {cooking_method: Boiled; main_ingredients: Rice; physical_form: Dry} → 肉粽, 菜粽, 鹼粽, 燒麻糬; call 4 {main_ingredients: Rice; occasion: Night Market} → 大腸包小腸, 豬血糕, 白糖粿, 糯米腸, 炸湯圓; call 5 {cooking_method: Boiled; main_ingredients: Starch} → 水晶餃, 芋圓湯, 粉圓湯, 芋頭西米露; call 6 asked for a sixth search {cooking_method: Boiled; flavor: Sweet; main_ingredients: Rice}, past the five of [R43], which has no lookup entry and no tool span. Guess: text `竹筒飯`, confidence 0.9: wrong.
+  - Round 2 (description): "It is a small street snack, not a full meal, where the grain is milled into a smooth, thick paste before cooking—quite different from whole grains packed into a long stalk. The paste is soft and slightly sweet, with a dense, custard-like body rather than a fluffy, grainy texture. It is typically topped with a layer of seasoned, ground meat and a fried egg, then finished with a spicy black-pepper sauce. Vendors sell it from a cart at night markets, and you eat it by tilting the short bamboo cylinder to slide the paste out." Lookups: call 1 {keywords: bamboo} → 竹筒飯, 烤茭白筍, 竹筍湯; call 2 {keywords: rice} → 滷肉飯, 焢肉飯, 腿庫飯, 火雞肉飯, 鴨肉飯, 鵝肉飯, 油飯, 筒仔米糕, 蝦仁飯, 肉粽 (`more_results` true); a third tool-loop call with no tool call. Guess: text `筒仔米糕`, confidence 0.9: the official name, the Guesser wins.
+  - The guess texts verbatim, with `matching.normalize` ([R22]) of each against the card's names (official 筒仔米糕, alias 米糕): round 1 `竹筒飯` → `竹筒饭`, equal to neither (竹筒飯 is another corpus entry); round 2 `筒仔米糕` → `筒仔米糕`, equal to the official name. Neither guess text carries a number; each confidence is in the `confidence` field only.
+- Per-call table (as for the off run):
+
+  | # | node | role | round | kind | call | attempt | latency (s) | input | output | load inside |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | B | Describer | 1 | text | – | 1 | 95.092 | 610 | 1212 | no |
+  | 2 | E | Guesser | 1 | tools | 1 | 1 | 11.128 | 2287 | 501 | no |
+  | 3 | E | Guesser | 1 | tools | 2 | 1 | 9.248 | 3052 | 471 | no |
+  | 4 | E | Guesser | 1 | tools | 3 | 1 | 14.172 | 4494 | 659 | no |
+  | 5 | E | Guesser | 1 | tools | 4 | 1 | 6.845 | 5573 | 314 | no |
+  | 6 | E | Guesser | 1 | tools | 5 | 1 | 24.579 | 6438 | 1227 | no |
+  | 7 | E | Guesser | 1 | tools | 6 | 1 | 7.651 | 8038 | 342 | no |
+  | 8 | E | Guesser | 1 | structured | – | 1 | 15.576 | 6833 | 155 | no |
+  | 9 | B | Describer | 2 | text | – | 1 | 135.833 | 700 | 1676 | no |
+  | 10 | E | Guesser | 2 | tools | 1 | 1 | 12.756 | 2416 | 596 | no |
+  | 11 | E | Guesser | 2 | tools | 2 | 1 | 6.795 | 3276 | 338 | no |
+  | 12 | E | Guesser | 2 | tools | 3 | 1 | 18.480 | 4625 | 894 | no |
+  | 13 | E | Guesser | 2 | structured | – | 1 | 7.107 | 3941 | 32 | no |
+
+- Loads and evictions: the server log has no `starting llama-server` line and no eviction line during this run (the only two loads in the log are the off run's), so no call paid a load. `ollama ps` after the run: `gemma4:26b-a4b-it-q4_K_M` 5571076f3d70 1.5 GB 100% GPU context 16384 UNTIL Forever; `qwen3.8:27b-q4_K_M` 25b843619e94 16 GB 100% GPU context 8192 UNTIL Forever; the Challenger not loaded.
+
+### Run 6 — Describer on, Guesser off, fixed prompt f9121e7
+
+- Trace: id `a5f09d90bb5e7e7ff4103ff177fa2969`, name `card-753f27f6`, session `m5-t1` (the session's sixth root), 18 observations, all session `m5-t1`, all level DEFAULT, read at 15:24:34 PDT. Node spans: A 1 (SPAN), G 1, B 1, C 1, E 1, F 1 (CHAIN); routers `route_c` 1, `route_after_e` 1, `route_after_f` 1; `LangGraph` 1; root 1. Tool spans: 2, both `search`, equal to the record's 2 lookups. Generation spans: 5, all `ChatOllama`, models gemma4:26b-a4b-it-q4_K_M 4 and qwen3.8:27b-q4_K_M 1; 5 equals the record's `calls` length; the multiset equals the record's (True), with tokens too (True), and the start-time order matches the ordinals (True).
+- Transcript:
+  - Round 1 (description): "A soft, chewy grain paste cooked inside a hollow bamboo stalk, then sliced and piled into a bowl. Topped with a generous piece of braised belly meat and drizzled with a dark, savory sauce. A classic night-market stall food, sold in small portions from a cart where the cook slices it fresh to order. The texture is dense and pillowy, with the meaty topping adding a rich, salty contrast." Lookups: call 1 `search` {keywords: bamboo, grain, pork belly} → 焢肉飯, 刈包, 竹筒飯, 烤茭白筍, 竹筍湯, 爌肉麵; call 2 {keywords: bamboo, rice} → 滷肉飯, 焢肉飯, 腿庫飯, 火雞肉飯, 鴨肉飯, 鵝肉飯, 油飯, 筒仔米糕, 蝦仁飯, 肉粽 (`more_results` true); a third tool-loop call with no tool call. Guess: text `筒仔米糕`, confidence 0.9: the official name, the Guesser wins in round 1.
+  - The guess text verbatim, with `matching.normalize` ([R22]) against the card's names (official 筒仔米糕, alias 米糕): round 1 `筒仔米糕` → `筒仔米糕`, equal to the official name; no number in the text.
+- Per-call table (as for the off run):
+
+  | # | node | role | round | kind | call | attempt | latency (s) | input | output | load inside |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | B | Describer | 1 | text | – | 1 | 83.899 | 610 | 1075 | no |
+  | 2 | E | Guesser | 1 | tools | 1 | 1 | 4.429 | 2292 | 24 | no |
+  | 3 | E | Guesser | 1 | tools | 2 | 1 | 1.449 | 2858 | 22 | no |
+  | 4 | E | Guesser | 1 | tools | 3 | 1 | 2.474 | 3884 | 33 | no |
+  | 5 | E | Guesser | 1 | structured | – | 1 | 5.221 | 2334 | 32 | no |
+
+- Loads and evictions: the server log has no `starting llama-server` line and no eviction line during this run, so no call paid a load. `ollama ps` after the run: `gemma4:26b-a4b-it-q4_K_M` 5571076f3d70 1.5 GB 100% GPU context 16384 UNTIL Forever; `qwen3.8:27b-q4_K_M` 25b843619e94 16 GB 100% GPU context 8192 UNTIL Forever; the Challenger not loaded.
+
+### Run 7 — V0, Describer on, Guesser off, fixed prompt f9121e7 (file v0-run1)
+
+- Trace: id `3ea05cba2affa3dfa7620ec803ad3603`, name `card-753f27f6`, session `m5-t1` (the session's seventh root), 101 observations, all session `m5-t1`, all level DEFAULT, read at 15:53:16 PDT. Node spans: A 1 (SPAN), G 10, B 10, C 10, E 10, F 9 (CHAIN; round 2 ended in a question, E → G); routers `route_c` 10, `route_after_e` 10, `route_after_f` 9; `LangGraph` 1; root 1. Tool spans: 0 (V0). Generation spans: 20, all `ChatOllama`, models qwen3.8:27b-q4_K_M 10 and gemma4:26b-a4b-it-q4_K_M 10; 20 equals the record's `calls` length; the multiset equals the record's (True), with tokens too (True), and the start-time order matches the ordinals (True).
+- Transcript (no lookups in V0):
+  - Round 1 (description): "It is a soft, layered cylinder of white grain, cooked inside a hollow bamboo stalk until tender and yielding. A savory soy-based meat sauce is spooned over the top, often with a sprinkle of chopped scallions. You will find it at crowded night-market stalls, where the vendor slices it into neat pieces for you to eat with a small fork. The layers melt on your tongue, balancing a mild sweetness from the grain with the salty, umami punch of the topping." Guess: text `竹筒飯`, confidence 0.95.
+  - Round 2 (description): "This is a small, handheld street snack rather than a sit-down meal, so it is not the kind of grain dish you would eat as a main course with chopsticks. The cooking vessel is a short metal or wooden cylinder, not a hollow plant stalk. The grain inside becomes impossibly soft and almost porridge-like toward the center, with a slightly firmer ring near the edges. A spoonful of soy-braised minced meat sauce and a drizzle of sweet oyster sauce are ladled over the top before you bite into it." Question: "Is it made using glutinous rice?".
+  - Round 3 (answer): "Yes, the base is made from a soft, waxy grain that turns very pliable and chewy when fully cooked." Guess: text `飯糰`, confidence 0.8.
+  - Round 4 (description): "It is not a firm, hand-shaped mound you squeeze and eat in a few bites; instead, it is a tall, layered column that you must cut into sections and eat with a small fork. The interior is so soft and yielding that it almost slides off the fork, unlike the dense, compact grain of a pressed ball. A thick, glossy soy-braised meat topping is spooned over the top, and the whole thing is served from a shallow metal mold at a busy street cart. The texture is closer to a thick, savory porridge than to a solid, formable grain dish." Guess: text `碗粿`, confidence 0.95.
+  - Round 5 (description): "Unlike a wide, concave, bowl-shaped cake you grab and eat in one or two bites, this snack is a tall, narrow column that the vendor slices into three or four rounds on a small plate. The base is not a poured batter set and cooled; it is whole kernels of a soft, pliable grain cooked down until they lose their individual shape and merge into a dense, yielding mass. Each slice reveals a gradient from a denser outer ring to an almost liquid, spoonable center. The savory topping is added only after you order, so the grain itself carries a clean, faintly sweet flavor before the sauce touches it." Guess: text `碗粿`, confidence 1.0.
+  - Round 6 (description): "It is a tall, narrow cylinder roughly the diameter of a small drinking glass, standing upright on a plate—nothing like a wide, shallow, concave dish. The grain is cooked by sitting in water inside a short open-topped metal or bamboo cylinder that is lowered into a large pot of boiling water for a long time, so the kernels soften one by one before merging into a dense mass. Unlike a smooth poured batter, you can still feel faint individual grains between your teeth, giving it a slightly granular, porridge-like bite. It is a quick, standing-up snack at a night-market cart, typically costing a few dollars and finished in under two minutes with a small plastic fork." Guess: text `碗粿`, confidence 0.95.
+  - Round 7 (description): "It is a single, upright serving—roughly the height of a shot glass and no wider than a thumb—so the cross-section is a small circle, not the broad, flat, concave shape of a bowl-molded cake. The vendor shapes it by packing the grain into a short, open cylinder and lowering that cylinder vertically into a pot of rolling water, so the finished product keeps its round, standing profile. Once sliced, each round is small enough to fit in a single bite with a plastic fork, and the whole portion is meant to be finished in a few quick bites while standing at the cart. The white, translucent grain is plain and gentle on its own, while the dark, glossy meat gravy provides all the salt, umami, and depth in a single pour." Guess: text `竹筒飯`, confidence 0.6.
+  - Round 8 (description): "The grain is cooked until it is nearly a thick, spoonable porridge—you cannot pick out whole kernels with chopsticks the way you would in a bamboo-stalk dish. The savory meat is a glossy sauce ladled on top after cooking, not pieces of meat folded into the grain during the cooking process. The cylindrical mold is lifted out of the boiling pot and the serving is inverted onto a small plate, so the cooking vessel and the eating vessel are completely separate objects. You hold a small plastic fork and eat each thin round in one or two bites while standing at the cart, rather than sitting down with a bowl and a pair of chopsticks." Guess: text `碗粿`, confidence 0.95.
+  - Round 9 (description): "Unlike a wide, concave cake with a raised rim that you grip and lift with chopsticks, this is a seamless, straight-sided column with no lip, no edge, and no hollow center—just a solid, uniform cylinder no wider than a pencil. The base is made from whole, unground seeds boiled in water until they swell and soften, not from a flour batter poured into a mold, so the texture is granular and slightly chewy rather than smooth and elastic. The vendor slices one thin, clean disc from the top with a serrated knife and places that single round on a small square plate with a plastic fork. A dark, glistening soy-meat gravy is poured over the pale white disc, and you mix the two with each small bite while still standing at the cart." Guess: text `<0xE7><0xB2><0xA2>仔粿`, confidence 0.9.
+  - Round 10 (description): "The base is made from whole, short, plump waxy kernels—each a small, round, dense seed that swells and turns translucent after a long boil—rather than a smooth, poured flour batter that sets into a uniform cake. At the cart, the vendor keeps several short open cylinders cooking side by side in one large pot of rolling water, so each serving is made to order and arrives still warm and yielding. The finished piece is inverted onto a small plate, flat side up, so the dark meat gravy pools evenly across the top rather than sliding down a slope. It is a late-night or pre-dawn grab-and-go item, costing only a few coins, and the whole portion is gone before the cup of black tea beside it has cooled." Guess: text `<0xE7><0xB2><0xA2>仔粿`, confidence 0.95.
+  - The guess texts verbatim, with `matching.normalize` ([R22]) against the card's names (official 筒仔米糕, alias 米糕); none equals either, and the game ends in a wrong guess in round 10 [R23]: round 1 `竹筒飯` → `竹筒饭`; round 3 `飯糰` → `饭团`; rounds 4, 5, 6, 8 `碗粿` → `碗粿`; round 7 `竹筒飯` → `竹筒饭`; rounds 9 and 10 `<0xE7><0xB2><0xA2>仔粿` → `<0xe7><0xb2><0xa2>仔粿`. No guess text carries a number. The round 9 and 10 texts hold the literal characters `<0xE7><0xB2><0xA2>` as the record stores them: three byte tokens written out as text, whose bytes E7 B2 A2 are the UTF-8 encoding of 粢 (U+7CA2), so the intended name reads 粢仔粿, which is no official name or alias in the corpus (searched for 粢); 竹筒飯, 飯糰, and 碗粿 are other corpus entries.
+- Per-call table (as for the off run; a V0 Guesser makes structured calls only):
+
+  | # | node | role | round | kind | call | attempt | latency (s) | input | output | load inside |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | B | Describer | 1 | text | – | 1 | 91.410 | 610 | 1170 | no |
+  | 2 | E | Guesser | 1 | structured | – | 1 | 1.939 | 604 | 24 | no |
+  | 3 | B | Describer | 2 | text | – | 1 | 145.159 | 713 | 1776 | no |
+  | 4 | E | Guesser | 2 | structured | – | 1 | 1.657 | 726 | 28 | no |
+  | 5 | B | Describer | 3 | text | – | 1 | 51.445 | 854 | 573 | no |
+  | 6 | E | Guesser | 3 | structured | – | 1 | 1.580 | 771 | 22 | no |
+  | 7 | B | Describer | 4 | text | – | 1 | 116.434 | 883 | 1412 | no |
+  | 8 | E | Guesser | 4 | structured | – | 1 | 1.832 | 915 | 23 | no |
+  | 9 | B | Describer | 5 | text | – | 1 | 137.355 | 1021 | 1662 | no |
+  | 10 | E | Guesser | 5 | structured | – | 1 | 2.206 | 1065 | 23 | no |
+  | 11 | B | Describer | 6 | text | – | 1 | 203.380 | 1168 | 2467 | no |
+  | 12 | E | Guesser | 6 | structured | – | 1 | 2.457 | 1229 | 24 | no |
+  | 13 | B | Describer | 7 | text | – | 1 | 165.921 | 1326 | 1983 | no |
+  | 14 | E | Guesser | 7 | structured | – | 1 | 2.425 | 1412 | 23 | no |
+  | 15 | B | Describer | 8 | text | – | 1 | 147.895 | 1504 | 1733 | no |
+  | 16 | E | Guesser | 8 | structured | – | 1 | 2.757 | 1564 | 23 | no |
+  | 17 | B | Describer | 9 | text | – | 1 | 172.225 | 1653 | 2043 | no |
+  | 18 | E | Guesser | 9 | structured | – | 1 | 2.856 | 1745 | 26 | no |
+  | 19 | B | Describer | 10 | text | – | 1 | 160.831 | 1845 | 1871 | no |
+  | 20 | E | Guesser | 10 | structured | – | 1 | 2.987 | 1934 | 20 | no |
+
+- Loads and evictions: the server log has no `starting llama-server` line and no eviction line during this run, so no call paid a load. `ollama ps` after the run: `gemma4:26b-a4b-it-q4_K_M` 5571076f3d70 1.5 GB 100% GPU context 16384 UNTIL Forever; `qwen3.8:27b-q4_K_M` 25b843619e94 16 GB 100% GPU context 8192 UNTIL Forever; the Challenger not loaded.
