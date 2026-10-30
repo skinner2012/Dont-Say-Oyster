@@ -1,6 +1,6 @@
 # M5 — run records (appendix to M5-models-temperature.md)
 
-This file holds the per-call tables and transcripts of M5's live runs, which `docs/tasks/M5-models-temperature.md` summarises run by run; the record files, stderr files, and server log under `runs/` are not committed. The record-validation command is in that file's "How to use these tickets", and the method by which each run was read is in its T1 Record.
+This file holds the per-call tables and transcripts of M5's live runs, which `docs/tasks/M5-models-temperature.md` summarises run by run; the record files, stderr files, and server log under `runs/` are not committed. The record-validation command is in that file's "How to use these tickets"; the method by which each run was read, the first comparison table, and the per-run blocks that the ticket file once held are under "T1 — method and comparison detail" and each run's section below.
 
 ## T1
 
