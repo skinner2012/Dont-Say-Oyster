@@ -63,7 +63,7 @@ T1 → T2 → T3 → T4 → T5, strictly in order: T1 adds the variant argument,
 - **Depends on:** T1, T2
 
 ### T4 — One live game in each of V0, V1, and V2
-- **Status:** todo
+- **Status:** done 7b65ad5
 - **Produces:** the records of one game per variant on the three local models, each reaching F with a JSONL record that validates against the schema, written into this Detail; the record files under `runs/m4-t4/`, one per run (not committed; `runs/` is ignored).
 - **Consumes:** `play-game` with T1–T3; the running Langfuse stack (M3) and the Ollama shell server; the model tags and num_ctx that are `play.py`'s defaults; the committed cards and corpus; `data/records/schema.json`.
 - **Detail:**
