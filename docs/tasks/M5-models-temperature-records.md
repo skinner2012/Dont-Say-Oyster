@@ -614,3 +614,32 @@ Commands for every T3 run (throwaway scripts in the session scratchpad, not in t
 
 - Per role: Challenger 19 calls, all with the 12B load inside, mean 6.298 s, largest 8.426 s, mean output 33.2, largest 58; Describer 20 calls, mean 244.401 s, largest 421.543 s, mean output 2844.8, largest 4944 (thinking included); Guesser 29 calls, all: mean 3.053 s, largest 7.034 s; without call 23 (the 26B reload): 28 calls, mean 2.911 s, largest 6.964 s, mean output 26.1, largest 34.
 - Commands: `uv run python gin_gens.py runs/m5-t3/v2-run4.jsonl runs/m5/ollama-server.log 15784 31962 gin_t3r4.json`; `uv run python t3_game_gin.py runs/m5-t3/v2-run4.jsonl gin_t3r4.json runs/m5/ollama-server.log 15784 31962`; `uv run python t3_md.py 4 runs/m5-t3/v2-run4.jsonl nolast.json` (no trace, so no tool-loop text); `uv run python t3_verdicts.py 4 points.json` (the ticket's Verdicts table; `points.json` holds the distractor column, written by hand from each reason); `pmset -g log` for the sleep lines.
+
+### Run 5 — V2, card-aae840e9 (杏仁豆腐)
+
+- Setting: as run 1; card card-aae840e9 (杏仁豆腐; alias 杏仁凍; English names Almond Jelly, Xing Ren Dou Fu; forbidden words almond, jelly, cubes, syrup, white; distractors 仙草凍 (Grass Jelly Dessert, Grass jelly; aliases 仙草凍甜湯, 仙草蜜), 愛玉冰 (Aiyu Jelly Dessert, Aiyu jelly ice, ai-gio-ping, Lemon aiyu jelly; alias 檸檬愛玉), 豆花 (Tofu Pudding, tau-hue, Dou Hua, Peanut Tofu Pudding; aliases 豆腐花, 花生豆花), 菜燕 (Agar jelly; alias 冬瓜菜燕), 杏仁茶 (Almond Tea, Xing Ren Cha); attributes dish_type Dessert, main_ingredients Beans and Seeds, cooking_method Set, flavor Sweet, physical_form Soup).
+- Before the run: code and prompts as at 56af585 (run 4's record was committed during the run, Markdown only), the same server process (pid 78720); `ollama ps` at launch: the 26B and the 27B loaded, the 12B not; the server log held 31962 lines; the `caffeinate` assertion held.
+- Launched 2026-10-30 19:33:16 PDT (finished 19:35:36). Command: `time uv run play-game --variant V2 card-aae840e9 runs/m5-t3/v2-run5.jsonl --describer-thinking on 2> runs/m5-t3/v2-run5.stderr`.
+- Exit 0. Printed: `Guesser wins (right guess): round 1, questions 0, rejects 0, forced passes 0`. `time`: `0.77s user 0.13s system 0% cpu 2:20.62 total`, so wall time 2:20.62.
+- stderr: 393 bytes, 3 lines, all `ERROR opentelemetry.exporter.otlp.proto.http.trace_exporter: Failed to export spans batch due to timeout, max retries or shutdown.`; num_ctx warnings 0.
+- Record: `runs/m5-t3/v2-run5.jsonl`, 1 line, `1 line(s) valid`; `result` right guess, `matched_name` 杏仁豆腐, `counters` rounds 1, questions 0, forced passes 0; 8 calls (Describer 1 `text`; Challenger 1 `structured`; Guesser 6: 5 `tools`, 1 `structured`), every one attempt 1; 1 verdict (pass, ordinal 2); `rejected` and `sent_back` empty; 4 lookups, 2 `success`, 2 `error`. Largest input plus output of any call: Describer 2133, Challenger 468, Guesser 2876.
+- Trace: not read (`curl -s -m 5 localhost:3000/api/public/health` timed out, exit 28, after the run). Call intervals from the log's `/api/chat` lines as in run 4 (8 = 8; each duration within 0.6 s of the record's latency).
+- Loads and evictions, the log window lines 31963–32871 (the end of the log when read): 8 `POST "/api/chat"` lines, all 200 (the first at 19:35:17, 2m0s, the Describer's call); 8 `truncated = 0`; one `starting llama-server` line, 19:35:17.488, the 12B, inside call 2 (Challenger), after "fits alongside existing models" (predicted 7.1 GiB, available 9.3 GiB, system_free 9.3 GiB), "started in 3.31 seconds", "loaded runners" count=3; no "evicting" line; no load of the 27B or the 26B.
+- `ollama ps` after the run (19:35:36): the 26B and the 27B loaded, UNTIL Forever; the 12B not loaded.
+- Pass verdicts: 1 —
+  - Round 1, verdict ordinal 2: "It is a delicate, pale-set dessert made from finely ground tree nuts blended with sugar and a setting agent, then chilled until firm. The texture is impossibly smooth, almost like a very fine custard, and it melts gently on the tongue. In Taiwan it is commonly served chilled in small bowls, topped with a sweet fruit sauce or a drizzle of honey, sometimes with slices of kiwi or peach arranged on top. It is a classic cold treat found in tea houses and snack shops throughout the island."
+- Per-call table (as run 4's):
+
+  | # | node | role | round | kind | call | attempt | latency (s) | input | output | load inside |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | B | Describer | 1 | text | – | 1 | 120.567 | 700 | 1433 | no |
+  | 2 | D | Challenger | 1 | structured | – | 1 | 5.925 | 456 | 12 | 12B 19:35:17.488 |
+  | 3 | E | Guesser | 1 | tools | 1 | 1 | 1.680 | 2417 | 50 | no |
+  | 4 | E | Guesser | 1 | tools | 2 | 1 | 0.954 | 2543 | 34 | no |
+  | 5 | E | Guesser | 1 | tools | 3 | 1 | 0.957 | 2653 | 35 | no |
+  | 6 | E | Guesser | 1 | tools | 4 | 1 | 0.904 | 2705 | 37 | no |
+  | 7 | E | Guesser | 1 | tools | 5 | 1 | 0.967 | 2843 | 33 | no |
+  | 8 | E | Guesser | 1 | structured | – | 1 | 2.893 | 1293 | 32 | no |
+
+- Per role: Challenger 1 call, 5.925 s, output 12, load inside; Describer 1 call, 120.567 s, output 1433 (thinking included); Guesser 6 calls, mean 1.393 s, largest 2.893 s, mean output 36.8, largest 50; no Describer or Guesser call had a load inside.
+- Commands: as run 4's, with `gin_t3r5.json` and the log window 31963–32871; `uv run python t3_verdicts.py 5 points.json` (the ticket's Verdicts table over runs 1–5).
