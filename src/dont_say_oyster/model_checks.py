@@ -65,7 +65,7 @@ class Model:
 DESCRIBER = Model(
     role="describer",
     tag="qwen3.8:27b-q4_K_M",
-    num_ctx=8192,
+    num_ctx=16384,
     think_off=False,
     # Qwen 3.8 takes levels (false, low, medium, xhigh); on is its default level.
     think_on="medium",

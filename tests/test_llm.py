@@ -381,3 +381,88 @@ def test_a_bad_stream_through_chatollama_raises_after_one_http_request(body: byt
         call_tools(SETTINGS, MESSAGES, [TOOL], attempt=1, client_for=client_for)
     assert isinstance(raised.value.__cause__, ValueError)
     assert len(sent) == 1
+
+
+ANSWERS: dict[str, dict[str, Any]] = {
+    "text": {"role": "assistant", "content": "A chewy drink."},
+    "structured": {
+        "role": "assistant",
+        "content": json.dumps({"guess": "珍珠奶茶", "confidence": 0.5}),
+    },
+    "tools": {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"function": {"name": "search", "arguments": {"keywords": ["boba"]}}}],
+    },
+}
+
+
+def call(kind: str, client_for: llm.ClientFor) -> llm.Reply[Any]:
+    if kind == "text":
+        return call_text(SETTINGS, MESSAGES, attempt=1, client_for=client_for)
+    if kind == "structured":
+        return call_structured(SETTINGS, MESSAGES, SCHEMA, attempt=1, client_for=client_for)
+    return call_tools(SETTINGS, MESSAGES, [TOOL], attempt=1, client_for=client_for)
+
+
+def ollama_answering(
+    kind: str, done_reason: str | None, sent: list[httpx.Request]
+) -> llm.ClientFor:
+    """A ChatOllama whose server streams one final line answering a call of `kind`, with
+    `done_reason` as given (left out when None)."""
+    line: dict[str, Any] = {**DONE, "message": ANSWERS[kind]}
+    if done_reason is None:
+        del line["done_reason"]
+    else:
+        line["done_reason"] = done_reason
+    body = (json.dumps(line) + "\n").encode()
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        sent.append(request)
+        return httpx.Response(200, content=body)
+
+    def client_for(settings: ModelSettings) -> ChatOllama:
+        return ChatOllama(
+            model=settings.model, client_kwargs={"transport": httpx.MockTransport(respond)}
+        )
+
+    return client_for
+
+
+@pytest.mark.parametrize("kind", ["text", "structured", "tools"])
+def test_a_reply_cut_off_by_the_context_window_raises_after_one_request(kind: str) -> None:
+    sent: list[httpx.Request] = []
+    with pytest.raises(LLMError) as raised:
+        call(kind, ollama_answering(kind, "length", sent))
+    assert str(raised.value) == (
+        "guesser: reply cut off by the context window: input tokens 5, output tokens 1, "
+        "num_ctx 16384"
+    )
+    assert len(sent) == 1
+
+
+@pytest.mark.parametrize("done_reason", ["stop", None], ids=["stop", "no-done-reason"])
+@pytest.mark.parametrize("kind", ["text", "structured", "tools"])
+def test_a_reply_that_stopped_or_names_no_done_reason_is_returned(
+    kind: str, done_reason: str | None
+) -> None:
+    sent: list[httpx.Request] = []
+    result = call(kind, ollama_answering(kind, done_reason, sent))
+    assert (result.input_tokens, result.output_tokens, result.kind) == (5, 1, kind)
+    if kind == "text":
+        assert result.output == "A chewy drink."
+    elif kind == "structured":
+        assert result.output == {"guess": "珍珠奶茶", "confidence": 0.5}
+    else:
+        assert [c["args"] for c in result.output.tool_calls] == [{"keywords": ["boba"]}]
+    assert len(sent) == 1
+
+
+def test_a_cut_off_reply_without_token_counts_names_them_unknown() -> None:
+    model = scripted(AIMessage(content="It is", response_metadata={"done_reason": "length"}))
+    with pytest.raises(LLMError) as raised:
+        call_text(SETTINGS, MESSAGES, attempt=1, client_for=Clients(model))
+    assert str(raised.value) == (
+        "guesser: reply cut off by the context window: input tokens unknown, "
+        "output tokens unknown, num_ctx 16384"
+    )

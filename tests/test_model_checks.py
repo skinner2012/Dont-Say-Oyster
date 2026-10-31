@@ -69,7 +69,7 @@ def run(ask: Scripted, *args: str) -> int:
 
 def test_the_three_models_are_the_t1_tags_at_their_num_ctx() -> None:
     assert [(m.role, m.tag, m.num_ctx) for m in MODELS] == [
-        ("describer", "qwen3.8:27b-q4_K_M", 8192),
+        ("describer", "qwen3.8:27b-q4_K_M", 16384),
         ("challenger", "gemma4:12b-it-q4_K_M", 4096),
         ("guesser", "gemma4:26b-a4b-it-q4_K_M", 16384),
     ]

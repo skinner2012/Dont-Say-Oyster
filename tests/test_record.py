@@ -280,7 +280,7 @@ def test_the_record_carries_the_settings_play_game_resolved(tmp_path: Path) -> N
     )
     assert code == 0
     assert game_record(output)["settings"] == {
-        "describer": {"model": "qwen3.8:27b-q4_K_M", "num_ctx": 8192, "thinking": "medium",
+        "describer": {"model": "qwen3.8:27b-q4_K_M", "num_ctx": 16384, "thinking": "medium",
                       "keep_alive": -1},
         "challenger": {"model": "gemma4:12b-it-q4_K_M", "num_ctx": 4096, "thinking": False,
                        "keep_alive": 0},

@@ -65,7 +65,7 @@ DEFAULT_MODELS = {
     "challenger": "gemma4:12b-it-q4_K_M",
     "guesser": "gemma4:26b-a4b-it-q4_K_M",
 }
-DEFAULT_NUM_CTX = {"describer": 8192, "challenger": 4096, "guesser": 16384}
+DEFAULT_NUM_CTX = {"describer": 16384, "challenger": 4096, "guesser": 16384}
 DEFAULT_TEMPERATURE = 0.7  # SPEC.md Implementation, Temperature policy
 ROLE_NAMES = {"describer": "Describer", "challenger": "Challenger", "guesser": "Guesser"}
 

@@ -26,8 +26,12 @@ WARNING naming the role, the prompt tokens, and num_ctx goes through `logging` (
 Implementation, Models).
 
 Nothing is retried (`SPEC.md` Recovery, forks, and replay, Model errors): a connection error,
-an error response from Ollama, a reply langchain-ollama cannot read, or a structured reply that
-is not JSON valid against its schema raises LLMError after the one request."""
+an error response from Ollama, a reply langchain-ollama cannot read, a reply cut off by the
+context window (Ollama's `done_reason` `length`, which langchain-ollama puts in the message's
+`response_metadata`), or a structured reply that is not JSON valid against its schema raises
+LLMError after the one request. The cut-off check is on every kind of call, before the reply is
+read; a reply with no `done_reason` is not cut off. It is the check on prompt and output
+together; the 90% warning counts prompt tokens only."""
 
 import json
 import logging
@@ -92,8 +96,8 @@ class Reply[T]:
 
 
 class LLMError(Exception):
-    """A model call failed: the request did not complete, or a structured reply did not
-    parse."""
+    """A model call failed: the request did not complete, the reply was cut off by the context
+    window, or a structured reply did not parse."""
 
 
 ClientFor = Callable[[ModelSettings], BaseChatModel]
@@ -124,7 +128,12 @@ def _request(
 ) -> tuple[AIMessage, float, int | None, int | None]:
     """Send the one request with the role, attempt, and kind in its run metadata, merged with the
     caller's `metadata` (the wrapper's three keys win); return the message, latency, and input
-    and output tokens."""
+    and output tokens.
+
+    A reply whose `response_metadata` has `done_reason` `length` was cut off by the context
+    window and raises LLMError naming the role, the token counts Ollama reported ("unknown"
+    when it reported none), and num_ctx (`SPEC.md` Recovery, forks, and replay, Model errors);
+    a reply with no `done_reason` key is not an error."""
     run_metadata = {
         **(metadata or {}),
         "role": settings.role,
@@ -150,6 +159,13 @@ def _request(
         ) from e
     latency = time.perf_counter() - start
     usage = message.usage_metadata
+    if message.response_metadata.get("done_reason") == "length":
+        tokens_in = usage["input_tokens"] if usage else "unknown"
+        tokens_out = usage["output_tokens"] if usage else "unknown"
+        raise LLMError(
+            f"{settings.role}: reply cut off by the context window: input tokens {tokens_in}, "
+            f"output tokens {tokens_out}, num_ctx {settings.num_ctx}"
+        )
     input_tokens = usage["input_tokens"] if usage else None
     output_tokens = usage["output_tokens"] if usage else None
     if input_tokens is None:

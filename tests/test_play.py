@@ -789,6 +789,28 @@ def test_a_describer_or_guesser_connection_error_exits_non_zero_without_an_outpu
     assert models.calls(role) == 1  # the one request that failed; nothing is retried
 
 
+def test_a_describer_reply_cut_off_by_the_context_window_exits_non_zero_without_an_output_file(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cut_off = AIMessage(
+        content="A street-stall snack of shellfish cooked over",
+        usage_metadata={"input_tokens": 900, "output_tokens": 15484, "total_tokens": 16384},
+        response_metadata={"done_reason": "length"},
+    )
+    models = Models(
+        describer=[cut_off], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
+    )
+    code, output = run(tmp_path, models)
+    assert code != 0
+    assert not output.exists()
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "the game stopped on a model error" in captured.err
+    assert "Describer: reply cut off by the context window" in captured.err
+    assert "num_ctx 16384" in captured.err
+    assert [models.calls(role) for role in ROLES] == [1, 0, 0]  # nothing is retried
+
+
 def test_an_unknown_card_id_exits_non_zero_before_any_model_call(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -862,7 +884,7 @@ def test_the_default_settings_are_the_role_defaults_with_keep_alive_fixed_per_ro
     code, _ = run(tmp_path, models)
     assert code == 0
     assert {role: set(s) for role, s in models.settings.items()} == {
-        "Describer": {ModelSettings("Describer", "qwen3.8:27b-q4_K_M", 8192, 0.7, False, -1)},
+        "Describer": {ModelSettings("Describer", "qwen3.8:27b-q4_K_M", 16384, 0.7, False, -1)},
         "Challenger": {ModelSettings("Challenger", "gemma4:12b-it-q4_K_M", 4096, 0.7, False, 0)},
         "Guesser": {ModelSettings("Guesser", "gemma4:26b-a4b-it-q4_K_M", 16384, 0.7, False, -1)},
     }
@@ -899,7 +921,7 @@ def test_the_command_configures_logging_so_num_ctx_warnings_appear(
     configured: list[dict[str, Any]] = []
     monkeypatch.setattr(logging, "basicConfig", lambda **kw: configured.append(kw))
     models = Models(
-        describer=[reply(CLEAN, 7500, 60)],  # over 90% of the Describer's num_ctx 8192
+        describer=[reply(CLEAN, 15000, 60)],  # over 90% of the Describer's num_ctx 16384
         challenger=[verdict("pass")],
         guesser=guesser_turn(guess(RIGHT)),
     )
@@ -914,7 +936,7 @@ def test_the_command_configures_logging_so_num_ctx_warnings_appear(
         for r in caplog.records
         if r.levelno == logging.WARNING and r.name.startswith("dont_say_oyster")
     ]
-    assert warnings == ["Describer: prompt tokens 7500 are over 90% of num_ctx 8192"]
+    assert warnings == ["Describer: prompt tokens 15000 are over 90% of num_ctx 16384"]
 
 
 # The command's interface.
@@ -945,6 +967,7 @@ def test_help_lists_every_parameter(capsys: pytest.CaptureFixture[str]) -> None:
         assert parameter in out
     for absent in ("--memory", "keep-alive", "keep_alive"):
         assert absent not in out
+    assert "the Describer's num_ctx (default 16384)" in " ".join(out.split())
 
 
 def test_play_game_is_a_console_script() -> None:
