@@ -433,7 +433,7 @@ No LangGraph checkpoints are used; recovery works from files.
 ### M5 Decide models and confirm temperature
 
 - Run one V1 game and personally check how the Describer and the Guesser interact, and decide whether to change models (one or both).
-- Run V2 games until ten fail verdicts have accumulated (rejects and forced passes), check them, analyze whether these ten fails are reasonable, and based on that decide whether to change the Challenger model.
+- Run five V2 games and check every verdict the Challenger gave in them: for a fail (a reject or a forced pass), whether the rejection is reasonable under [R35]; for a pass, whether the description also points at a distractor and should have failed. Based on that, decide whether to change the Challenger model.
 - At the same time, check whether the output can be parsed, and whether descriptions repeat or get worse, to adjust the temperature as needed.
 - Decide whether the Describer and the Guesser each have thinking on or off.
 - If the models, temperature, or thinking on/off change, M5 is rerun until all of them are settled.
