@@ -423,3 +423,50 @@ Commands for every T3 run (throwaway scripts in the session scratchpad, not in t
   | 7 | E | Guesser | 1 | structured | – | 1 | 3.793 | 1735 | 32 | no |
 
 - Per role: Challenger 1 call, 8.032 s, output 20, load inside; Describer 1 call, 133.245 s, output 1621 (thinking included); Guesser 5 calls, mean 2.299 s, largest 4.195 s, mean output 34.0, largest 46; no Describer or Guesser call had a load inside.
+
+### Run 2 — V2, card-47d7897f (薑絲大腸)
+
+- Setting: as run 1 (thinking "medium" / false / false for Describer / Challenger / Guesser; prompts as at 56af585); card card-47d7897f (薑絲大腸; aliases 薑絲炒大腸, 客家薑絲大腸; English name Stir-Fried Pork Intestines with Ginger; forbidden words ginger, intestine, vinegar, hakka, shredded; distractors 滷大腸 (Braised pork intestine; alias 大腸頭), 燙粉腸 (Blanched pork small intestine; alias 粉腸), 客家小炒 (Hakka Stir-Fry), 麻油腰子 (Sesame Oil Pork Kidney), 大腸麵線 (Pork Intestine Vermicelli); attributes dish_type Snack, main_ingredients Pork, cooking_method Stir-Fried, flavor Savory, Sour, physical_form Sauced, occasion none).
+- Before the run: HEAD 56af585 (run 1's record not yet committed; the code and prompts as at 56af585), the same server process (pid 78720), the suite as in run 1; launched 30 s after run 1 finished, so no separate `ollama ps`; the server log held 8885 lines.
+- Launched 2026-10-30 17:13:58 PDT (finished 17:20:21). Command: `time uv run play-game --variant V2 card-47d7897f runs/m5-t3/v2-run2.jsonl --describer-thinking on 2> runs/m5-t3/v2-run2.stderr`.
+- Exit 0. Printed: `Guesser wins (right guess): round 3, questions 2, rejects 1, forced passes 0`. `time`: `1.76s user 0.18s system 0% cpu 6:22.42 total`, so wall time 6:22.42.
+- stderr: empty (0 bytes), num_ctx warnings 0.
+- Record: `runs/m5-t3/v2-run2.jsonl`, 1 line, `1 line(s) valid`; `result` right guess, `matched_name` 薑絲大腸, `counters` rounds 3, questions 2, forced passes 0; 23 calls (Describer 4 `text`; Challenger 2 `structured`; Guesser 17: 14 `tools`, 3 `structured`), every one attempt 1; 2 verdicts, both in round 1 (fail at ordinal 2, pass at ordinal 4); 1 rejected description (round 1) with the fail's reason; `sent_back` empty; 11 lookups, 10 `success`, 1 `error`. Largest input plus output of any call: Describer 2483 (call 3; num_ctx 8192), Challenger 565 (call 2; num_ctx 4096), Guesser 4068 (call 18; num_ctx 16384).
+- Trace: id `18c8843704af4e632c318593a4a33e86`, name `card-47d7897f`, session `m5-t3` (the session's second root), root span 00:13:59.406–00:20:21.184 UTC (381.778 s). 64 observations, all session `m5-t3`, levels 63 DEFAULT and 1 ERROR (the round 2 `search` span whose arguments the schema rejected). Node spans: A 1 (SPAN), G 3, B 4, C 4, D 2, E 3, F 1 (CHAIN; round 2's and round 3's answers go C → E with no D [R12]; rounds 1 and 2 ended in a question, E → G); routers `route_c` 4, `route_after_d` 2, `route_after_e` 3, `route_after_f` 1; `LangGraph` 1; root 1. Tool spans: 11, all `search`, equal to the record's 11 lookups. Generation spans: 23, all `ChatOllama`, models gemma4:26b-a4b-it-q4_K_M 17, qwen3.8:27b-q4_K_M 4, gemma4:12b-it-q4_K_M 2; the multiset equals the record's (True), with tokens (True), and the start-time order matches the ordinals (True). Guesser outputs read from the spans (`t2_lastcalls.py`): round 1's sixth tool-loop call (call 10) holds a search call {flavor: Spicy; main_ingredients: Pork; physical_form: Dry} and round 2's sixth (call 18) {main_ingredients: Pork; physical_form: Sauced}, neither with a tool span (not run [R43]); round 3's second tool-loop call (call 22) holds no tool call, its text a fenced JSON block `{"text": "薑絲大腸", "confidence": 0.9}`; the structured calls hold the two questions with confidence 0.0 (the record's questions carry confidence null) and the guess with 0.9.
+- Loads and evictions, the log window lines 8886–11371: 23 `POST "/api/chat"` lines, all status 200 (the first at 17:16:05, 2m5s, the Describer's call 1); 23 `truncated = 0`, no `truncated = 1`. In order:
+  - 17:16:05.363, inside call 2 (Challenger): "llama-server model predicted to exceed available memory, evicting" (predicted 7.1 GiB, predicted_num_ctx 4096, available 6.5 GiB, gpu_free 35.5 GiB, system_free 6.5 GiB, `system_limited=true`); at 17:16:05.676 "fits alongside existing models" (available 32.1 GiB); 17:16:05.715 `starting llama-server`, the 12B blob with `--spec-draft-model`; "llama-server started in 3.78 seconds" (17:16:09.497, logged twice); "loaded runners" count=2.
+  - 17:18:23.941, inside call 4 (Challenger): "fits alongside existing models" (system_free 31.7 GiB, no eviction); `starting llama-server`, the 12B; "started in 1.76 seconds"; "loaded runners" count=2.
+  - 17:18:28.708, inside call 5 (Guesser, round 1, tool-loop call 1): "fits alongside existing models" (predicted 18.1 GiB, predicted_num_ctx 16384, num_batch 1024, system_free 25.1 GiB); `starting llama-server`, the 26B blob; "started in 2.52 seconds"; "loaded runners" count=2.
+  - The eviction line names no model. The model evicted was the 26B: "loaded runners" was 3 after run 1's 12B load and 2 after this one, the Describer's call 3 (17:16:14–17:18:23) ran with no load, and the next load of a resident model was the 26B's, in the Guesser's first call. No load of the 27B.
+- `ollama ps` after the run (17:20:31, before run 3): `gemma4:26b-a4b-it-q4_K_M` 5571076f3d70 1.5 GB 100% GPU context 16384 UNTIL Forever; `qwen3.8:27b-q4_K_M` 25b843619e94 16 GB 100% GPU context 8192 UNTIL Forever; the 12B not loaded.
+- Pass verdicts: 1 — round 1, ordinal 4, description 2 (in the ticket's transcript).
+- Per-call table (as run 1's):
+
+  | # | node | role | round | kind | call | attempt | latency (s) | input | output | load inside |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | B | Describer | 1 | text | – | 1 | 125.897 | 713 | 1506 | no |
+  | 2 | D | Challenger | 1 | structured | – | 1 | 8.749 | 496 | 69 | 12B 17:16:05.715 (after the eviction at 17:16:05.363) |
+  | 3 | B | Describer | 1 | text | – | 1 | 129.774 | 945 | 1538 | no |
+  | 4 | D | Challenger | 1 | structured | – | 1 | 4.770 | 529 | 12 | 12B 17:18:23.941 |
+  | 5 | E | Guesser | 1 | tools | 1 | 1 | 7.068 | 2477 | 28 | 26B 17:18:28.708 |
+  | 6 | E | Guesser | 1 | tools | 2 | 1 | 1.133 | 2794 | 27 | no |
+  | 7 | E | Guesser | 1 | tools | 3 | 1 | 0.817 | 2838 | 33 | no |
+  | 8 | E | Guesser | 1 | tools | 4 | 1 | 0.893 | 2888 | 36 | no |
+  | 9 | E | Guesser | 1 | tools | 5 | 1 | 1.035 | 3030 | 35 | no |
+  | 10 | E | Guesser | 1 | tools | 6 | 1 | 1.026 | 3163 | 35 | no |
+  | 11 | E | Guesser | 1 | structured | – | 1 | 3.422 | 1639 | 36 | no |
+  | 12 | B | Describer | 2 | text | – | 1 | 50.972 | 1084 | 515 | no |
+  | 13 | E | Guesser | 2 | tools | 1 | 1 | 2.395 | 2515 | 28 | no |
+  | 14 | E | Guesser | 2 | tools | 2 | 1 | 1.149 | 2832 | 28 | no |
+  | 15 | E | Guesser | 2 | tools | 3 | 1 | 2.082 | 3822 | 19 | no |
+  | 16 | E | Guesser | 2 | tools | 4 | 1 | 0.850 | 3949 | 27 | no |
+  | 17 | E | Guesser | 2 | tools | 5 | 1 | 0.749 | 3993 | 29 | no |
+  | 18 | E | Guesser | 2 | tools | 6 | 1 | 0.761 | 4039 | 29 | no |
+  | 19 | E | Guesser | 2 | structured | – | 1 | 3.893 | 2509 | 37 | no |
+  | 20 | B | Describer | 3 | text | – | 1 | 28.008 | 1129 | 221 | no |
+  | 21 | E | Guesser | 3 | tools | 1 | 1 | 2.179 | 2545 | 13 | no |
+  | 22 | E | Guesser | 3 | tools | 2 | 1 | 1.224 | 2848 | 33 | no |
+  | 23 | E | Guesser | 3 | structured | – | 1 | 2.695 | 1298 | 33 | no |
+
+- Per role: Challenger 2 calls, both with the 12B load inside, mean 6.759 s, largest 8.749 s, mean output 40.5, largest 69; Describer 4 calls, mean 83.663 s, largest 129.774 s, mean output 945.0, largest 1538 (thinking included); Guesser 17 calls, all: mean 1.963 s, largest 7.068 s; without call 5 (the 26B reload): 16 calls, mean 1.644 s, largest 3.893 s, mean output 29.9, largest 37.
+- Commands: as in the T3 preamble, with the log window 8886–11371; `uv run python t2_lastcalls.py 18c8843704af4e632c318593a4a33e86` (the Guesser's generation outputs).
