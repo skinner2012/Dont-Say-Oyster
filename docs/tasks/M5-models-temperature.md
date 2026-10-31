@@ -232,14 +232,55 @@ Live runs: the machine must stay awake for the whole run: the Mac mini's `sleep`
 
 ### T4 — Parse and repeat check over the M5 games: the temperature
 - **Status:** todo
-- **Produces:** the counts, written into this Detail: for every M5 game so far (T1's two, T2's one, T3's), the calls made, the runs stopped by a reply the program could not parse, the outputs the program sent back [R11], [R17], [R40], and the descriptions repeated within a game; and the author's decision, on the Decision line below, of the temperature: 0.7 unchanged or the new value.
+- **Produces:** the counts, written into this Detail: for every M5 game so far (T1's seven, five with records; T2's two; T3's five), the calls made, the runs stopped by a reply the program could not parse, the outputs the program sent back [R11], [R17], [R40], and the descriptions repeated within a game; and the author's decision, on the Decision line below, of the temperature: 0.7 unchanged or the new value.
 - **Consumes:** the records of T1, T2, and T3 in this file and their record files under `runs/m5-t1/`, `runs/m5-t2/`, `runs/m5-t3/` (not committed; the counts are re-derived from them by the auditor while they exist, and the Detail stands alone after).
 - **Detail:**
   - From BACKLOG M5.3. `SPEC.md` M5 (the third bullet), Implementation (Temperature policy: one value for the three roles and the four variants), [R8], [R28], Recovery, forks, and replay (Model errors: an unparseable reply stops the game and writes no record, so a parse failure shows as a run with no record, not inside one).
   - The table, one row per run: variant, card, thinking, calls (the record's `calls` length), parse failures (0 for a run with a record; a run stopped by a model error whose stderr line says a reply "did not parse", the wording of `llm.py`, is a row with no record, `calls` written as n/a, and 1; a run stopped by any other model error, a connection error say, is such a row with 0; after T8 a run stopped by a reply cut off by the context window, which stderr names as such, is such a row with 0 and a note "cut off", so that T1's runs 2 and 3, which surfaced as parse failures before T8, and any later cut-off are told apart), send-backs by kind from the record's `sent_back` entries, descriptions in the game (every text the Describer gave as a description: each round's `rejected` texts, its `reached_text` when `owed` is description, and its `sent_back` entries of kind description, in that order within the round; answers are not descriptions [R28] and are not compared), and repeated descriptions: the number of descriptions equal to an earlier description of the same game after the English normalization of [R22], derived by a throwaway script in the session scratchpad, not in the repo, whose command and output the record quotes. Whether descriptions "get worse" over the rounds is the author's reading of the transcripts in T1–T3, not a count.
   - The author decides from the counts and the transcripts; the agent proposes nothing. One temperature for every role (`SPEC.md` Temperature policy; `record.build_record` raises when the roles' temperatures differ, M4's T3 F2): a per-role temperature is a `SPEC.md` change the author would make first (Q3). A changed value is applied in T5 (`DEFAULT_TEMPERATURE` in `play.py` and `TEMPERATURE` in `model_checks.py`, with the tests that read them).
-  - **Counts** (date): filled by dispatch.
-  - **Decision** (author, date): temperature —.
+  - **Counts** (2026-10-31): one row per M5 run so far, in the appendix's order. A row with a record takes every value from the record (card id, variant, `settings`); a no-record row takes variant, card, and thinking from its appendix block and command. Thinking: D, C, G are the Describer, the Challenger, the Guesser; on is Ollama's think "medium" for the Describer and true for the Guesser, off is false. Send-backs by the schema's `sent_back` kinds.
+
+    | Run | Variant | Card | Thinking | Calls | Parse failures | Send-backs (description / answer / question / reason) | Descriptions in the game | Repeated descriptions |
+    |---|---|---|---|---|---|---|---|---|
+    | T1 run 1 | V1 | card-753f27f6 筒仔米糕 | D off/C off/G off | 35 | 0 | 0 / 0 / 0 / 0 | 7 | 1 |
+    | T1 run 2 | V1 | card-753f27f6 筒仔米糕 | D on/C off/G on | n/a | 1 | n/a | n/a | n/a |
+    | T1 run 3 | V1 | card-753f27f6 筒仔米糕 | D on/C off/G on | n/a | 1 | n/a | n/a | n/a |
+    | T1 run 4 | V1 | card-753f27f6 筒仔米糕 | D on/C off/G on | 8 | 0 | 0 / 0 / 0 / 0 | 2 | 0 |
+    | T1 run 5 | V1 | card-753f27f6 筒仔米糕 | D on/C off/G on | 13 | 0 | 0 / 0 / 0 / 0 | 2 | 0 |
+    | T1 run 6 | V1 | card-753f27f6 筒仔米糕 | D on/C off/G off | 5 | 0 | 0 / 0 / 0 / 0 | 1 | 0 |
+    | T1 run 7 | V0 | card-753f27f6 筒仔米糕 | D on/C off/G off | 20 | 0 | 0 / 0 / 0 / 0 | 9 | 0 |
+    | T2 run 1 | V1 | card-c4431ef9 湯粄條 | D on/C off/G off | 11 | 0 | 0 / 0 / 0 / 0 | 2 | 0 |
+    | T2 run 2 | V1 | card-c4431ef9 湯粄條 | D on/C off/G off | 18 | 0 | 0 / 0 / 0 / 0 | 1 | 0 |
+    | T3 run 1 | V2 | card-1b8d14cb 滷豆干 | D on/C off/G off | 7 | 0 | 0 / 0 / 0 / 0 | 1 | 0 |
+    | T3 run 2 | V2 | card-47d7897f 薑絲大腸 | D on/C off/G off | 23 | 0 | 0 / 0 / 0 / 0 | 2 | 0 |
+    | T3 run 3 | V2 | card-b223994f 肉羹 | D on/C off/G off | 21 | 0 | 0 / 0 / 0 / 0 | 5 | 0 |
+    | T3 run 4 | V2 | card-370cd9f4 年糕 | D on/C off/G off | 68 | 0 | 0 / 0 / 0 / 0 | 19 | 0 |
+    | T3 run 5 | V2 | card-aae840e9 杏仁豆腐 | D on/C off/G off | 8 | 0 | 0 / 0 / 0 / 0 | 1 | 0 |
+    | Total (14 runs, 12 records) | | | | 237 | 2 | 0 / 0 / 0 / 0 | 52 | 1 |
+
+    T1 runs 2 and 3: stderr reads `the game stopped on a model error: Guesser: structured reply did not parse: ` (the reply text empty), so parse failures 1 and no "cut off" note, since stderr does not name a reply cut off by the context window (both runs predate T8; the cause was context truncation, `truncated = 1` with empty content, as T1's crashes paragraph records, so the two parse failures are two cut-offs in fact). The one repeat is T1 run 1's round 9 description, equal to its round 6 description. T3 run 4's 19 descriptions include round 8's empty one (a truncated call, appendix T3 Run 4), counted as given.
+
+    Command, from the repo root (throwaway script in the session scratchpad; `--texts` also prints each game's descriptions with the repeats marked):
+    `uv run python /private/tmp/claude-501/-Users-skinnercheng-Projects-Dont-Say-Oyster/a1079b76-f2d6-4063-adff-3aa95e6b6257/scratchpad/t4_counts.py`
+
+    ```
+    T1 run 1 | runs/m5-t1/v1-run1.jsonl | V1 | card-753f27f6 筒仔米糕 | D off/C off/G off | temp 0.7 | calls 35 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 7 | repeated 1
+    T1 run 4 | runs/m5-t1/v1-run4.jsonl | V1 | card-753f27f6 筒仔米糕 | D on/C off/G on | temp 0.7 | calls 8 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 2 | repeated 0
+    T1 run 5 | runs/m5-t1/v1-run5.jsonl | V1 | card-753f27f6 筒仔米糕 | D on/C off/G on | temp 0.7 | calls 13 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 2 | repeated 0
+    T1 run 6 | runs/m5-t1/v1-run6.jsonl | V1 | card-753f27f6 筒仔米糕 | D on/C off/G off | temp 0.7 | calls 5 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 1 | repeated 0
+    T1 run 7 | runs/m5-t1/v0-run1.jsonl | V0 | card-753f27f6 筒仔米糕 | D on/C off/G off | temp 0.7 | calls 20 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 9 | repeated 0
+    T2 run 1 | runs/m5-t2/v1-run1.jsonl | V1 | card-c4431ef9 湯粄條 | D on/C off/G off | temp 0.7 | calls 11 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 2 | repeated 0
+    T2 run 2 | runs/m5-t2/v1-run2.jsonl | V1 | card-c4431ef9 湯粄條 | D on/C off/G off | temp 0.7 | calls 18 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 1 | repeated 0
+    T3 run 1 | runs/m5-t3/v2-run1.jsonl | V2 | card-1b8d14cb 滷豆干 | D on/C off/G off | temp 0.7 | calls 7 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 1 | repeated 0
+    T3 run 2 | runs/m5-t3/v2-run2.jsonl | V2 | card-47d7897f 薑絲大腸 | D on/C off/G off | temp 0.7 | calls 23 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 2 | repeated 0
+    T3 run 3 | runs/m5-t3/v2-run3.jsonl | V2 | card-b223994f 肉羹 | D on/C off/G off | temp 0.7 | calls 21 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 5 | repeated 0
+    T3 run 4 | runs/m5-t3/v2-run4.jsonl | V2 | card-370cd9f4 年糕 | D on/C off/G off | temp 0.7 | calls 68 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 19 | repeated 0
+    T3 run 5 | runs/m5-t3/v2-run5.jsonl | V2 | card-aae840e9 杏仁豆腐 | D on/C off/G off | temp 0.7 | calls 8 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 1 | repeated 0
+    TOTAL (12 records) | calls 237 | sent_back description=0 answer=0 question=0 reason=0 | descriptions 52 | repeated 1
+    ```
+
+    The repeat count reuses the program's [R22] English-side normalization, `english_normalize` in `src/dont_say_oyster/matching.py`, and counts a description as repeated when its normalized text equals that of an earlier description of the same game. Stderr noise, not model errors and not in the table: 4 of the 14 runs' stderr files held OpenTelemetry export errors or a 90% num_ctx warning (T1 run 2 one export error, T1 run 3 one warning, T3 run 4 26 export errors, T3 run 5 three); the other ten are empty.
+  - **Decision** (author, 2026-10-31): temperature 0.7, unchanged. Tested: the 14 M5 runs above (12 with records, 237 calls): no parse failure and no send-back of any kind, so no sign the value is too high; one repeated description in 14 runs, in the one game with every role's thinking off, and none in the 45 descriptions of the 11 games with the Describer's thinking on, so no sign it is too low. Across the five recorded games on one card (T1) and the two on another (T2) no description repeats between games, while the Guesser's wrong candidates recur (竹筒飯 in three games, 碗粿 in four rounds), which is the model's own ranking, not the sampling. The Challenger's one-in-five verdict flips at 0.7 (T3 Probes) are a known cost, but a Challenger-only temperature is a `SPEC.md` change (Q3), T3 kept the Challenger as it is, and the probes show a steadier judge would not be a more correct one. A different value would need its own games in T5; nothing here justifies that.
 - **Acceptance:** this Detail holds the table with one row per M5 run so far and every column filled (n/a where a no-record row has no value), the script command and output for the repeat count, and the Decision line reads a temperature value.
 - **Out of scope:** any code change (T5); the models and thinking (T1–T3); M4's games (same settings, already read in M4's T4 and T5; cited only if the author asks); per-role temperatures (Q3).
 - **Depends on:** T1, T2, T3
