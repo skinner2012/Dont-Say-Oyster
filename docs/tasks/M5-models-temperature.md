@@ -286,7 +286,7 @@ Live runs: the machine must stay awake for the whole run: the Mac mini's `sleep`
 - **Depends on:** T5
 
 ### T8 — The Describer's num_ctx and the cut-off reply as a model error
-- **Status:** todo
+- **Status:** done 70ec27d
 - **Produces:** `DEFAULT_NUM_CTX["describer"]` 16384 in `play.py` and the Describer's `num_ctx` in `model_checks.py`; `llm._request` raising `LLMError` when the reply's `response_metadata["done_reason"]` is `length` (Ollama stopped generating at the context window), on every call kind, before the reply is read; the tests for both.
 - **Consumes:** `SPEC.md` as changed in 984432c (Implementation (Models): Describer 16K; Recovery, forks, and replay: a reply cut off by the context window is a model error); `play.py`, `model_checks.py`, `llm.py`, `tests/test_play.py` (the defaults test and the 90% warning test, which use the Describer's 8192), `tests/test_llm.py` (the scripted responses carry `done_reason`), `tests/test_model_checks.py`.
 - **Detail:**
@@ -347,3 +347,12 @@ Decisions made by the orchestrator in cutting these tickets, for the author's re
 - T3 F17, F19–F22: the condensation (8c59c28) lossless (157 lines moved, the 28 compact rows equal the full table, the probe numbers re-derived from the probe files, F8 and F10 wording still present after the move, the Decision's figures consistent with the probes). No change.
 - T3 F18: the appendix's probe text said rows 7 and 13 each passed in one thinking-off pass; row 7 passed in both. Fixed in this commit's companion fix.
 - T3 F23 (note): the Decision rules out the Guesser's model for the Challenger as the author's rule, which `SPEC.md` does not state. Note.
+- T8 F1: the Record bullet and the Acceptance said one real call; the script, the bullet's own timings, and the server log show two (one raw `ChatOllama` call, one through `call_text`). Fixed 2702714.
+- T8 F2 (note): the quoted `llama_context: n_ctx = 2048` line has its padding collapsed; the usage 52 + 1996 = 2048 differs by one from the server's `n_tokens = 2047`, unexplained; the 2048 floor is marked as read from one load. No change.
+- T8 F3 (note): the `ollama ps` outputs before and after the check are not in the server log (only the `GET /api/ps` lines), so they stand on the implementer's report; the log's load at 11:41:47 ("fits alongside existing models", two runners) agrees with the 8192 instance being replaced. No change.
+- T8 F4 (note, for M7's reader rules): the cut-off check runs after `invoke` returns, so the Langfuse callback has already closed that call's generation as completed, with the truncated output and a usage that fills num_ctx; only the game span ends in error, and no call row or record is written. Not in the ticket's scope. No change.
+- T8 F5 (note): on a cut-off reply the raise comes before the 90% warning, so a cut-off call whose prompt was also over 90% logs only the error, as the Detail's "before the token counts are read" says. No change.
+- T8 F6 (note): the old value 8192 remains only in historical text (records, earlier tickets, `docs/DECISIONS.md` 2026-10-31's problem statement), in Guesser overrides in tests, and in `tests/test_describer.py:23`'s fixture, which is a test's own setting, not a default; `SPEC.md`, `data/records/schema.json`, and the code state no stale default. No change.
+- T8 F7 (note): `tests/test_model_checks.py`'s test name `test_the_three_models_are_the_t1_tags_at_their_num_ctx` carries a ticket id; it predates this ticket, which only changed the value it asserts. Known; may be renamed when T6 touches the file.
+- T8 F8: the commit is one, title-only, with the trailer; the Status line stayed `todo` until this commit; nothing under `runs/` or `.env` was staged. No change.
+- T8, verified by the auditor and not checked: gates exit 0, 496 tests pass, `--help` shows 16384, the five cut-off tests fail against a mutated copy of `llm.py` (the check disabled), no ticket or milestone id in the new docstrings. Not checked: any model call; Langfuse's view of a cut-off generation (F4); a real cut-off through a structured or tools call (mock streams only).
