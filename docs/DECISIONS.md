@@ -188,6 +188,11 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 - Rejected: letting Ollama choose what to evict (it evicted the most recently used model once in T1's session, not the oldest); making keep_alive a one-game command parameter or a manifest field (it does not change outputs; the reload lands in the Challenger's end-to-end latency, which Metrics already defines to include it); changing the Batch time estimate for the ~2 s reload per Challenger call (small against 8–20 s per call; author).
 - Left open in Q19: load order at game start in quick succession; the 12B's fit once the Guesser's 16K context is full; a single run.
 
+### 2026-10-30 — M5 reviews every Challenger verdict of five V2 games, not ten fails  (commit b18a2e2)
+- Changed: Milestones M5, the Challenger bullet, changed ("ten fail verdicts" → five V2 games, every verdict checked: a fail for whether the rejection is reasonable under [R35], a pass for whether the description also points at a distractor). BACKLOG M5.2 patched.
+- Why: ten fails were chosen (2026-10-17) because a fail is the verdict that changes the game, and a wrong fail costs the Describer a rewrite. With the Describer's thinking on (M5 T1), its descriptions fit the cards and fails became rare: the first two T3 games gave one fail in four verdicts, so ten fails would have taken about twenty games, and they would still show only one of the judge's two errors. A Challenger can be too strict (a reasonable description failed) or too lenient (a description that also fits a distractor passed), and the lenient error is visible only in passes. Five games bound the cost (about ten verdicts) and show both.
+- Rejected: running until ten fails anyway (cost, and half the picture); provoking fails by running T3 with the Describer's thinking off (verdicts on descriptions the batches will never produce); ten verdicts counted across games (a game is the unit the runs and records already use).
+
 ## Memory (V3)
 
 ### 2026-09-20 — Cross-game memory lives in per-role JSON files numbered by game; no LangGraph checkpointer  (spec v0.2; Architecture)
