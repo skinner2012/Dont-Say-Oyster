@@ -231,7 +231,7 @@ Live runs: the machine must stay awake for the whole run: the Mac mini's `sleep`
 - **Depends on:** T1, T2
 
 ### T4 — Parse and repeat check over the M5 games: the temperature
-- **Status:** todo
+- **Status:** done ee721d3
 - **Produces:** the counts, written into this Detail: for every M5 game so far (T1's seven, five with records; T2's two; T3's five), the calls made, the runs stopped by a reply the program could not parse, the outputs the program sent back [R11], [R17], [R40], and the descriptions repeated within a game; and the author's decision, on the Decision line below, of the temperature: 0.7 unchanged or the new value.
 - **Consumes:** the records of T1, T2, and T3 in this file and their record files under `runs/m5-t1/`, `runs/m5-t2/`, `runs/m5-t3/` (not committed; the counts are re-derived from them by the auditor while they exist, and the Detail stands alone after).
 - **Detail:**
@@ -397,3 +397,9 @@ Decisions made by the orchestrator in cutting these tickets, for the author's re
 - T8 F7 (note): `tests/test_model_checks.py`'s test name `test_the_three_models_are_the_t1_tags_at_their_num_ctx` carries a ticket id; it predates this ticket, which only changed the value it asserts. Known; may be renamed when T6 touches the file.
 - T8 F8: the commit is one, title-only, with the trailer; the Status line stayed `todo` until this commit; nothing under `runs/` or `.env` was staged. No change.
 - T8, verified by the auditor and not checked: gates exit 0, 496 tests pass, `--help` shows 16384, the five cut-off tests fail against a mutated copy of `llm.py` (the check disabled), no ticket or milestone id in the new docstrings. Not checked: any model call; Langfuse's view of a cut-off generation (F4); a real cut-off through a structured or tools call (mock streams only).
+- T4 F1 (note): T1 runs 2 and 3 count as parse failures by the Detail's rule, though their cause was context truncation; a reader of "2 parse failures" could take them for malformed JSON. The cause added to the sentence under the table in ee721d3.
+- T4 F2 (note): `calls` is the record's `calls` length, so a retried call [R26] would count twice; in these 12 records every call is attempt 1 and every `sent_back` is empty, so one row is one request. No change.
+- T4 F3 (note): T3 run 4's empty round 8 description (the truncated call) is counted as a description, as the Detail's definition says; 18 without it, repeated 0 either way. No change.
+- T4 F4 (note): the two no-record rows take the Challenger's thinking from the appendix's Setting line and the command, as the Detail allows. No change.
+- T4 F5: the Decision line said "no parse failure" against the table's total of 2. Fixed ddf970c (no parse failure in the 12 records; the two no-record runs were cut-offs).
+- T4, verified by the auditor: every cell of the table re-derived by a second script written before reading the runner's (237 calls, 52 descriptions, 1 repeat, send-backs 0/0/0/0, totals), the quoted output byte-equal to the script's, the Decision line's figures (45 descriptions with the Describer's thinking on, no description shared between games of one card, 竹筒飯 in three games, 碗粿 in four rounds, one in five verdict flips) re-derived from the records and the appendix. Not checked: the records against `data/records/schema.json`; near-duplicate descriptions that [R22] normalization does not equate; the traces.
