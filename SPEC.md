@@ -313,7 +313,7 @@ No LangGraph checkpoints are used; recovery works from files.
 
 - Crash recovery: continue from the last memory file written; the game that crashed is rerun, and it does not resume inside a game. For V0–V2, which have no memory file, the batch script skips cards that already have a JSONL record.
 - Trace loss: if Langfuse is down or drops a batch of spans, the game's trace is incomplete or missing; the JSONL record is the record of the game, so the game is not rerun for its trace.
-- Model errors: a connection error or a reply the program cannot parse is not retried; the game stops with an error, writes no JSONL record, and is rerun as a crash. A search-tool call whose arguments the tool's schema rejects is not an error: it counts as one lookup [R43] and returns the validation message to the Guesser as its result.
+- Model errors: a connection error, a reply the program cannot parse, or a reply cut off by the context window (Ollama's done_reason length) is not retried; the game stops with an error, writes no JSONL record, and is rerun as a crash. A search-tool call whose arguments the tool's schema rejects is not an error: it counts as one lookup [R43] and returns the validation message to the Guesser as its result.
 - Fork and rerun: not needed, because the same command only needs a different variant as its argument.
 - Replay: decided not to do it.
 
@@ -369,7 +369,7 @@ No LangGraph checkpoints are used; recovery works from files.
 ## Implementation
 
 - **Language and runtime**: plan to use Python 3.13 or later. Package management and virtual environments will use uv.
-- **Models**: Gemma 4:26B (Guesser), Qwen 3.8:27B (Describer), and Gemma 4:12B (Challenger), all three local models; on a Mac mini M4 Pro + 64 GB, with Ollama serving all three; M2 found that the three do not reliably stay resident together (Q19 in docs/tasks/M2-one-game.md: it depends on load order and on free memory at that moment), so the Describer and the Guesser stay resident and the Challenger is loaded for each call and unloaded after it (keep_alive 0 on its requests), and every call sets its role's keep_alive explicitly rather than relying on Ollama's default; tests in M5 will settle the three models. As for num_ctx, the current defaults are: Guesser 16K, Describer 8K, Challenger 4K. When a role's Prompt tokens on a call start to go over 90% of num_ctx, the program will log a warning. In M4 and M6 the log will be checked and adjusted as needed.
+- **Models**: Gemma 4:26B (Guesser), Qwen 3.8:27B (Describer), and Gemma 4:12B (Challenger), all three local models; on a Mac mini M4 Pro + 64 GB, with Ollama serving all three; M2 found that the three do not reliably stay resident together (Q19 in docs/tasks/M2-one-game.md: it depends on load order and on free memory at that moment), so the Describer and the Guesser stay resident and the Challenger is loaded for each call and unloaded after it (keep_alive 0 on its requests), and every call sets its role's keep_alive explicitly rather than relying on Ollama's default; tests in M5 will settle the three models. As for num_ctx, the current defaults are: Guesser 16K, Describer 16K (M5 raised the Describer's from 8K after its thinking filled 8K twice in a ten-round V2 game), Challenger 4K. When a role's Prompt tokens on a call start to go over 90% of num_ctx, the program will log a warning. In M4 and M6 the log will be checked and adjusted as needed.
 - **Temperature policy**: Temperature is set to 0.7 for now (same value for all three roles, same value for all four variants). We pick >0 because we need variation in the output. In M5 the temperature may change depending on what we see.
 - **Batch time estimate**:
     | Role | Calls per round V0 / V1 / V2–V3 | Each call, thinking off | Each call, thinking on |
@@ -452,7 +452,7 @@ No LangGraph checkpoints are used; recovery works from files.
 
 ### M7 Build batches and metrics
 
-- Build the batch script: it reads a manifest and runs the forty cards in the fixed order; before each game it checks that Langfuse answers its health endpoint and stops if it does not; on a crash it skips cards that already have a JSONL record (V0–V2) or continues from the last memory file (V3).
+- Build the batch script: it reads a manifest and runs the forty cards in the fixed order; before each game it checks that Langfuse answers its health endpoint and stops if it does not; on a crash it skips cards that already have a JSONL record (V0–V2) or continues from the last memory file (V3); a game that exits with an error is rerun at once on the same card, at most twice, before the script moves on.
 - Run the four batches on the fixed card set.
 - Optional, if time allows: run V2 a second time as the luck ruler mentioned in Evaluation.
 - Compute the per-game and per-batch metrics listed in Evaluation.
