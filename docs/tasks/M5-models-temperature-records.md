@@ -516,3 +516,101 @@ Commands for every T3 run (throwaway scripts in the session scratchpad, not in t
 
 - Per role: Challenger 5 calls, all with the 12B load inside, mean 6.113 s, largest 7.445 s, mean output 30.8, largest 52; Describer 5 calls, mean 139.622 s, largest 191.086 s, mean output 1648.8, largest 2264 (thinking included); Guesser 11 calls, all: mean 3.036 s, largest 6.925 s; without call 5 (the 26B reload): 10 calls, mean 2.647 s, largest 5.058 s, mean output 27.5, largest 40.
 - Commands: as in the T3 preamble, with the log window 11372–15783; `uv run python t3_last.py afeaf8c5a2515cef3ece85e9c8784a09 last_t3r3.json` (the Guesser's tool-bound generation outputs) and `uv run python t3_md.py 3 runs/m5-t3/v2-run3.jsonl last_t3r3.json` (the ticket's transcript and fail rows from the record).
+
+### Run 4 — V2, card-370cd9f4 (年糕)
+
+- Setting: as run 1; card card-370cd9f4 (年糕; alias 甜年糕; English names Sweet Sticky Rice Cake, Nian Gao; forbidden words new, year, glutinous, brown, sugar, sticky; distractors 炸年糕 (Deep-Fried New Year Cake), 發粿 (Steamed Prosperity Cake; aliases 發糕, 發粄), 黑糖糕 (Brown Sugar Cake, Hei Tang Gao; aliases 烏糖粿, 澎湖黑糖糕), 紅龜粿 (Red Tortoise Rice Cake; aliases 紅粄, 龜粄), 九層粿 (Nine Layer Rice Cake; aliases 九層糕, 九層粄); attributes dish_type Dessert, main_ingredients Rice, cooking_method Steamed, flavor Sweet, physical_form Dry).
+- Before the run: code and prompts as at 56af585, the same server process (pid 78720); `ollama ps` at launch: the 26B and the 27B loaded (as run 3's after), the 12B not; the server log held 15783 lines.
+- Launched 2026-10-30 17:34:03 PDT (finished 19:32:50). Command: `time uv run play-game --variant V2 card-370cd9f4 runs/m5-t3/v2-run4.jsonl --describer-thinking on 2> runs/m5-t3/v2-run4.stderr`.
+- Exit 0. Printed: `Guesser loses (wrong guess in round 10): round 10, questions 1, rejects 10, forced passes 0`. `time`: `13.46s user 1.42s system 0% cpu 1:58:47.28 total`, so wall time 1:58:47.28, of which about 33 min (18:08:20–18:25:47 and 18:26:47–18:43:06) the system slept.
+- stderr: 3406 bytes, 26 lines, all `ERROR opentelemetry.exporter.otlp.proto.http.trace_exporter: Failed to export spans batch due to timeout, max retries or shutdown.`; num_ctx warnings 0.
+- Record: `runs/m5-t3/v2-run4.jsonl`, 1 line, `1 line(s) valid`; `result` wrong guess in round 10, `matched_name` null, `counters` rounds 10, questions 1, forced passes 0; 68 calls (Describer 20 `text`; Challenger 19 `structured`; Guesser 29: 19 `tools`, 10 `structured`), every one attempt 1; 19 verdicts (9 pass, 10 fail), 10 rejected descriptions; `sent_back` empty; 9 lookups, all `success`. Largest input plus output of any call: Describer 8192 (calls 53 and 65 reached num_ctx 8192), Challenger 577, Guesser 5373 (num_ctx 16384).
+- Trace: not read. `lf_read.py m5-t3` at 19:33 and the health check at 19:34 timed out (`httpx.ReadTimeout`; `curl -s -m 10 localhost:3000/api/public/health` gave no answer within 120 s). The stack was not touched (not this ticket's). Call intervals for the load matching: `gin_gens.py` pairs the log window's `POST "/api/chat"` lines in order with the record's calls (68 = 68), the interval being the line's time minus its duration, widened by 1 s each side for the log's one-second resolution, and `t3_game_gin.py` (t3_game.py with a load assigned to the latest call whose interval contains it) reads the loads against them; every GIN duration is within 0.9 s of the record's latency.
+- Loads and evictions, the log window lines 15784–31962: 68 `POST "/api/chat"` lines, all 200; 66 `truncated = 0` and 2 `truncated = 1` (lines 27945 and 31235, `n_tokens = 8191`, the ends of calls 53 and 65). 12B loads: 19, one inside each Challenger call (calls 2 17:35:34.692, 4 17:37:41.958, 6 17:40:23.304, 18 17:44:19.181, 20 17:49:02.665, 22 17:52:26.472, 27 17:54:41.882, 29 17:59:16.670, 33 18:03:46.638, 35 18:43:30.023, 39 18:48:45.063, 41 18:51:54.501, 48 18:57:42.040, 50 19:03:58.497, 54 19:11:12.213, 56 19:15:33.982, 60 19:21:31.921, 64 19:26:06.282, 66 19:32:27.645). The eviction line at 17:44:18.987 (line 18520, inside call 18; predicted 7.1 GiB, available 7.3 GiB, gpu_free 35.5 GiB, system_free 7.3 GiB, `system_limited=true`); the 26B started again at 17:52:31.239 inside call 23 (Guesser, round 3, tool-loop call 1), "started in 2.52 seconds". No load of the 27B.
+- System sleep (`pmset -g log`): "Entering Sleep state due to 'Idle Sleep'" 18:08:20, DarkWake 18:25:47, "Entering Sleep state due to 'Maintenance Sleep'" 18:26:47, DarkWake 18:43:06; both inside call 34. `caffeinate -ims -t 6000` from 18:43:30 for the rest of the T3 runs.
+- `ollama ps` after the run (19:33:16, at run 5's launch): the 26B and the 27B loaded, UNTIL Forever; the 12B not loaded.
+- Pass verdicts: 9 —
+  - Round 1, verdict ordinal 6: "It is a single, seamless mass of pounded rice with no swirls, layers, or dark inclusions, pressed into a thick, uniform block and sliced into hefty, pillow-shaped pieces. The sweetness is kneaded into the rice itself, so the color and flavor are identical from the center to the outer edge. If you pull two ends apart, the piece stretches into long, glistening threads before finally snapping, a give-and-take elasticity that no crumbly or flaky pastry shares. In Taiwan, you will find uncut loaves the length of your forearm wrapped in clear film at bakery counters, where the vendor carves off a portion to order."
+  - Round 3, verdict ordinal 22: "Each piece is a thick, rectangular cross-section roughly the size of a small paperback book, carved from a long, unbroken loaf rather than shaped into a small round ball. The mass is dense and solid throughout with no filling or soft center, so you must actively chew through each bite rather than letting it dissolve or yield under gentle pressure. The color is a uniform, pale off-white from edge to edge, with a slightly glossy, smooth surface and no dark streaks, spots, or caramelized crust anywhere. At a bakery counter in Taiwan, the vendor keeps the entire uncut loaf under a glass dome and slices off a portion to order, which you then eat cold, straight from its clear plastic wrap, as a simple standalone snack."
+  - Round 4, verdict ordinal 29: "It is a long, unbroken white confection the length of a forearm, sold whole and sealed in clear film, from which the vendor carves a single thick slice on request—unlike a tray of pre-portioned individual cakes. The sweetness is mild and uniform, running through every grain of the pounded rice rather than sitting in a coating or a center filling, so each bite tastes the same from the first chew to the last. It has no caramelized crust, no dark marbling, and no crisp edges; the entire surface is a smooth, pale-white plane with only a faint sheen. You bite into the cold, solid piece and must work through it with sustained chewing, as it resists your teeth far longer than a soft, yielding ball would."
+  - Round 5, verdict ordinal 35: "It is a uniformly pale, milky-white confection with no dark or reddish hue anywhere in its body, and the faintly grainy feel between your teeth reveals whole rice kernels that were steamed and then hammered into a seamless paste, a texture no fine flour batter can replicate. The sweetness is barely perceptible—just the faintest hint of sweetness worked into the rice itself—so each taste reads as a dense, plain, chewy confection rather than a richly flavored dessert. Each bite is a solid, unyielding mass that demands continuous, deliberate chewing, unlike a soft cake that dissolves after a few seconds. At a traditional bakery counter in Taiwan, the vendor saws a portion from an uncut white loaf wrapped in clear film, and you eat it cold and plain as a simple snack between meals."
+  - Round 6, verdict ordinal 41: "It tastes almost entirely of plain rice, with only the faintest whisper of sweetness you might miss if you are not paying attention—certainly not the rich, deep, caramel-forward flavor of a dark confection. The body is a pure, cool, creamy white with zero warmth of tone, no amber cast, and no reddish undertone, the exact color of fresh steamed rice held up to daylight. When pressed against your palate, it offers a firm, almost waxy resistance that requires real jaw pressure to break down, far harder and less yielding than a soft, pillowy ball. It is the kind of plain, no-frills filler you grab from a bakery counter between meals, not a rich dessert you savor slowly on a plate."
+  - Round 7, verdict ordinal 50: "The raw material is whole, un-milled rice—each individual grain still intact and faintly visible within the mass—rather than a fine, sifted flour, and the making involves steaming these whole kernels until they burst open, then pounding them with a heavy mallet until they fuse into one rigid, seamless body, a dense, grainy texture that no smooth flour batter could ever replicate. The color is a flat, cool, almost clinical white with zero warmth of tone, no amber depth, and no dark veining anywhere, the exact hue of plain steamed rice with literally nothing added to it. There is no coating, no glaze, no drizzle of any dark syrup on the surface; the piece is naked, uniform, and unadorned from its outermost layer to its very center. You buy a chunk carved from a long, uncut white loaf at a bakery counter and eat it cold, plain, as a no-frills filler between meals rather than as a plated dessert."
+  - Round 8, verdict ordinal 56: "It is formed into a long, seamless cylinder the length of your forearm—never a small, palm-sized sphere—and the vendor must run a sharp blade or wire through it to separate a single flat slice, because the mass is too rigid to be pinched, torn, or broken by hand. The surface is bare and smooth with no starchy dusting, no coating, no drizzle, and no wrapped filling hidden inside; it is one solid, unbroken white body from the outermost skin to the very center. Each grain of whole rice was steamed until it split open, then hammered with a heavy wooden mallet on a flat board until the kernels fused into a single, dense, waxy mass that resists your teeth for many seconds of sustained chewing. It keeps its firm, unyielding shape for two to three weeks in a refrigerator, a shelf-stable confection you bite into cold and plain, unlike a soft, perishable ball that must be consumed within a day."
+  - Round 9, verdict ordinal 60: "It is made from the same ordinary rice you scoop from a steamer pot at dinner, not a special rice variety, giving it a faintly grainy, almost bread-like chew that a smooth, seamless confection made from a different grain simply cannot replicate. The finished mass is so rigid that pressing it firmly with your thumb leaves absolutely no dent, and squishing it between your fingers is physically impossible—separating a portion requires running a wire or sharp blade straight through it. It is formed into one long, continuous cylindrical log, easily the length of your forearm, and sold in that whole shape sealed in clear film, from which the vendor carves a single flat slice to order. The taste reads almost entirely as plain, unseasoned rice with only the faintest whisper of sweetness, more like a dense, chewy white bread than a rich, flavored dessert."
+  - Round 10, verdict ordinal 66: "You can feel individual rice kernels as tiny, separate particles grinding between your molars, a rough, particulate resistance that a smooth, homogeneous flour paste simply cannot produce, and this graininess is the fingerprint of whole kernels that were steamed and then beaten with a mallet, not a fine batter that was steamed from a bowl. The body is one flat, homogeneous plane of pure, zero-warmth white with literally no internal structure—no strata, no gradient, no dark core, no soft center—so every single bite is identical to every other, a uniformity no layered or swirled confection can match. The"
+- Per-call table (as run 1's; "load inside" from the log against the `/api/chat` intervals):
+
+  | # | node | role | round | kind | call | attempt | latency (s) | input | output | load inside |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | B | Describer | 1 | text | – | 1 | 90.387 | 702 | 1049 | no |
+  | 2 | D | Challenger | 1 | structured | – | 1 | 6.206 | 436 | 38 | 12B 17:35:34.692 |
+  | 3 | B | Describer | 1 | text | – | 1 | 121.033 | 835 | 1429 | no |
+  | 4 | D | Challenger | 1 | structured | – | 1 | 5.939 | 468 | 52 | 12B 17:37:41.958 |
+  | 5 | B | Describer | 1 | text | – | 1 | 155.395 | 1011 | 1814 | no |
+  | 6 | D | Challenger | 1 | structured | – | 1 | 5.265 | 480 | 20 | 12B 17:40:23.304 |
+  | 7 | E | Guesser | 1 | tools | 1 | 1 | 2.084 | 2445 | 13 | no |
+  | 8 | E | Guesser | 1 | tools | 2 | 1 | 2.081 | 3462 | 17 | no |
+  | 9 | E | Guesser | 1 | tools | 3 | 1 | 2.369 | 4557 | 17 | no |
+  | 10 | E | Guesser | 1 | tools | 4 | 1 | 0.619 | 4591 | 18 | no |
+  | 11 | E | Guesser | 1 | tools | 5 | 1 | 1.965 | 5346 | 27 | no |
+  | 12 | E | Guesser | 1 | structured | – | 1 | 6.964 | 3790 | 31 | no |
+  | 13 | B | Describer | 2 | text | – | 1 | 32.147 | 1129 | 264 | no |
+  | 14 | E | Guesser | 2 | tools | 1 | 1 | 1.789 | 2461 | 29 | no |
+  | 15 | E | Guesser | 2 | tools | 2 | 1 | 2.302 | 3455 | 31 | no |
+  | 16 | E | Guesser | 2 | structured | – | 1 | 3.598 | 1903 | 30 | no |
+  | 17 | B | Describer | 3 | text | – | 1 | 174.404 | 1135 | 2094 | no |
+  | 18 | D | Challenger | 3 | structured | – | 1 | 6.919 | 484 | 40 | 12B 17:44:19.181 (after the eviction at 17:44:18.987) |
+  | 19 | B | Describer | 3 | text | – | 1 | 276.702 | 1325 | 3366 | no |
+  | 20 | D | Challenger | 3 | structured | – | 1 | 5.759 | 494 | 50 | 12B 17:49:02.665 |
+  | 21 | B | Describer | 3 | text | – | 1 | 198.028 | 1520 | 2356 | no |
+  | 22 | D | Challenger | 3 | structured | – | 1 | 4.767 | 498 | 15 | 12B 17:52:26.472 |
+  | 23 | E | Guesser | 3 | tools | 1 | 1 | 7.034 | 2630 | 14 | 26B 17:52:31.239 |
+  | 24 | E | Guesser | 3 | tools | 2 | 1 | 1.339 | 3022 | 31 | no |
+  | 25 | E | Guesser | 3 | structured | – | 1 | 2.915 | 1470 | 30 | no |
+  | 26 | B | Describer | 4 | text | – | 1 | 119.307 | 1655 | 1372 | no |
+  | 27 | D | Challenger | 4 | structured | – | 1 | 8.102 | 487 | 54 | 12B 17:54:41.882 |
+  | 28 | B | Describer | 4 | text | – | 1 | 266.658 | 1870 | 3224 | no |
+  | 29 | D | Challenger | 4 | structured | – | 1 | 5.304 | 502 | 20 | 12B 17:59:16.670 |
+  | 30 | E | Guesser | 4 | tools | 1 | 1 | 3.227 | 2803 | 27 | no |
+  | 31 | E | Guesser | 4 | structured | – | 1 | 1.946 | 1247 | 30 | no |
+  | 32 | B | Describer | 5 | text | – | 1 | 259.447 | 2008 | 3076 | no |
+  | 33 | D | Challenger | 5 | structured | – | 1 | 8.426 | 529 | 48 | 12B 18:03:46.638 |
+  | 34 | B | Describer | 5 | text | – | 1 | 355.473 | 2258 | 4192 | no |
+  | 35 | D | Challenger | 5 | structured | – | 1 | 7.422 | 506 | 20 | 12B 18:43:30.023 |
+  | 36 | E | Guesser | 5 | tools | 1 | 1 | 3.300 | 2980 | 28 | no |
+  | 37 | E | Guesser | 5 | structured | – | 1 | 2.252 | 1425 | 31 | no |
+  | 38 | B | Describer | 6 | text | – | 1 | 302.009 | 2414 | 3572 | no |
+  | 39 | D | Challenger | 6 | structured | – | 1 | 8.164 | 529 | 46 | 12B 18:48:45.063 |
+  | 40 | B | Describer | 6 | text | – | 1 | 181.249 | 2667 | 2017 | no |
+  | 41 | D | Challenger | 6 | structured | – | 1 | 4.902 | 501 | 19 | 12B 18:51:54.501 |
+  | 42 | E | Guesser | 6 | tools | 1 | 1 | 2.945 | 3153 | 15 | no |
+  | 43 | E | Guesser | 6 | tools | 2 | 1 | 0.800 | 3185 | 34 | no |
+  | 44 | E | Guesser | 6 | tools | 3 | 1 | 0.888 | 3414 | 19 | no |
+  | 45 | E | Guesser | 6 | tools | 4 | 1 | 2.338 | 4437 | 27 | no |
+  | 46 | E | Guesser | 6 | structured | – | 1 | 4.680 | 2881 | 24 | no |
+  | 47 | B | Describer | 7 | text | – | 1 | 330.898 | 2810 | 3877 | no |
+  | 48 | D | Challenger | 7 | structured | – | 1 | 7.556 | 509 | 58 | 12B 18:57:42.040 |
+  | 49 | B | Describer | 7 | text | – | 1 | 368.879 | 3065 | 4304 | no |
+  | 50 | D | Challenger | 7 | structured | – | 1 | 5.368 | 548 | 20 | 12B 19:03:58.497 |
+  | 51 | E | Guesser | 7 | tools | 1 | 1 | 3.229 | 3374 | 28 | no |
+  | 52 | E | Guesser | 7 | structured | – | 1 | 3.522 | 1819 | 24 | no |
+  | 53 | B | Describer | 8 | text | – | 1 | 421.543 | 3248 | 4944 | no (truncated at num_ctx) |
+  | 54 | D | Challenger | 8 | structured | – | 1 | 6.512 | 354 | 33 | 12B 19:11:12.213 |
+  | 55 | B | Describer | 8 | text | – | 1 | 255.200 | 3295 | 2862 | no |
+  | 56 | D | Challenger | 8 | structured | – | 1 | 5.445 | 543 | 15 | 12B 19:15:33.982 |
+  | 57 | E | Guesser | 8 | tools | 1 | 1 | 3.914 | 3589 | 28 | no |
+  | 58 | E | Guesser | 8 | structured | – | 1 | 4.007 | 2034 | 31 | no |
+  | 59 | B | Describer | 9 | text | – | 1 | 344.507 | 3495 | 3951 | no |
+  | 60 | D | Challenger | 9 | structured | – | 1 | 6.137 | 522 | 20 | 12B 19:21:31.921 |
+  | 61 | E | Guesser | 9 | tools | 1 | 1 | 3.849 | 3783 | 28 | no |
+  | 62 | E | Guesser | 9 | structured | – | 1 | 4.233 | 2228 | 31 | no |
+  | 63 | B | Describer | 10 | text | – | 1 | 260.086 | 3691 | 2870 | no |
+  | 64 | D | Challenger | 10 | structured | – | 1 | 6.666 | 515 | 44 | 12B 19:26:06.282 |
+  | 65 | B | Describer | 10 | text | – | 1 | 374.675 | 3930 | 4262 | no (truncated at num_ctx) |
+  | 66 | D | Challenger | 10 | structured | – | 1 | 4.810 | 473 | 19 | 12B 19:32:27.645 |
+  | 67 | E | Guesser | 10 | tools | 1 | 1 | 4.012 | 3927 | 28 | no |
+  | 68 | E | Guesser | 10 | structured | – | 1 | 4.337 | 2372 | 23 | no |
+
+- Per role: Challenger 19 calls, all with the 12B load inside, mean 6.298 s, largest 8.426 s, mean output 33.2, largest 58; Describer 20 calls, mean 244.401 s, largest 421.543 s, mean output 2844.8, largest 4944 (thinking included); Guesser 29 calls, all: mean 3.053 s, largest 7.034 s; without call 23 (the 26B reload): 28 calls, mean 2.911 s, largest 6.964 s, mean output 26.1, largest 34.
+- Commands: `uv run python gin_gens.py runs/m5-t3/v2-run4.jsonl runs/m5/ollama-server.log 15784 31962 gin_t3r4.json`; `uv run python t3_game_gin.py runs/m5-t3/v2-run4.jsonl gin_t3r4.json runs/m5/ollama-server.log 15784 31962`; `uv run python t3_md.py 4 runs/m5-t3/v2-run4.jsonl nolast.json` (no trace, so no tool-loop text); `uv run python t3_verdicts.py 4 points.json` (the ticket's Verdicts table; `points.json` holds the distractor column, written by hand from each reason); `pmset -g log` for the sleep lines.
