@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from jsonschema import Draft202012Validator
 
 from dont_say_oyster import cards, selection
 from dont_say_oyster.cards import (
@@ -246,6 +247,13 @@ def test_build_writes_forty_cards_and_four_manifests_in_one_order(
             "cards": cards_path.resolve().as_posix(),
             "card_ids": ids,
         }
+    # A first build writes no settings, so the check rejects every manifest until they are set.
+    with pytest.raises(ManifestError) as e:
+        check_manifests(manifest_paths(batches), cards_path)
+    for path in manifest_paths(batches):
+        assert f"{path}: 'settings' is a required property" in e.value.problems
+        assert f"{path}: 'ollama_version' is a required property" in e.value.problems
+    fx.add_settings(manifest_paths(batches))
     check_manifests(manifest_paths(batches), cards_path)
     assert len(load_cards(cards_path, corpus)) == 40
 
@@ -358,7 +366,101 @@ def test_build_fails_on_a_current_list_with_an_alias(
 @pytest.fixture
 def built(tmp_path: Path, corpus_path: Path) -> tuple[Path, list[Path]]:
     cards_path, batches = run_build(tmp_path, corpus_path)
+    fx.add_settings(manifest_paths(batches))
     return cards_path, manifest_paths(batches)
+
+
+def test_manifest_check_passes_on_built_manifests_with_settings(
+    built: tuple[Path, list[Path]],
+) -> None:
+    cards_path, manifests = built
+    check_manifests(manifests, cards_path)
+    schema = read(cards.MANIFEST_SCHEMA_PATH)
+    for path in manifests:
+        Draft202012Validator(schema).validate(read(path))
+
+
+def _drop(field: str) -> Callable[[dict[str, Any]], None]:
+    def mutate(data: dict[str, Any]) -> None:
+        del data[field]
+    return mutate
+
+
+def _set_role(field: str, value: Any) -> Callable[[dict[str, Any]], None]:
+    def mutate(data: dict[str, Any]) -> None:
+        data["settings"]["guesser"][field] = value
+    return mutate
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (_drop("settings"), "'settings' is a required property"),
+        (_drop("ollama_version"), "'ollama_version' is a required property"),
+        (_set_role("thinking", "medium"), "settings.guesser.thinking: 'medium' is not one of"),
+        (_set_role("num_ctx", 16384.5), "settings.guesser.num_ctx: 16384.5 is not of type"),
+        (_set_role("num_ctx", "16384"), "settings.guesser.num_ctx: '16384' is not of type"),
+    ],
+    ids=["no settings", "no ollama_version", "thinking medium", "num_ctx float", "num_ctx str"],
+)
+def test_manifest_check_fails_on_a_manifest_without_the_settings_shape(
+    built: tuple[Path, list[Path]], mutate: Callable[[dict[str, Any]], None], message: str
+) -> None:
+    cards_path, manifests = built
+    data = read(manifests[2])
+    mutate(data)
+    write(manifests[2], data)
+    with pytest.raises(ManifestError, match=message) as e:
+        check_manifests(manifests, cards_path)
+    assert e.value.problems and all(str(manifests[2]) in p for p in e.value.problems)
+
+
+def _temperature(data: dict[str, Any]) -> None:
+    data["settings"]["temperature"] = 0.9
+
+
+def _version(data: dict[str, Any]) -> None:
+    data["ollama_version"] = "0.0.2"
+
+
+@pytest.mark.parametrize(
+    ("mutate", "field"), [(_temperature, "settings"), (_version, "ollama_version")],
+    ids=["temperature", "ollama_version"],
+)
+def test_manifest_check_fails_when_one_manifest_has_other_settings(
+    built: tuple[Path, list[Path]], mutate: Callable[[dict[str, Any]], None], field: str
+) -> None:
+    cards_path, manifests = built
+    data = read(manifests[1])
+    mutate(data)
+    write(manifests[1], data)
+    with pytest.raises(ManifestError) as e:
+        check_manifests(manifests, cards_path)
+    assert e.value.problems == [f"{manifests[1]}: {field} differs from {manifests[0]}"]
+
+
+def test_a_rebuild_over_manifests_with_settings_keeps_them(
+    built: tuple[Path, list[Path]], corpus_path: Path
+) -> None:
+    cards_path, manifests = built
+    root = cards_path.parent
+    args = [str(corpus_path), str(root / "selection.json"), str(root / "distractors.json"),
+            str(cards_path), str(root / "batches")]
+    before = [path.read_bytes() for path in manifests]
+    assert cards.main(args) == 0
+    for path, old in zip(manifests, before, strict=True):
+        assert read(path)["settings"] == fx.SETTINGS
+        assert read(path)["ollama_version"] == fx.OLLAMA_VERSION
+        assert path.read_bytes() == old
+    check_manifests(manifests, cards_path)
+
+
+def test_a_build_into_an_empty_directory_writes_no_settings(
+    tmp_path: Path, corpus_path: Path
+) -> None:
+    _, batches = run_build(tmp_path, corpus_path)
+    for path in manifest_paths(batches):
+        assert set(read(path)) == {"variant", "cards", "card_ids"}
 
 
 def test_manifest_check_fails_when_one_manifest_order_is_changed(

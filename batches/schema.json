@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Batch manifest",
+  "description": "One variant's batch manifest, batches/<variant>/manifest.json, written by build-cards (src/dont_say_oyster/cards.py) and checked by check_manifests there. Fields: SPEC.md, Implementation, Experiment result format (models, the Ollama server version, variant, card set, card order, num_ctx, temperature, thinking on/off). build-cards writes the variant, the cards file, and the card order, and carries settings and ollama_version forward from the manifest it replaces; the four manifests hold the same card order, settings, and ollama_version, which check_manifests checks across them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "variant",
+    "cards",
+    "card_ids",
+    "settings",
+    "ollama_version"
+  ],
+  "$defs": {
+    "role_settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "num_ctx",
+        "thinking"
+      ],
+      "properties": {
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The role's Ollama model tag."
+        },
+        "num_ctx": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "thinking": {
+          "enum": [
+            "on",
+            "off"
+          ],
+          "description": "play-game's thinking argument for the role, not Ollama's think value."
+        }
+      }
+    }
+  },
+  "properties": {
+    "variant": {
+      "type": "string"
+    },
+    "cards": {
+      "type": "string",
+      "description": "The cards file, relative to the repo root when it is inside it."
+    },
+    "card_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The forty card ids in card order."
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "describer",
+        "challenger",
+        "guesser",
+        "temperature"
+      ],
+      "properties": {
+        "describer": {
+          "$ref": "#/$defs/role_settings"
+        },
+        "challenger": {
+          "$ref": "#/$defs/role_settings"
+        },
+        "guesser": {
+          "$ref": "#/$defs/role_settings"
+        },
+        "temperature": {
+          "type": "number",
+          "description": "The one temperature of every role (SPEC.md, Implementation, Temperature policy)."
+        }
+      },
+      "description": "The settings play-game runs the batch with: the record's settings without keep_alive, which is not a manifest field."
+    },
+    "ollama_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The Ollama server version, the bare number /api/version returns."
+    }
+  }
+}

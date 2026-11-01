@@ -42,5 +42,24 @@
     "card-261a62cc",
     "card-06a5fb37",
     "card-7d1600d2"
-  ]
+  ],
+  "settings": {
+    "describer": {
+      "model": "qwen3.8:27b-q4_K_M",
+      "num_ctx": 16384,
+      "thinking": "on"
+    },
+    "challenger": {
+      "model": "gemma4:12b-it-q4_K_M",
+      "num_ctx": 4096,
+      "thinking": "off"
+    },
+    "guesser": {
+      "model": "gemma4:26b-a4b-it-q4_K_M",
+      "num_ctx": 16384,
+      "thinking": "off"
+    },
+    "temperature": 0.7
+  },
+  "ollama_version": "0.40.8"
 }

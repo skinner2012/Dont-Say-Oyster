@@ -3,7 +3,8 @@ touches them is checked by the normal test command. The corpus part skips only w
 file is absent (before it is committed). The card part loads the cards file, runs the manifest
 check, reselects the forty names from the committed corpus, failing when the result differs from the
 committed selection, and rebuilds the cards from the committed corpus, selection, and
-distractor file, failing when the result differs from the committed cards file or manifests.
+distractor file, failing when the result differs from the committed cards file or manifests
+(the rebuild keeps the committed manifests' settings and Ollama version, as `build-cards` does).
 It skips only while the cards
 file and all four manifests are absent (before they are built), and fails when some card files
 (those five, the selection, and the distractor file) are present and some are not."""
@@ -86,7 +87,7 @@ def check_cards(files: CardFiles) -> None:
                 "card rebuilt from the committed corpus, selection, and distractor file"
             )
     for path, new in zip(
-        files.manifests, manifest_data(rebuilt, files.cards), strict=True
+        files.manifests, manifest_data(rebuilt, files.cards, files.manifests), strict=True
     ):
         if read(path) != new:
             pytest.fail(f"{path} differs from the manifest rebuilt from the committed files")
@@ -116,7 +117,7 @@ def test_committed_paths_are_the_ticket_file_names() -> None:
 @pytest.fixture
 def card_files(tmp_path: Path) -> CardFiles:
     """A fixture corpus, selection, and distractor file, and the cards and manifests built from
-    them."""
+    them, with the fixture settings and Ollama version written into the manifests."""
     corpus = fx.write_corpus(tmp_path / "corpus.json")
     selection = tmp_path / "selection.json"
     assert selection_command([str(corpus), str(selection)]) == 0
@@ -124,6 +125,7 @@ def card_files(tmp_path: Path) -> CardFiles:
     cards_path, batches = tmp_path / "cards.json", tmp_path / "batches"
     args = [str(corpus), str(selection), str(distractors), str(cards_path), str(batches)]
     assert cards.main(args) == 0
+    fx.add_settings(manifest_paths(batches))
     return CardFiles(corpus, selection, distractors, cards_path, manifest_paths(batches))
 
 

@@ -7,6 +7,7 @@ three entries whose five attribute fields other than Occasion are the same, so t
 cards to reject. Every other entry differs from every other in those five fields."""
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -100,3 +101,24 @@ def distractor_records() -> dict[str, DistractorRecord]:
 def write_distractor_file(path: Path) -> Path:
     write_distractors(path, distractor_records())
     return path
+
+
+# The manifest fields a build carries forward rather than writes (cards.py, the module
+# docstring): a fixture value for each, which `add_settings` writes into built manifests.
+SETTINGS: dict[str, Any] = {
+    "describer": {"model": "fixture-describer:1b", "num_ctx": 8192, "thinking": "on"},
+    "challenger": {"model": "fixture-challenger:1b", "num_ctx": 4096, "thinking": "off"},
+    "guesser": {"model": "fixture-guesser:1b", "num_ctx": 16384, "thinking": "off"},
+    "temperature": 0.5,
+}
+OLLAMA_VERSION = "0.0.1"
+
+
+def add_settings(manifests: Sequence[Path]) -> None:
+    """Write `SETTINGS` and `OLLAMA_VERSION` into each manifest, as they are set by hand after
+    a first build."""
+    for path in manifests:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["settings"] = json.loads(json.dumps(SETTINGS))
+        data["ollama_version"] = OLLAMA_VERSION
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

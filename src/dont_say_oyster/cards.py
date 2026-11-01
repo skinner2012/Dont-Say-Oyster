@@ -9,8 +9,16 @@ file), and every other field copied from its corpus entry: `official_name`, `ali
 never edited by hand; it is rebuilt.
 
 A manifest is a JSON object holding `variant`, `cards` (the cards file path, relative to the repo
-root when the file is inside it), and `card_ids`, the forty card ids in card order. The order is
-the ordering criterion applied to the selection (`selection.order`)."""
+root when the file is inside it), `card_ids` (the forty card ids in card order), `settings` (per
+role the model tag, num_ctx, and thinking on or off, and the one temperature), and
+`ollama_version` (the Ollama server version), the fields `SPEC.md` Implementation, Experiment
+result format lists; its format is `batches/schema.json`. The order is the ordering criterion
+applied to the selection (`selection.order`). The build writes the variant, the cards file, and
+the order; `settings` and `ollama_version` are carried forward from the manifest a build
+replaces rather than taken as build parameters, because the cards are built once and the
+settings are decided on their own (`SPEC.md` Milestones, M5: the Done when writes them into the
+manifests), so a rebuild keeps them and a first build writes a manifest without them, which
+`check_manifests` rejects until they are set."""
 
 import argparse
 import hashlib
@@ -34,6 +42,7 @@ SELECTION_PATH = REPO_ROOT / "data" / "cards" / "selection.json"
 DISTRACTORS_PATH = REPO_ROOT / "data" / "cards" / "distractors.json"
 CARDS_PATH = REPO_ROOT / "data" / "cards" / "cards.json"
 BATCHES_DIR = REPO_ROOT / "batches"
+MANIFEST_SCHEMA_PATH = BATCHES_DIR / "schema.json"
 VARIANTS = ("V0", "V1", "V2", "V3")
 MANIFEST_NAME = "manifest.json"
 MAX_DISTRACTORS = 5
@@ -179,23 +188,18 @@ def load_cards(path: Path, corpus: Sequence[CorpusEntry]) -> list[Card]:
     ]
 
 
-_MANIFEST_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "required": ["variant", "cards", "card_ids"],
-    "additionalProperties": False,
-    "properties": {
-        "variant": {"type": "string"},
-        "cards": {"type": "string"},
-        "card_ids": {"type": "array", "items": {"type": "string"}},
-    },
-}
+CARRIED_FIELDS = ("settings", "ollama_version")
 
 
 def check_manifests(manifests: Sequence[Path], cards: Path) -> None:
-    """Fail (raise ManifestError) when the manifests do not all list the same card ids in the
-    same order, or when one does not list exactly the cards file's ids (each id once, none
-    missing, none extra). The cards file is read only for its ids; `load_cards` checks the
-    rest."""
+    """Fail (raise ManifestError, one line per problem naming its manifest) when a manifest does
+    not have the shape of `batches/schema.json` (among others: it lacks `settings` or
+    `ollama_version`, a role's `thinking` is not on or off, a `num_ctx` is not an integer), when
+    the manifests do not all list the same card ids in the same order or do not all hold the same
+    `settings` and `ollama_version` (one temperature for the four variants: `SPEC.md`
+    Implementation, Temperature policy; the same models by design), or when one does not list
+    exactly the cards file's ids (each id once, none missing, none extra). The cards file is read
+    only for its ids; `load_cards` checks the rest."""
     try:
         card_data = json.loads(cards.read_text(encoding="utf-8"))
         card_ids = Counter(card["card_id"] for card in card_data)
@@ -204,22 +208,32 @@ def check_manifests(manifests: Sequence[Path], cards: Path) -> None:
     if not manifests:
         raise ManifestError(["no manifests given"])
 
-    orders: list[list[str]] = []
+    validator = Draft202012Validator(
+        json.loads(MANIFEST_SCHEMA_PATH.read_text(encoding="utf-8"))
+    )
+    loaded: list[dict[str, Any]] = []
     problems = []
-    validator = Draft202012Validator(_MANIFEST_SCHEMA)
     for path in manifests:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as e:
             raise ManifestError([f"{path}: not valid JSON: {e}"]) from e
-        errors = [e.message for e in validator.iter_errors(data)]
-        if errors:
-            raise ManifestError([f"{path}: {m}" for m in errors])
-        orders.append(data["card_ids"])
+        for error in validator.iter_errors(data):
+            field = ".".join(str(p) for p in error.absolute_path)
+            problems.append(f"{path}: {field}: {error.message}" if field
+                            else f"{path}: {error.message}")
+        loaded.append(data)
+    if problems:
+        raise ManifestError(problems)
 
-    for path, ids in zip(manifests, orders, strict=True):
-        if ids != orders[0]:
+    first = loaded[0]
+    for path, data in zip(manifests, loaded, strict=True):
+        ids = data["card_ids"]
+        if ids != first["card_ids"]:
             problems.append(f"{path}: card order differs from {manifests[0]}")
+        for name in CARRIED_FIELDS:
+            if data[name] != first[name]:
+                problems.append(f"{path}: {name} differs from {manifests[0]}")
         listed = Counter(ids)
         missing = sorted((card_ids - listed).elements())
         extra = sorted((listed - card_ids).elements())
@@ -297,16 +311,32 @@ def _write_json(path: Path, data: Any) -> None:
     os.replace(tmp, path)
 
 
-def manifest_data(cards_data: list[dict[str, Any]], cards: Path) -> list[dict[str, Any]]:
-    """The four manifests, V0 to V3, for the cards data written to `cards`."""
+def manifest_data(
+    cards_data: list[dict[str, Any]], cards: Path, existing: Sequence[Path]
+) -> list[dict[str, Any]]:
+    """The four manifests, V0 to V3, for the cards data written to `cards`. `existing` is the
+    four manifests' paths, V0 to V3: each manifest takes `settings` and `ollama_version` from
+    that variant's file when the file exists and holds them, and is written without them
+    otherwise (see the module docstring for why). Raises json.JSONDecodeError when an existing
+    file is not valid JSON."""
     ids = [card["card_id"] for card in cards_data]
-    return [{"variant": v, "cards": _path_ref(cards), "card_ids": ids} for v in VARIANTS]
+    manifests = []
+    for variant, path in zip(VARIANTS, existing, strict=True):
+        manifest: dict[str, Any] = {"variant": variant, "cards": _path_ref(cards), "card_ids": ids}
+        old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+        if isinstance(old, dict):
+            manifest.update({name: old[name] for name in CARRIED_FIELDS if name in old})
+        manifests.append(manifest)
+    return manifests
 
 
 def write_build(cards_data: list[dict[str, Any]], cards: Path, batches: Path) -> None:
-    """Write the cards file and the four manifests."""
+    """Write the cards file and the four manifests, reading the manifests already in `batches`
+    before replacing them so their `settings` and `ollama_version` are kept."""
+    paths = manifest_paths(batches)
+    manifests = manifest_data(cards_data, cards, paths)
     _write_json(cards, cards_data)
-    for data, path in zip(manifest_data(cards_data, cards), manifest_paths(batches), strict=True):
+    for data, path in zip(manifests, paths, strict=True):
         path.parent.mkdir(parents=True, exist_ok=True)
         _write_json(path, data)
 
