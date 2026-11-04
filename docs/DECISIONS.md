@@ -221,6 +221,11 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 - Changed: State schema (the Game result row's readers), Information isolation (one bullet per role for what H's prompt adds at game end), the Disclosure rule, the H row of Full flow of one game. Supersedes "the program tells each role only who won" in the 2026-09-20 entry above; the rest of that entry stands.
 - Rejected: keeping the literal rule and letting the Describer infer the outcome from its transcript (it cannot: the violating text is unmarked, and a Guesser violation happens on an invalid question the Describer never sees).
 
+### 2026-11-04 — The memory token count is measured by the role's own model on the block it read  (commit f0aba46)
+- Why: Metrics said "the tokens of the memory text alone; M6 decides how it is counted", and M6 decided. Ollama 0.40.8 has no tokenize endpoint, and the two roles' models tokenize the same text differently, so the count is one `/api/generate` request per role with the memory block as a raw prompt, `num_predict` 1, and the role's own num_ctx and keep_alive (the resident model answers in well under a second and is not reloaded), reading `prompt_eval_count`. What is counted is the block the role read at game start, as rendered into its prompts, so game n measures file n − 1 and game 1 the empty memory's markers: the size the role carries into the game, which the num_ctx check needs; the memory written at game end is the next game's count. The request is a measurement, not a model call of the game, so it is not in the record's call list and makes no trace span; a failure is a model error (no record, rerun as a crash). The author accepted the extra request per role per game on 2026-11-03.
+- Changed: Metrics, Per game, the "Token count of the memory part" line; BACKLOG M6.5 patched in the same commit.
+- Rejected: a word or character count (no model call, but not tokens, and the Describer's tokenizer differs from the Guesser's); dropping the field and reading the growth of `input_tokens` across games instead (indirect, and the num_ctx check wants the block's own size); `num_predict` 0 (on this server it generates without limit).
+
 ## Evaluation
 
 ### 2026-09-18 — Per-card pairing of neighboring variants; count discordant cards; one-sided binomial; credibility = 1 − p; threshold 0.95; forty cards  (spec v0.2–v0.3)
