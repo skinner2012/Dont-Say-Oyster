@@ -358,7 +358,7 @@ No LangGraph checkpoints are used; recovery works from files.
     - Number of questions.
     - Number of rejects (from V2): the length of the game's rejected-descriptions list in the JSONL record [R13].
     - Number of forced passes (from V2) [R13].
-    - Token count of the memory part (V3): the tokens of the memory text alone; M6 decides how it is counted.
+    - Token count of the memory part (V3): per role, the tokens of the memory block the role read at game start (the previous game's file as rendered into the role's prompts; in game 1 the empty memory's markers), counted after node H by the role's own model: one /api/generate request with the block as a raw prompt, num_predict 1, and the role's num_ctx and keep_alive, reading prompt_eval_count. A measurement, not a model call of the game, so it is not in the call list.
 - Per model call (every call of nodes B, D, E, and H, listed in the JSONL record)
     - Ordinal of the call within the game; (round, role, attempt) alone is not unique [R26].
     - Node (B, D, E, or H), role, round (for H, the game's last round), attempt number [R26] (the tool-bound calls of one try share that try's attempt), and kind (text, structured output, or tool-bound).
