@@ -13,6 +13,7 @@ from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, Card, load_cards
 from dont_say_oyster.corpus import load_corpus
 from dont_say_oyster.describer import NONE, PROMPT_PATH, build_messages, build_prompt, node_b
 from dont_say_oyster.llm import ModelSettings
+from dont_say_oyster.memory import empty_memory, render
 from dont_say_oyster.program_nodes import node_a, node_c, node_f, node_g, route_after_c
 from dont_say_oyster.prompt_sections import sections
 from dont_say_oyster.state import EarlierGuessOrQuestion, GuessOrQuestion, State
@@ -119,11 +120,13 @@ def _prompt(model: Recording, call: int) -> str:
     [
         ("prompt", [
             "official_name", "aliases", "english_names", "forbidden_words", "challenger rules",
-            "round", "earlier_descriptions_and_answers", "earlier_guesses_and_questions",
-            "latest_guess_or_question", "challenger context", "task",
+            "memory", "round", "earlier_descriptions_and_answers",
+            "earlier_guesses_and_questions", "latest_guess_or_question", "challenger context",
+            "task",
         ]),
         ("challenger rules", []),
         ("challenger context", ["latest_verdict", "rejected_descriptions"]),
+        ("memory", ["memory_block"]),
     ],
 )
 def test_the_section_braces_are_exactly_the_slots_each_once(
@@ -146,7 +149,12 @@ def test_the_conventions_never_reach_the_model(round_1: State) -> None:
             "attempt": 1,
         },
     }
-    for messages in (build_messages(round_1, SECTIONS), build_messages(sent_back, SECTIONS)):
+    for messages in (
+        build_messages(round_1, SECTIONS),
+        build_messages(sent_back, SECTIONS),
+        build_messages(round_1, SECTIONS, memory=True),
+        build_messages(sent_back, SECTIONS, memory=True),
+    ):
         assert all(conventions not in m.text for m in messages)
         assert all("=== " not in m.text for m in messages)
 
@@ -211,9 +219,11 @@ def _every_item() -> State:
         "questions": 43,
         "forced_passes": 44,
         "result": None,
-        "describer_memory": {"entries": [], "summary": None},
-        "guesser_memory": {"entries": [], "summary": None},
-        "game": 1,
+        "describer_memory": {"entries": [{"game": 6, "text": "S-describer-memory-entry"}],
+                             "summary": "S-describer-memory-summary"},
+        "guesser_memory": {"entries": [{"game": 6, "text": "S-guesser-memory-entry"}],
+                           "summary": "S-guesser-memory-summary"},
+        "game": 7,
         "violation": None,
         "matched_name": "S-matched-name",
         "describer_send_backs": 0,
@@ -246,7 +256,10 @@ HIDDEN = (
     "S-card-id", "S-attribute", "S-distractor", "S-guesser-input", "S-description-row",
     "S-answer-row", "S-lookup", "S-matched-name", "0.3", "41", "42", "43", "44",
     "S-call-role", "S-sent-back", "S-send-back-reason", "S-verdicts-reason",
+    "S-guesser-memory-entry", "S-guesser-memory-summary",
 )
+# The Describer's own cross-game memory, shown only with the memory flag on (V3).
+MEMORY_ITEMS = ("S-describer-memory-entry", "S-describer-memory-summary")
 
 
 def test_isolation_the_prompt_holds_the_describer_items_and_no_others() -> None:
@@ -254,6 +267,15 @@ def test_isolation_the_prompt_holds_the_describer_items_and_no_others() -> None:
     assert len(messages) == 1
     prompt = messages[0].text
     assert [s for s in (*SHOWN, *CHALLENGER_ITEMS) if s not in prompt] == []
+    assert [s for s in (*HIDDEN, *MEMORY_ITEMS) if s in prompt] == []
+
+
+def test_isolation_with_memory_on_the_prompt_adds_the_describers_memory_and_not_the_guessers(
+) -> None:
+    messages = build_messages(_every_item(), SECTIONS, memory=True)
+    assert len(messages) == 1
+    prompt = messages[0].text
+    assert [s for s in (*SHOWN, *CHALLENGER_ITEMS, *MEMORY_ITEMS) if s not in prompt] == []
     assert [s for s in HIDDEN if s in prompt] == []
 
 
@@ -299,6 +321,77 @@ def test_with_the_challenger_on_the_prompt_is_the_off_prompt_with_both_sections_
         + SECTIONS["task: description"] in on
     assert on.replace(rules, "", 1).replace(context, "", 1) == off
     assert on.count(NONE) == 5 and off.count(NONE) == 3
+
+
+# The memory flag (SPEC.md Cross-game memory definition, Ablation Design): the Describer's own
+# memory in the prompt in V3 only.
+
+MEMORY_FRAMING = SECTIONS["memory"].split("{memory_block}")[0].strip()
+
+
+def _game_7(state: State) -> State:
+    """`state` at game 7 of a batch: each role's memory holds the entries of games 2–6 and a
+    summary of game 1, every text distinct by role and game."""
+    return {
+        **state,
+        "game": 7,
+        "describer_memory": {
+            "entries": [{"game": g, "text": f"Describer note {g}."} for g in range(2, 7)],
+            "summary": "Describer summary of game 1.",
+        },
+        "guesser_memory": {
+            "entries": [{"game": g, "text": f"Guesser note {g}."} for g in range(2, 7)],
+            "summary": "Guesser summary of game 1.",
+        },
+    }
+
+
+def test_with_memory_on_at_game_7_the_prompt_shows_each_entry_and_the_summary_once(
+    round_1: State,
+) -> None:
+    state = _game_7(round_1)
+    on = build_prompt(state, SECTIONS, memory=True)
+    for g in range(2, 7):
+        assert on.count(f"Game {g}: Describer note {g}.") == 1
+    assert on.count("Describer summary of game 1.") == 1
+    assert "Guesser note" not in on and "Guesser summary" not in on
+    block = SECTIONS["memory"].replace("{memory_block}", render(state["describer_memory"]))
+    assert on.count(block) == 1
+    assert "{" not in on and "}" not in on
+    # The section sits after the output format and before the round counter; nothing else
+    # differs from the prompt without memory.
+    assert "no notes after it.\n\n" + block + "\n\nThis is round 1 of ten." in on
+    assert on.replace(block, "", 1) == build_prompt(state, SECTIONS)
+    messages = build_messages(state, SECTIONS, memory=True)
+    assert [m.text for m in messages] == [on]
+    # B passes the flag to its request; without it B's request has no memory.
+    model = recording(CLEAN, CLEAN)
+    node_b(state, SETTINGS, Clients(model), memory=True)
+    node_b(state, SETTINGS, Clients(model))
+    assert _prompt(model, 0) == on
+    assert _prompt(model, 1) == build_prompt(state, SECTIONS)
+
+
+def test_with_memory_on_at_game_1_the_section_shows_its_none_parts(round_1: State) -> None:
+    prompt = build_prompt(round_1, SECTIONS, memory=True)
+    assert round_1["game"] == 1 and round_1["describer_memory"] == empty_memory()
+    assert MEMORY_FRAMING in prompt
+    assert "Latest entries:\n(none)\nSummary of older games:\n(none)" in prompt
+    assert prompt.count(NONE) == 5 + 2
+
+
+def test_with_memory_off_the_prompt_holds_no_memory_text_and_no_slot(round_1: State) -> None:
+    state = _game_7(round_1)
+    for owes in ("description", "answer"):
+        off = build_prompt({**state, "owes": owes}, SECTIONS)
+        assert off == build_prompt({**state, "owes": owes}, SECTIONS, memory=False)
+        assert MEMORY_FRAMING not in off
+        assert "memory" not in off.lower() and "note 2" not in off
+        assert "Latest entries:" not in off and "Summary of older games:" not in off
+        assert "{" not in off and "}" not in off
+    for challenger in (True, False):
+        messages = build_messages(state, SECTIONS, challenger)
+        assert all("memory" not in m.text.lower() for m in messages)
 
 
 def test_a_fail_verdict_and_two_rejected_descriptions_are_in_the_prompt(round_1: State) -> None:

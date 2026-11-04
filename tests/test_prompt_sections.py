@@ -58,11 +58,13 @@ def test_a_file_is_read_once_per_path(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("role", "names"),
     [
-        ("describer", ["prompt", "challenger rules", "challenger context", "task: description",
-                       "task: answer", "fixed message [R11]", "conventions"]),
+        ("describer", ["prompt", "challenger rules", "challenger context", "memory",
+                       "task: description", "task: answer", "fixed message [R11]",
+                       "conventions"]),
         ("challenger", ["prompt", "re-ask [R40]", "fixed message [R40]", "conventions"]),
-        ("guesser", ["prompt", "search", "task: question or guess", "task: guess only",
-                     "fixed message [R17]", "blocked lookup result", "conventions"]),
+        ("guesser", ["prompt", "search", "memory", "task: question or guess",
+                     "task: guess only", "fixed message [R17]", "blocked lookup result",
+                     "conventions"]),
     ],
 )
 def test_the_committed_prompt_files_parse(role: str, names: list[str]) -> None:

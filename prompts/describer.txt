@@ -27,6 +27,8 @@ Responding to what came before:
 
 Output format: reply with the description or the answer alone. No preamble, no title, no label such as "Description:", no quotation marks, no notes after it.
 
+{memory}
+
 This is round {round} of ten.
 
 Your earlier descriptions and answers in this game (oldest first):
@@ -53,6 +55,11 @@ The verdict on your most recent description:
 Descriptions rejected in this game, each with its reason:
 {rejected_descriptions}
 
+=== memory ===
+Your memory of earlier games, in your own words: the entries you wrote as the Describer at the end of your latest games, each with its game number, and a summary of the games before them. It is your own experience from those games.
+
+{memory_block}
+
 === task: description ===
 Write a new description of the snack, three or four sentences, following every rule above.
 
@@ -63,4 +70,4 @@ Answer the Guesser's latest question in one sentence, truthfully, following ever
 Your previous reply contained Chinese characters, so it was not delivered. Write it again entirely in English: no Chinese character anywhere, not in parentheses, not as a translation, not as a name. Keep to the same task and the same rules.
 
 === conventions ===
-An empty slot is printed as (none). The latest guess or question is not repeated in the earlier list. The verdict slot is filled only when this round's reject counter is above zero, so it always refers to the description just rejected; otherwise it is (none). The fixed message is sent as a new message after the model's reply, so the model sees what it wrote. Only the prompt section and the matching task section go to the model. The {challenger rules} and {challenger context} slots are filled with their sections in V2–V3 and left empty in V0–V1, so a Describer without a Challenger is never told that descriptions can be rejected.
+An empty slot is printed as (none). The latest guess or question is not repeated in the earlier list. The verdict slot is filled only when this round's reject counter is above zero, so it always refers to the description just rejected; otherwise it is (none). The fixed message is sent as a new message after the model's reply, so the model sees what it wrote. Only the prompt section and the matching task section go to the model. The {challenger rules} and {challenger context} slots are filled with their sections in V2–V3 and left empty in V0–V1, so a Describer without a Challenger is never told that descriptions can be rejected. The {memory} slot is filled with the memory section when the memory flag is on (V3) and left empty when it is off (V0–V2), so a Describer without cross-game memory is never told that memory exists; the section's {memory_block} slot holds the Describer's own memory as the program formats it for every prompt, its latest entries and its summary of older games, each printed as (none) while empty. The Guesser's memory never reaches this prompt.

@@ -7,17 +7,21 @@ the `prompt` section, with `{task}` replaced by the `task: description` or `task
 section, and the `fixed message [R11]` section. The `{challenger rules}` and
 `{challenger context}` slots hold the `challenger rules` and `challenger context` sections when
 the Challenger is on and are empty when it is off (`SPEC.md` Ablation Design), so a Describer
-playing without a Challenger is never told that a description can be rejected. The
-`conventions` section is for the implementer and never goes to the model.
+playing without a Challenger is never told that a description can be rejected. The `{memory}`
+slot holds the `memory` section, around `memory.render` of the Describer's own memory row, when
+the memory flag is on (V3) and is empty when it is off (V0–V2), so a Describer without
+cross-game memory is never told that memory exists. The `conventions` section is for the
+implementer and never goes to the model.
 
 Readings settled with the author on 2026-10-21:
-- The prompt holds only the Describer's items of Information isolation, without cross-game
-  memory (not built yet): the card's names, English names, and forbidden words; the round
-  counter; earlier descriptions and answers; earlier guesses and questions, without the latest when
-  it is the last entry; the latest guess or question; the latest verdict, only while this round's
-  reject counter is above zero, so a verdict left from an earlier round is not shown; and the
-  rejected descriptions with their reasons. A guess is shown without its confidence. With the
-  Challenger off there is no verdict and no rejected description, so neither is shown.
+- The prompt holds only the Describer's items of Information isolation: the card's names,
+  English names, and forbidden words; the round counter; earlier descriptions and answers;
+  earlier guesses and questions, without the latest when it is the last entry; the latest guess
+  or question; the latest verdict, only while this round's reject counter is above zero, so a
+  verdict left from an earlier round is not shown; the rejected descriptions with their
+  reasons; and, with the memory flag on, the Describer's cross-game memory, never the
+  Guesser's. A guess is shown without its confidence. With the Challenger off there is no
+  verdict and no rejected description, so neither is shown.
 - On a send-back [R11] the request is the prompt, then the Describer's previous reply as the
   model's message, then the fixed message, so the model sees what it wrote; only the last reply
   is shown, not every reply sent back for this output.
@@ -37,6 +41,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from dont_say_oyster import prompt_sections
 from dont_say_oyster.cards import REPO_ROOT
 from dont_say_oyster.llm import ClientFor, ModelSettings, call_text, ollama_client
+from dont_say_oyster.memory import render
 from dont_say_oyster.state import (
     Answer,
     Description,
@@ -83,10 +88,13 @@ def _challenger_context(state: State, sections: dict[str, str]) -> str:
     })
 
 
-def build_prompt(state: State, sections: dict[str, str], challenger: bool = True) -> str:
+def build_prompt(
+    state: State, sections: dict[str, str], challenger: bool = True, memory: bool = False
+) -> str:
     """The Describer's prompt for the output `owes` names, from the Describer's items in State
     alone (Information isolation). The Challenger's text and its verdict and rejected
-    descriptions are in the prompt only when `challenger` is on (`SPEC.md` Ablation Design)."""
+    descriptions are in the prompt only when `challenger` is on, and the Describer's cross-game
+    memory only when `memory` is on (`SPEC.md` Ablation Design)."""
     official_name, *aliases = state["names"]
     latest = state["guesser_output"]
     earlier = state["earlier_guesses"]
@@ -111,16 +119,21 @@ def build_prompt(state: State, sections: dict[str, str], challenger: bool = True
         ),
         "challenger rules": sections["challenger rules"] if challenger else "",
         "challenger context": _challenger_context(state, sections) if challenger else "",
+        "memory": (
+            sections["memory"].format_map({"memory_block": render(state["describer_memory"])})
+            if memory
+            else ""
+        ),
         "task": sections[f"task: {state['owes']}"],
     })
 
 
 def build_messages(
-    state: State, sections: dict[str, str], challenger: bool = True
+    state: State, sections: dict[str, str], challenger: bool = True, memory: bool = False
 ) -> list[BaseMessage]:
     """The request: the prompt alone on the first call; after a send-back [R11], the prompt, the
     previous reply, and the fixed message."""
-    prompt = HumanMessage(build_prompt(state, sections, challenger))
+    prompt = HumanMessage(build_prompt(state, sections, challenger, memory))
     if state["describer_send_backs"] == 0:
         return [prompt]
     return [
@@ -136,14 +149,17 @@ def node_b(
     client_for: ClientFor = ollama_client,
     sections: dict[str, str] | None = None,
     challenger: bool = True,
+    memory: bool = False,
 ) -> State:
     """B: one call for the description or answer `owes` names, written into its row as given
     and appended to the game's calls. `challenger` is the Challenger toggle (`SPEC.md` Ablation
-    Design); it defaults to on, V2's value."""
+    Design); it defaults to on, V2's value. `memory` is the cross-game memory flag; unlike the
+    Challenger toggle it defaults to off, V0–V2's value, since V3 is the only variant with
+    memory: a caller that leaves it out plays without memory, and a V3 game passes it on."""
     sections = prompt_sections.sections(PROMPT_PATH) if sections is None else sections
     reply = call_text(
         settings,
-        build_messages(state, sections, challenger),
+        build_messages(state, sections, challenger, memory),
         attempt=state["describer_send_backs"] + 1,
         client_for=client_for,
         metadata={"round": state["round"]},

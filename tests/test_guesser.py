@@ -8,6 +8,7 @@ that keeps each call's messages, what was bound, its attempt number, the run met
 given, and its Reply."""
 
 import json
+import re
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal, get_type_hints
@@ -28,6 +29,7 @@ from dont_say_oyster.guesser import (
     route_after_e,
 )
 from dont_say_oyster.llm import LLMError, ModelSettings, Reply, call_structured, call_tools
+from dont_say_oyster.memory import empty_memory, render
 from dont_say_oyster.program_nodes import node_a, node_g
 from dont_say_oyster.prompt_sections import sections
 from dont_say_oyster.state import PROGRAM_ONLY, Lookup, State
@@ -230,6 +232,7 @@ def test_sections_are_parsed_from_the_prompt_file() -> None:
     assert set(SECTIONS) == {
         "prompt",
         "search",
+        "memory",
         "task: question or guess",
         "task: guess only",
         "fixed message [R17]",
@@ -241,9 +244,36 @@ def test_sections_are_parsed_from_the_prompt_file() -> None:
     assert "{search}" in SECTIONS["prompt"] and "search tool" in SEARCH
 
 
-def test_the_prompt_holds_only_the_guessers_items(start: State) -> None:
+@pytest.mark.parametrize(
+    ("section", "slots"),
+    [
+        ("prompt", [
+            "search", "memory", "round", "question_counter", "earlier_descriptions_and_answers",
+            "earlier_guesses_and_questions", "description_or_answer", "task",
+        ]),
+        ("search", []),
+        ("memory", ["memory_block"]),
+        ("task: question or guess", []),
+        ("task: guess only", []),
+        ("fixed message [R17]", []),
+        ("blocked lookup result", []),
+    ],
+)
+def test_the_section_braces_are_exactly_the_slots_each_once(
+    section: str, slots: list[str]
+) -> None:
+    # build_prompt fills the slots by plain replacement, so a stray brace would reach the model.
+    text = SECTIONS[section]
+    assert re.findall(r"\{[^}]*\}", text) == ["{" + slot + "}" for slot in slots]
+    assert text.count("{") == text.count("}") == len(slots)
+
+
+@pytest.mark.parametrize("memory", [False, True])
+def test_the_prompt_holds_only_the_guessers_items(start: State, memory: bool) -> None:
     """Isolation: every row holds a distinct sentinel; the prompt holds the Guesser's items
-    (Information isolation) and none of the others, and no section meant for later."""
+    (Information isolation) and none of the others, and no section meant for later. The
+    Guesser's own cross-game memory is shown only with the memory flag on (V3); the
+    Describer's never is."""
     state: State = {
         **start,
         "card_id": "SENTINEL-card-id",
@@ -299,8 +329,16 @@ def test_the_prompt_holds_only_the_guessers_items(start: State) -> None:
                        "ordinal": 1, "reason": "SENTINEL-send-back-reason", "replaced": False}],
         "verdicts": [{"round": 2, "verdict": "fail", "reason": "SENTINEL-verdicts-reason",
                       "ordinal": 1}],
+        "describer_memory": {"entries": [{"game": 6, "text": "SENTINEL-describer-memory-entry"}],
+                             "summary": "SENTINEL-describer-memory-summary"},
+        "guesser_memory": {"entries": [{"game": 6, "text": "SENTINEL-guesser-memory-entry"}],
+                           "summary": "SENTINEL-guesser-memory-summary"},
+        "game": 7,
     }
-    prompt = build_prompt(state)
+    prompt = build_prompt(state, memory=memory)
+    own_memory = ("SENTINEL-guesser-memory-entry", "SENTINEL-guesser-memory-summary")
+    for item in own_memory:
+        assert (item in prompt) == memory
     for shown in (
         "SENTINEL-this-round",
         "SENTINEL-earlier-description",
@@ -317,7 +355,8 @@ def test_the_prompt_holds_only_the_guessers_items(start: State) -> None:
         "SENTINEL-description-row", "SENTINEL-answer-row", "SENTINEL-last-output",
         "SENTINEL-verdict", "SENTINEL-rejected", "SENTINEL-reason", "SENTINEL-lookup",
         "SENTINEL-call-role", "SENTINEL-sent-back", "SENTINEL-send-back-reason",
-        "SENTINEL-verdicts-reason",
+        "SENTINEL-verdicts-reason", "SENTINEL-describer-memory-entry",
+        "SENTINEL-describer-memory-summary",
     ):
         assert hidden not in prompt
     assert prompt.count("SENTINEL-this-round") == 1  # this round's item is not in the earlier list
@@ -356,6 +395,97 @@ def test_the_search_slot_holds_the_search_section_only_when_lookup_is_on(start: 
         assert "{" not in prompt and "}" not in prompt
         assert prompt.rstrip().endswith(SECTIONS["task: question or guess"])
     assert without == with_lookup.replace(SEARCH, "")
+
+
+# The memory flag (SPEC.md Cross-game memory definition, Ablation Design): the Guesser's own
+# memory in the prompt in V3 only.
+
+MEMORY_FRAMING = SECTIONS["memory"].split("{memory_block}")[0].strip()
+
+
+def game_7(state: State) -> State:
+    """`state` at game 7 of a batch: each role's memory holds the entries of games 2–6 and a
+    summary of game 1, every text distinct by role and game."""
+    return {
+        **state,
+        "game": 7,
+        "describer_memory": {
+            "entries": [{"game": g, "text": f"Describer note {g}."} for g in range(2, 7)],
+            "summary": "Describer summary of game 1.",
+        },
+        "guesser_memory": {
+            "entries": [{"game": g, "text": f"Guesser note {g}."} for g in range(2, 7)],
+            "summary": "Guesser summary of game 1.",
+        },
+    }
+
+
+def test_with_memory_on_at_game_7_the_prompt_shows_each_entry_and_the_summary_once(
+    start: State,
+) -> None:
+    state = game_7(start)
+    on = build_prompt(state, memory=True)
+    for g in range(2, 7):
+        assert on.count(f"Game {g}: Guesser note {g}.") == 1
+    assert on.count("Guesser summary of game 1.") == 1
+    assert "Describer note" not in on and "Describer summary" not in on
+    block = SECTIONS["memory"].replace("{memory_block}", render(state["guesser_memory"]))
+    assert on.count(block) == 1
+    assert "{" not in on and "}" not in on
+    # The section sits after the reply format and before the round counter; nothing else
+    # differs from the prompt without memory.
+    assert "never in text.\n\n" + block + "\n\nThis is round 1 of ten." in on
+    assert on.replace(block, "", 1) == build_prompt(state)
+
+
+def test_with_memory_on_at_game_1_the_section_shows_its_none_parts(start: State) -> None:
+    prompt = build_prompt(start, memory=True)
+    assert start["game"] == 1 and start["guesser_memory"] == empty_memory()
+    assert MEMORY_FRAMING in prompt
+    assert "Latest entries:\n(none)\nSummary of older games:\n(none)" in prompt
+    assert prompt.count("(none)") == 2 + 2
+
+
+def test_with_memory_off_the_prompt_holds_no_memory_text_and_no_slot(start: State) -> None:
+    state = game_7(start)
+    for lookup in (True, False):
+        for guess_only in (False, True):
+            off = build_prompt({**state, "guess_only": guess_only}, lookup)
+            assert off == build_prompt({**state, "guess_only": guess_only}, lookup, memory=False)
+            assert MEMORY_FRAMING not in off
+            assert "memory" not in off.lower() and "note 2" not in off
+            assert "Latest entries:" not in off and "Summary of older games:" not in off
+            assert "{" not in off and "}" not in off
+
+
+def test_with_memory_on_the_block_is_in_the_first_message_of_every_call_and_no_tool_result(
+    start: State, corpus: list[CorpusEntry], spy: Spy
+) -> None:
+    """E passes the flag to its prompt: the tool loop's history starts with the prompt holding
+    the memory block, the structured calls and the [R17] retry see it on the same history, it is
+    never a tool result, and no message holds the conventions."""
+    state = game_7(start)
+    prompt = build_prompt(state, memory=True)
+    run_state = node_e(
+        state, SETTINGS, corpus,
+        Clients(scripted(tool_reply({"keywords": ["oyster"]}), tool_reply(), question(INVALID),
+                         guess("烤蚵仔"))),
+        memory=True,
+    )
+    assert run_state["guesser_output"] is not None
+    assert spy.kinds == ["tools", "tools", "structured", "structured"]
+    block = render(state["guesser_memory"])
+    for call in spy.calls:
+        first = call.messages[0]
+        assert isinstance(first, HumanMessage) and first.text == prompt
+        assert [m for m in call.messages[1:] if block in m.text or MEMORY_FRAMING in m.text] == []
+        assert all(SECTIONS["conventions"] not in m.text for m in call.messages)
+    assert tool_messages(spy.calls[-1]) and all(
+        block not in m.text for m in tool_messages(spy.calls[-1])
+    )
+    off_state, _ = run(state, corpus, tool_reply(), guess("烤蚵仔"))
+    assert off_state["guesser_output"] is not None
+    assert all("memory" not in m.text.lower() for c in spy.calls[-2:] for m in c.messages)
 
 
 def test_the_prompt_file_is_the_committed_one() -> None:

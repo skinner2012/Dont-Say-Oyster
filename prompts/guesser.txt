@@ -13,6 +13,8 @@ Hard rules, checked by the program.
 
 Your reply is a JSON object. Its text field holds the Chinese name alone (or the question, when you ask one); its confidence field holds a number from 0 to 1, how sure you are that this guess is right. The number goes in confidence and never in text.
 
+{memory}
+
 This is round {round} of ten. Questions asked so far: {question_counter} of three.
 
 Earlier descriptions and answers from the Describer in this game (oldest first):
@@ -29,6 +31,11 @@ The Describer's description or answer this round:
 === search ===
 The snack is one entry of a closed catalogue, and you may search that catalogue with the search tool, at most five times per round; a sixth call is not run. The tool's own description says what it takes and what it returns. Pick filters from what the description says; several values in one field, and several keywords, are OR, not AND: an entry passes with any one of them, so to narrow a search give one value per field or one keyword. Noodles of any grain, rice noodles included, are Noodles in the catalogue, never Rice. A keyword is matched against the dishes' English names, so use a word that would appear in a dish's English name (noodle, soup, cake, tofu), written in the singular, not a word that describes it (chewy, savory). When results still hold several candidates, search again with narrower filters, or ask a question that separates them, or guess the most likely one. Only names exactly as the catalogue writes them count as right, so copy the official name or an alias from a result when you guess.
 
+=== memory ===
+Your memory of earlier games, in your own words: the entries you wrote as the Guesser at the end of your latest games, each with its game number, and a summary of the games before them. It is your own experience from those games.
+
+{memory_block}
+
 === task: question or guess ===
 Reply with a guess (text: the name alone; confidence: the number) or with a question (text: the question).
 
@@ -42,4 +49,4 @@ Your question was not accepted: questions can only be in English and cannot cont
 This search was not run: you have used all five searches for this round. Reply now without searching again.
 
 === conventions ===
-An empty slot is printed as (none). The description or answer of this round is not repeated in the earlier list. The tool loop runs first, with the search tool bound and the task section asking for a question or guess; the results of this round's searches reach the model as tool results in the message history, not through a slot, and results from earlier rounds are not shown; the model searches again when it needs them. The blocked lookup result is the tool result given to every search call beyond the fifth of the round, and a call the search tool's schema rejects gets the tool's validation message as its result. The structured call follows with no tool bound and the same prompt; its schema is question-or-guess, or guess-only when the program set the guess-only flag, and the task section matches the schema. The fixed message is sent as a new message after the model's invalid question, so the model sees what it wrote, and the structured call is repeated; invalid questions are not shown in the earlier list. The {search} slot is filled with the search section in V1–V2 and left empty in V0, so a V0 Guesser is never told that a catalogue or a search tool exists.
+An empty slot is printed as (none). The description or answer of this round is not repeated in the earlier list. The tool loop runs first, with the search tool bound and the task section asking for a question or guess; the results of this round's searches reach the model as tool results in the message history, not through a slot, and results from earlier rounds are not shown; the model searches again when it needs them. The blocked lookup result is the tool result given to every search call beyond the fifth of the round, and a call the search tool's schema rejects gets the tool's validation message as its result. The structured call follows with no tool bound and the same prompt; its schema is question-or-guess, or guess-only when the program set the guess-only flag, and the task section matches the schema. The fixed message is sent as a new message after the model's invalid question, so the model sees what it wrote, and the structured call is repeated; invalid questions are not shown in the earlier list. The {search} slot is filled with the search section in V1–V2 and left empty in V0, so a V0 Guesser is never told that a catalogue or a search tool exists. The {memory} slot is filled with the memory section when the memory flag is on (V3) and left empty when it is off (V0–V2), so a Guesser without cross-game memory is never told that memory exists; the section's {memory_block} slot holds the Guesser's own memory as the program formats it for every prompt, its latest entries and its summary of older games, each printed as (none) while empty. The memory is part of the prompt, the first message of the tool loop, never a tool result, so the structured call sees it on the same history. The Describer's memory never reaches this prompt.

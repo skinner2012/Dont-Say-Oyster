@@ -8,16 +8,23 @@ model tag is fixed here (`play.py` passes the constants). With the toggle off (V
 structured call alone, with no tool bound and no tool-loop call, and the `{search}` slot of the
 prompt is left empty, so the model is never told that a catalogue or a search tool exists
 (Self-checks: the information each agent gets is clean); on (V1–V2), the slot is filled from
-the `search` section. The toggle defaults to on, V2's value.
+the `search` section. The toggle defaults to on, V2's value. E also takes the cross-game memory
+flag: on (V3), the `{memory}` slot holds the `memory` section around `memory.render` of the
+Guesser's own memory row; off (V0–V2), the slot is empty, so the model is never told that memory
+exists. Unlike the lookup toggle, the flag defaults to off, V0–V2's value, since V3 is the only
+variant with memory.
 
 Readings settled on 2026-10-21:
 - The prompt file is parsed by its `=== name ===` sections; the model gets the `prompt`
   section with `{task}` replaced by the task section matching the schema. The slots are the
   Guesser's items in Information isolation: the round and question counters, the earlier
   descriptions and answers (without this round's item, which C and D append before E runs),
-  the earlier guesses and valid questions, and this round's description or answer. An empty
-  slot prints (none). Lookup results have no slot: this round's results reach the model as tool
-  results in the message history, and earlier rounds' results are not shown.
+  the earlier guesses and valid questions, this round's description or answer, and, with the
+  memory flag on, the Guesser's cross-game memory, never the Describer's. An empty slot prints
+  (none). The memory is in the prompt, the first message of the tool loop, never a tool result,
+  so the structured call sees it on the same history. Lookup results have no slot: this
+  round's results reach the model as tool results in the message history, and earlier rounds'
+  results are not shown.
 - The tool loop: the history starts as the prompt; each reply's tool calls are handled in
   order: while fewer than five lookups have been made this round, the call is run (its tool
   result is the result JSON, or the validation message for a call the schema rejects, counted
@@ -75,6 +82,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMe
 from dont_say_oyster import prompt_sections
 from dont_say_oyster.corpus import CorpusEntry
 from dont_say_oyster.llm import ClientFor, ModelSettings, call_structured, call_tools, ollama_client
+from dont_say_oyster.memory import render
 from dont_say_oyster.oracle import QuestionCheck, check_question
 from dont_say_oyster.search import search_tool
 from dont_say_oyster.state import (
@@ -145,10 +153,12 @@ def _earlier_guesses(state: State) -> str:
     return "\n".join(lines) or NONE
 
 
-def build_prompt(state: State, lookup: bool = True) -> str:
+def build_prompt(state: State, lookup: bool = True, memory: bool = False) -> str:
     """The Guesser's prompt for this round, from the `prompt` section and the task section
     matching the schema (guess only when G set the flag [R16]); the `{search}` slot holds the
-    `search` section when the Guesser can look up the corpus [R42] and nothing otherwise."""
+    `search` section when the Guesser can look up the corpus [R42] and nothing otherwise, and
+    the `{memory}` slot the `memory` section around the Guesser's cross-game memory when
+    `memory` is on [R42] and nothing otherwise."""
     texts = prompt_sections.sections(PROMPT_PATH)
     task = texts["task: guess only"] if state["guess_only"] else texts["task: question or guess"]
     current = state["guesser_input"]
@@ -159,6 +169,11 @@ def build_prompt(state: State, lookup: bool = True) -> str:
         "{earlier_guesses_and_questions}": _earlier_guesses(state),
         "{description_or_answer}": current["text"] if current is not None else NONE,
         "{search}": texts["search"] if lookup else "",
+        "{memory}": (
+            texts["memory"].replace("{memory_block}", render(state["guesser_memory"]))
+            if memory
+            else ""
+        ),
         "{task}": task,
     }
     prompt = texts["prompt"]
@@ -248,14 +263,16 @@ def node_e(
     corpus: Sequence[CorpusEntry],
     client_for: ClientFor = ollama_client,
     lookup: bool = True,
+    memory: bool = False,
 ) -> State:
     """E: the tool loop when `lookup` is on, then the structured call for a question or a
     guess, repeated with the fixed message on an invalid question [R17]; writes the Guesser's
     output, the lookups, the counters, `owes`, and on the third invalid question `violation`.
     With `lookup` off there is no tool loop [R47]: the lookups and the lookup counter are left
-    as they are (empty and zero in a game without lookups)."""
+    as they are (empty and zero in a game without lookups). `memory` is the cross-game memory
+    flag; it defaults to off, V0–V2's value, and a V3 game passes it on."""
     texts = prompt_sections.sections(PROMPT_PATH)
-    messages: list[BaseMessage] = [HumanMessage(build_prompt(state, lookup))]
+    messages: list[BaseMessage] = [HumanMessage(build_prompt(state, lookup, memory))]
     invalid = state["invalid_questions"]
     attempt = invalid + 1
     after_loop: State = state
