@@ -1,6 +1,6 @@
-"""The LangGraph State of one game: every row of the State schema except the two cross-game
-memory rows (not built yet), the counters [R25], and the program-only fields the loops need. Every
-value is a JSON type, so the final State can be written with `json.dumps`.
+"""The LangGraph State of one game: every row of the State schema, the counters [R25], and the
+program-only fields the loops need. Every value is a JSON type, so the final State can be written
+with `json.dumps`.
 
 Readings settled with the author on 2026-10-20:
 - The card's "Official name and accepted aliases" row is one list, `names`, official name
@@ -25,6 +25,7 @@ from typing import Any, Literal, TypedDict
 from dont_say_oyster.cards import Card
 from dont_say_oyster.corpus import Attributes
 from dont_say_oyster.llm import CallKind, ModelSettings, Reply
+from dont_say_oyster.memory import Memory, empty_memory
 
 ROUNDS = 10  # [R15]
 QUESTION_LIMIT = 3  # [R16]
@@ -211,7 +212,12 @@ class State(TypedDict):
     forced_passes: int
     result: Outcome | None
 
+    # Cross-game memory (Cross-game memory definition), loaded from the memory files at game start
+    describer_memory: Memory
+    guesser_memory: Memory
+
     # Program-only: not rows of the State schema
+    game: int  # the game number in the batch, from 1; the memory files are saved by it (Storage)
     violation: Literal["Describer", "Guesser"] | None
     matched_name: str | None  # the card name a right guess equals (Metrics)
     describer_send_backs: int  # [R11], for the output being asked for
@@ -226,8 +232,8 @@ class State(TypedDict):
 
 
 PROGRAM_ONLY = frozenset({
-    "violation", "matched_name", "describer_send_backs", "invalid_questions", "reason_reasks",
-    "owes", "guess_only", "d_route", "calls", "sent_back", "verdicts",
+    "game", "violation", "matched_name", "describer_send_backs", "invalid_questions",
+    "reason_reasks", "owes", "guess_only", "d_route", "calls", "sent_back", "verdicts",
 })
 
 
@@ -291,8 +297,14 @@ def describer_output(state: State) -> str:
     raise ValueError(f"no {state['owes']} from the Describer in round {state['round']}")
 
 
-def initial_state(card: Card) -> State:
-    """The State at game start: the card rows from `card`, no outputs, counters at zero."""
+def initial_state(
+    card: Card,
+    describer_memory: Memory | None = None,
+    guesser_memory: Memory | None = None,
+    game: int = 1,
+) -> State:
+    """The State at game start: the card rows from `card`, no outputs, counters at zero, the two
+    cross-game memories (the empty memory when not given), and the game number."""
     return {
         "card_id": card.card_id,
         "names": [card.official_name, *card.aliases],
@@ -315,6 +327,9 @@ def initial_state(card: Card) -> State:
         "questions": 0,
         "forced_passes": 0,
         "result": None,
+        "describer_memory": empty_memory() if describer_memory is None else describer_memory,
+        "guesser_memory": empty_memory() if guesser_memory is None else guesser_memory,
+        "game": game,
         "violation": None,
         "matched_name": None,
         "describer_send_backs": 0,

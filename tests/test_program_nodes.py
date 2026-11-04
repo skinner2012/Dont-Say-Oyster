@@ -10,6 +10,7 @@ from langgraph.graph import StateGraph
 
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, Card, load_cards
 from dont_say_oyster.corpus import load_corpus
+from dont_say_oyster.memory import Memory, empty_memory
 from dont_say_oyster.program_nodes import node_a, node_f, node_g, route_after_f
 from dont_say_oyster.state import PROGRAM_ONLY, State, card_from_state, winner
 
@@ -232,3 +233,21 @@ def test_f_wrong_guess_before_round_10_routes_to_g(
 def test_f_without_a_guess_or_violation_raises(start: State) -> None:
     with pytest.raises(ValueError, match="no guess"):
         node_f({**start, "round": 1})
+
+
+# A with cross-game memory (Cross-game memory definition, Storage)
+
+
+def test_a_puts_the_two_memories_and_the_game_number_in_their_rows(cards: list[Card]) -> None:
+    describer: Memory = {"entries": [{"game": 4, "text": "D-entry"}], "summary": "D-summary"}
+    guesser: Memory = {"entries": [{"game": 3, "text": "G-entry"}], "summary": None}
+    state = node_a(CARD_ID, cards, describer, guesser, 5)
+    assert state["describer_memory"] == describer
+    assert state["guesser_memory"] == guesser
+    assert state["game"] == 5
+
+
+def test_a_without_memories_gives_the_empty_memory_and_game_1(start: State) -> None:
+    assert start["describer_memory"] == empty_memory()
+    assert start["guesser_memory"] == empty_memory()
+    assert start["game"] == 1

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cross-game memory file",
+  "description": "One role's cross-game memory after one game, written by the program (src/dont_say_oyster/memory.py) as <role>-<nn>.json and read by the next game. Fields: SPEC.md, Architecture, Cross-game memory definition (Storage, the size limit). Every object lists every one of its fields as required and allows no other.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["role", "game", "entries", "summary"],
+  "properties": {
+    "role": { "enum": ["describer", "guesser"] },
+    "game": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The game after which the file was written; the file name carries the same number."
+    },
+    "entries": {
+      "type": "array",
+      "maxItems": 5,
+      "description": "The latest entries in full, in ascending game order, at most five (the size limit). Not necessarily contiguous: a game whose entry the Check rule refused leaves none.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["game", "text"],
+        "properties": {
+          "game": { "type": "integer", "minimum": 1 },
+          "text": { "type": "string" }
+        }
+      }
+    },
+    "summary": {
+      "type": ["string", "null"],
+      "description": "The rolling summary of the older entries; null until there is one."
+    }
+  }
+}

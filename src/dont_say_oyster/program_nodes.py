@@ -13,6 +13,7 @@ from typing import Literal
 
 from dont_say_oyster.cards import Card
 from dont_say_oyster.matching import has_chinese_characters
+from dont_say_oyster.memory import Memory
 from dont_say_oyster.oracle import check_describer, check_guess
 from dont_say_oyster.state import (
     CHINESE_CHARACTERS,
@@ -28,12 +29,19 @@ from dont_say_oyster.state import (
 )
 
 
-def node_a(card_id: str, cards: Sequence[Card]) -> State:
-    """A: draw the card `card_id` from `cards` into a new State. Raises KeyError naming the id
-    when no card has it."""
+def node_a(
+    card_id: str,
+    cards: Sequence[Card],
+    describer_memory: Memory | None = None,
+    guesser_memory: Memory | None = None,
+    game: int = 1,
+) -> State:
+    """A: draw the card `card_id` from `cards` into a new State, with the two cross-game memories
+    the program loaded at game start (the empty memory when not given) and the game number
+    (Cross-game memory definition, Storage). Raises KeyError naming the id when no card has it."""
     for card in cards:
         if card.card_id == card_id:
-            return initial_state(card)
+            return initial_state(card, describer_memory, guesser_memory, game)
     raise KeyError(f"no card with id {card_id}")
 
 
