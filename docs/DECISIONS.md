@@ -216,6 +216,11 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 ### 2026-09-24 — Check rule on memory output; failure keeps the previous file  (spec v0.3)
 - Why: the Guesser's English summary could leak the answer or an English name in prose. The program checks both roles' output for Chinese characters and the Guesser's for the answer, aliases, and English names; two redos, then that game is not written and the previous file is copied forward.
 
+### 2026-11-03 — The Describer is told the game result; the Guesser only who won  (commit b34293a)
+- Why: the Disclosure rule said the program tells both roles only who won and who lost. A Describer whose violation ended the game then saw its own violating description followed by "Guesser wins" and nothing marking it as a violation, so in two of the four outcomes (Describer violation, Guesser violation) its memory entry would learn the wrong lesson, and the Describer's learning to avoid forbidden words is what V3 is meant to show. The outcome's name is the program's verdict and carries no card information the Describer does not already see [R27], so telling it costs nothing the rule protects. The Guesser is still told only who won and who lost, and never the answer or aliases, which is what the rule was written for.
+- Changed: State schema (the Game result row's readers), Information isolation (one bullet per role for what H's prompt adds at game end), the Disclosure rule, the H row of Full flow of one game. Supersedes "the program tells each role only who won" in the 2026-09-20 entry above; the rest of that entry stands.
+- Rejected: keeping the literal rule and letting the Describer infer the outcome from its transcript (it cannot: the violating text is unmarked, and a Guesser violation happens on an invalid question the Describer never sees).
+
 ## Evaluation
 
 ### 2026-09-18 — Per-card pairing of neighboring variants; count discordant cards; one-sided binomial; credibility = 1 − p; threshold 0.95; forty cards  (spec v0.2–v0.3)
