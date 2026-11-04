@@ -226,6 +226,11 @@ The entries below were backfilled on 2026-10-03 from the spec review log (2026-0
 - Changed: Metrics, Per game, the "Token count of the memory part" line; BACKLOG M6.5 patched in the same commit.
 - Rejected: a word or character count (no model call, but not tokens, and the Describer's tokenizer differs from the Guesser's); dropping the field and reading the growth of `input_tokens` across games instead (indirect, and the num_ctx check wants the block's own size); `num_predict` 0 (on this server it generates without limit).
 
+### 2026-11-04 — M8 reads the T6 memory observations before pasting memory entries  (commit b751de1)
+- Why: T6's seven V3 games left fourteen memory files whose entries and summaries were read against the records (docs/tasks/M6-cross-game-memory-observations.md): the mechanism held, but one Describer entry stores a mistaken picture of the dish confirmed by a lucky win, two credit a description the Challenger failed three times (the forced pass is not shown in H's prompt), and the Guesser's summaries copy entries instead of summarizing. M8 pastes memory entries into the V3 report, so it must know which ones say what the records say. The T6 Out of scope line keeps entry quality out of M6; the file is the record for M8 and for the author's prompt decisions before M7's V3 batch.
+- Changed: Milestones M8, second bullet, one sentence appended; BACKLOG M8.3 patched in the same commit.
+- Rejected: fixing the prompts inside M6 (entry quality is out of T6's scope, and a prompt change needs its own games to show its effect); leaving the observations in the ticket file only (M8's ticket writer would not be pointed at them).
+
 ## Evaluation
 
 ### 2026-09-18 — Per-card pairing of neighboring variants; count discordant cards; one-sided binomial; credibility = 1 − p; threshold 0.95; forty cards  (spec v0.2–v0.3)
