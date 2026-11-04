@@ -1,10 +1,13 @@
 """The program nodes A, G, F, and C (Full flow of one game) and the routing of F and C. Each
 node takes the State and returns a new State; none calls a model. C and its route take the
 Challenger toggle (`SPEC.md` Ablation Design): on, a clean description goes to D; off, C fills
-the Guesser's row itself and routes to E. The toggle defaults to on, V2's value.
+the Guesser's row itself and routes to E. F's route takes the memory toggle: on, an outcome
+goes to H; off, it ends the game. Each toggle defaults to V2's value (the Challenger on, memory
+off).
 
 Readings settled with the author on 2026-10-20:
-- F's route is the pure function `route_after_f` over `result`; State has no route key.
+- F's route is the pure function `route_after_f` over `result` and the memory toggle; State has
+  no route key.
 - G also zeroes the [R11] and [R17] counts, since a new round asks for new outputs; it leaves
   `owes` alone (E sets it before G runs on a valid question)."""
 
@@ -80,9 +83,13 @@ def node_f(state: State) -> State:
     return state
 
 
-def route_after_f(state: State) -> Literal["G", "end"]:
-    """F's route: "end" on one of the four outcomes, otherwise G for a new round."""
-    return "G" if state["result"] is None else "end"
+def route_after_f(state: State, memory: bool = False) -> Literal["G", "H", "end"]:
+    """F's route: on one of the four outcomes, H when cross-game memory is on and "end" when it
+    is off (Full flow of one game, Transitions that differ between variants); otherwise G for a
+    new round."""
+    if state["result"] is None:
+        return "G"
+    return "H" if memory else "end"
 
 
 SEND_BACKS = 2  # [R11]

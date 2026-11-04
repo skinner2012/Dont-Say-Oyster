@@ -1,11 +1,13 @@
 """The JSONL game record (`record.py`, `data/records/schema.json`): records built from the final
 States of scripted games on the committed card 烤蚵仔, run through `graph.play_game` with the
 settings the command builds, and records written by the command itself; every record validates
-against the schema. The schema itself: every object lists every one of its fields as required and
-allows no other, except a lookup's arguments and result."""
+against the schema. The record's `memory` (V3): a written, a not-written, and a game-six case,
+with scripted token counts. The schema itself: every object lists every one of its fields as
+required and allows no other, except a lookup's arguments and result."""
 
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -15,12 +17,13 @@ from jsonschema import Draft202012Validator, ValidationError
 from dont_say_oyster import play, tracing
 from dont_say_oyster.cards import CARDS_PATH, load_cards
 from dont_say_oyster.corpus import load_corpus
-from dont_say_oyster.graph import RoleSettings, Variant
+from dont_say_oyster.graph import GameMemory, RoleSettings, Variant
 from dont_say_oyster.llm import ModelSettings
+from dont_say_oyster.memory import Memory, Role, read_memory, write_memory
 from dont_say_oyster.play import CORPUS_PATH
 from dont_say_oyster.program_nodes import SEND_BACKS
 from dont_say_oyster.record import SCHEMA_PATH, build_record, write_record
-from dont_say_oyster.state import State, initial_state
+from dont_say_oyster.state import HResult, State, initial_state
 from tests.test_guesser import tool_reply
 from tests.test_play import (
     ANSWER,
@@ -29,24 +32,35 @@ from tests.test_play import (
     CLEAN,
     CLEAN_2,
     CLEAN_3,
+    D_ENTRY,
+    D_SUMMARY,
     FAIL_REASON,
+    G_ENTRY,
+    G_SUMMARY,
     INVALID,
     RIGHT,
     VALID,
     WRONG,
     Models,
+    game_memory,
     game_record,
     guess,
     guesser_turn,
+    h_reply,
     in_memory_client,
+    mixed_replies,
     no_tool_calls,
     play_directly,
     question,
     run,
     text,
     v0_game,
+    v3_game,
     verdict,
 )
+
+COUNTS: dict[Role, int] = {"describer": 11, "guesser": 13}
+NAMING = "Grilled oysters sold at night markets: search for them first."  # an English name
 
 SCHEMA = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
 VALIDATOR = Draft202012Validator(SCHEMA)
@@ -66,10 +80,18 @@ def default_settings(variant: Variant = "V2") -> RoleSettings:
     return play.role_settings(args)
 
 
-def played(models: Models, variant: Variant = "V2") -> tuple[State, dict[str, Any]]:
-    """The final State of the scripted game and its record, which validates."""
-    state = play_directly(models, variant)
-    record = build_record(state, variant, default_settings(variant))
+def played(
+    models: Models,
+    variant: Variant = "V2",
+    memory: GameMemory | None = None,
+    tokens: Mapping[Role, int] | None = None,
+) -> tuple[State, dict[str, Any]]:
+    """The final State of the scripted game and its record, which validates; a V3 game takes
+    `memory` and the scripted token counts (`COUNTS` unless given)."""
+    state = play_directly(models, variant, memory=memory)
+    if memory is not None and tokens is None:
+        tokens = COUNTS
+    record = build_record(state, variant, default_settings(variant), tokens)
     VALIDATOR.validate(record)
     assert json.loads(json.dumps(record, ensure_ascii=False)) == record
     return state, record
@@ -310,6 +332,91 @@ def test_build_record_raises_for_a_game_with_no_result() -> None:
         build_record(initial_state(card), "V2", default_settings())
 
 
+# The record's memory (V3; SPEC.md Implementation, Experiment result format: the memory
+# summary, each role's redo count, the memory token count).
+
+
+def test_a_written_game_1_has_both_entries_no_summary_and_the_counts(tmp_path: Path) -> None:
+    state, record = played(v3_game(), "V3", game_memory(tmp_path))
+    assert record["variant"] == "V3"
+    assert record["memory"] == {
+        "game": 1,
+        "describer": {"entry": D_ENTRY, "summary": None, "redos": 0, "written": True,
+                      "failed": [], "tokens": 11},
+        "guesser": {"entry": G_ENTRY, "summary": None, "redos": 0, "written": True,
+                    "failed": [], "tokens": 13},
+    }
+    # The two role objects are State's H rows plus the count.
+    rows: list[tuple[Role, HResult | None]] = [
+        ("describer", state["describer_h"]), ("guesser", state["guesser_h"])
+    ]
+    for role, row in rows:
+        assert row is not None
+        assert record["memory"][role] == {**row, "tokens": COUNTS[role]}
+    assert [c["node"] for c in record["calls"]][-2:] == ["H", "H"]
+
+
+def test_a_game_not_written_for_the_guesser_has_its_three_failed_outputs(
+    tmp_path: Path,
+) -> None:
+    """The Guesser's entry names an English name of the card three times: sent back twice,
+    refused the third time, the previous memory copied forward (Cross-game memory definition,
+    Check rule)."""
+    models = v3_game(h_reply(NAMING), h_reply(NAMING), h_reply(NAMING))
+    _, record = played(models, "V3", game_memory(tmp_path))
+    guesser_calls = [c["ordinal"] for c in record["calls"] if c["node"] == "H"
+                     and c["role"] == "Guesser"]
+    assert len(guesser_calls) == 3
+    assert record["memory"]["guesser"] == {
+        "entry": None, "summary": None, "redos": 2, "written": False,
+        "failed": [
+            {"attempt": attempt, "ordinal": ordinal, "entry": NAMING, "summary": None,
+             "reasons": ["the card's English names"]}
+            for attempt, ordinal in zip((1, 2, 3), guesser_calls, strict=True)
+        ],
+        "tokens": 13,
+    }
+    assert record["memory"]["describer"]["written"] is True
+    assert read_memory(tmp_path, "guesser", 2) == {"entries": [], "summary": None}
+
+
+def test_a_game_6_has_the_summaries_and_the_count_of_game_5_s_rendering(tmp_path: Path) -> None:
+    five: Memory = {
+        "entries": [{"game": g, "text": f"entry {g}"} for g in range(1, 6)], "summary": None
+    }
+    write_memory(tmp_path, "describer", 5, five)
+    write_memory(tmp_path, "guesser", 5, five)
+    describer, challenger, guesser = mixed_replies()
+    models = Models(
+        describer=[*describer, h_reply(D_ENTRY, D_SUMMARY)],
+        challenger=challenger,
+        guesser=[*guesser, h_reply(G_ENTRY, G_SUMMARY)],
+    )
+    _, record = played(models, "V3", game_memory(tmp_path, 6), {"describer": 70, "guesser": 65})
+    assert record["memory"] == {
+        "game": 6,
+        "describer": {"entry": D_ENTRY, "summary": D_SUMMARY, "redos": 0, "written": True,
+                      "failed": [], "tokens": 70},
+        "guesser": {"entry": G_ENTRY, "summary": G_SUMMARY, "redos": 0, "written": True,
+                    "failed": [], "tokens": 65},
+    }
+    assert read_memory(tmp_path, "guesser", 7) == {
+        "entries": [*five["entries"][1:], {"game": 6, "text": G_ENTRY}], "summary": G_SUMMARY
+    }
+
+
+def test_build_record_refuses_counts_that_disagree_with_the_variant(tmp_path: Path) -> None:
+    state = play_directly(v3_game(), "V3", memory=game_memory(tmp_path))
+    with pytest.raises(ValueError, match="plays with memory but no memory token counts"):
+        build_record(state, "V3", default_settings("V3"))
+    v2 = play_directly(v0_game(), "V0")
+    with pytest.raises(ValueError, match="plays without memory but memory token counts"):
+        build_record(v2, "V0", default_settings("V0"), COUNTS)
+    # A V3 record needs H's rows: a State that never reached H has none.
+    with pytest.raises(ValueError, match="H has not run"):
+        build_record(v2, "V3", default_settings("V3"), COUNTS)
+
+
 def test_write_record_creates_the_file_and_appends_one_line(tmp_path: Path) -> None:
     path = tmp_path / "game.jsonl"
     write_record({"a": "烤蚵仔\n"}, path)
@@ -374,5 +481,32 @@ def test_the_schema_rejects_a_record_with_a_missing_or_extra_field(change: str) 
         record["calls"][0]["thinking_tokens"] = 0
     else:
         record["settings"]["describer"]["temperature"] = 0.7
+    with pytest.raises(ValidationError):
+        VALIDATOR.validate(record)
+
+
+@pytest.mark.parametrize(
+    "change",
+    ["missing memory key", "extra memory key", "missing role key", "extra role key",
+     "extra failed key", "unknown reason"],
+)
+def test_the_schema_rejects_a_memory_object_with_a_missing_extra_or_unknown_field(
+    change: str, tmp_path: Path
+) -> None:
+    models = v3_game(h_reply(NAMING), h_reply(G_ENTRY))
+    _, record = played(models, "V3", game_memory(tmp_path))
+    memory = record["memory"]
+    if change == "missing memory key":
+        del memory["game"]
+    elif change == "extra memory key":
+        memory["challenger"] = None
+    elif change == "missing role key":
+        del memory["describer"]["tokens"]
+    elif change == "extra role key":
+        memory["guesser"]["words"] = 12
+    elif change == "extra failed key":
+        memory["guesser"]["failed"][0]["round"] = 3
+    else:
+        memory["guesser"]["failed"][0]["reasons"] = ["an English name"]
     with pytest.raises(ValidationError):
         VALIDATOR.validate(record)

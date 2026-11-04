@@ -4,7 +4,7 @@
   "description": "One line of a game's JSONL record, written by play-game (src/dont_say_oyster/record.py). Fields: SPEC.md, Implementation, Experiment result format, and Evaluation, Metrics. Every object lists every one of its fields as required and allows no other, so a record is complete when it validates; a key that does not apply is present with null or an empty list. The two exceptions are a lookup's arguments and result, which are what the model sent and what the search tool returned.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["card_id", "official_name", "variant", "result", "matched_name", "counters", "rounds", "calls", "settings"],
+  "required": ["card_id", "official_name", "variant", "result", "matched_name", "counters", "rounds", "calls", "settings", "memory"],
   "properties": {
     "card_id": { "type": "string", "minLength": 1 },
     "official_name": {
@@ -12,7 +12,7 @@
       "minLength": 1,
       "description": "The card's official name, in Chinese, so matched_name reads as the official name or an alias."
     },
-    "variant": { "enum": ["V0", "V1", "V2"] },
+    "variant": { "enum": ["V0", "V1", "V2", "V3"] },
     "result": {
       "enum": ["right guess", "wrong guess in round 10", "Guesser violation", "Describer violation"],
       "description": "One of the four F outcomes."
@@ -54,9 +54,61 @@
         "temperature": { "type": "number" }
       },
       "description": "The settings play-game resolved for the game."
+    },
+    "memory": {
+      "anyOf": [{ "$ref": "#/$defs/memory" }, { "type": "null" }],
+      "description": "The game's cross-game memory (SPEC.md Cross-game memory definition; Implementation, Experiment result format): null in V0-V2, whose memory toggle is off."
     }
   },
   "$defs": {
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["game", "describer", "guesser"],
+      "properties": {
+        "game": { "type": "integer", "minimum": 1, "description": "The game's number in the batch; its memory files carry it (Storage)." },
+        "describer": { "$ref": "#/$defs/memory_role" },
+        "guesser": { "$ref": "#/$defs/memory_role" }
+      }
+    },
+    "memory_role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry", "summary", "redos", "written", "failed", "tokens"],
+      "properties": {
+        "entry": { "type": ["string", "null"], "description": "The accepted memory entry; null when the game was not written for the role." },
+        "summary": { "type": ["string", "null"], "description": "The accepted rolling summary; null before game six and when the game was not written." },
+        "redos": { "type": "integer", "minimum": 0, "maximum": 2, "description": "Redos under the Check rule." },
+        "written": { "type": "boolean", "description": "False when the third output still failed the Check rule and the previous game's memory was copied forward." },
+        "failed": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/memory_failed" },
+          "description": "Every output the Check rule failed, in order, the refused third included; those with attempt at most redos were sent back with the fixed message."
+        },
+        "tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Token count of the memory part (SPEC.md Metrics, Per game): the memory block the role read at game start (memory.render of the previous game's file; the empty memory's (none) markers in game 1), counted by the role's own model as prompt_eval_count of one /api/generate request with the block as a raw prompt, num_predict 1, and the role's num_ctx and keep_alive; a measurement after H, not an entry in calls."
+        }
+      }
+    },
+    "memory_failed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt", "ordinal", "entry", "summary", "reasons"],
+      "properties": {
+        "attempt": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "ordinal": { "type": "integer", "minimum": 1, "description": "The ordinal of the calls entry that produced it." },
+        "entry": { "type": "string" },
+        "summary": { "type": ["string", "null"], "description": "Null with the entry-only schema of games 1 to 5." },
+        "reasons": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "enum": ["Chinese characters", "the card's names", "the card's English names"] },
+          "description": "Why it failed, each reason once in this order [R6], [R22]."
+        }
+      }
+    },
     "round": {
       "type": "object",
       "additionalProperties": false,
@@ -165,7 +217,7 @@
       "required": ["ordinal", "node", "role", "round", "attempt", "kind", "call", "latency", "input_tokens", "output_tokens"],
       "properties": {
         "ordinal": { "type": "integer", "minimum": 1 },
-        "node": { "enum": ["B", "D", "E"] },
+        "node": { "enum": ["B", "D", "E", "H"] },
         "role": { "enum": ["Describer", "Challenger", "Guesser"] },
         "round": { "type": "integer", "minimum": 1 },
         "attempt": { "type": "integer", "minimum": 1 },

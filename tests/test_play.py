@@ -1,7 +1,9 @@
 """Whole games through the `play-game` command on the committed card 烤蚵仔 and the committed
 corpus, with one scripted model per role injected through `main(argv, client_for=...)`: V2 games
-for the loops, and one V0 and one V1 game for the toggles (no D node; no tool loop in V0); the
-recursion limit and its arithmetic; the settings the command builds; the errors; `--help`. Every
+for the loops, one V0 and one V1 game for the toggles (no D node; no tool loop in V0), and one V3
+game for memory (F → H → end, the memory files, the record's `memory` with a scripted token count
+through `main(..., count_tokens=...)`); the memory parameters; the recursion limit and its
+arithmetic; the settings the command builds; the errors; `--help`. Every
 test traces into memory (`in_memory_tracing`): none reads the developer's Langfuse keys or reaches
 the stack. A game run through the command is read from its record, which every read validates
 against the schema; a program-only or card field the record does not hold is read from the final
@@ -35,13 +37,16 @@ from dont_say_oyster.graph import (
     RECURSION_LIMIT,
     TOGGLES,
     WORST_CASE_STEPS,
+    WORST_CASE_STEPS_WITHOUT_MEMORY,
+    GameMemory,
     RoleSettings,
     Variant,
     build_graph,
     play_game,
 )
 from dont_say_oyster.guesser import INVALID_QUESTION_LIMIT, PROMPT_PATH
-from dont_say_oyster.llm import ModelSettings, call_structured, call_text
+from dont_say_oyster.llm import LLMError, ModelSettings, TokenCounter, call_structured, call_text
+from dont_say_oyster.memory import empty_memory, memory_path, read_memory, render
 from dont_say_oyster.play import (
     CORPUS_PATH,
     KEEP_ALIVE_CHALLENGER,
@@ -106,6 +111,31 @@ def question(content: str) -> AIMessage:
     return reply(json.dumps({"kind": "question", "text": content, "confidence": 0.5}), 400, 15)
 
 
+def h_reply(entry: str, summary: str | None = None) -> AIMessage:
+    """A memory-writing reply of H: the entry alone, or the entry and the summary."""
+    output = {"entry": entry} if summary is None else {"entry": entry, "summary": summary}
+    return reply(json.dumps(output), 900, 60)
+
+
+D_ENTRY = "Lead with the stall setting and the topping; the garlic detail got the guess."
+G_ENTRY = "Search by cooking method before guessing, and ask about the sauce early."
+D_SUMMARY = "Toppings and the stall setting work better than the texture."
+G_SUMMARY = "Two searches, then a question, then the guess."
+TOKENS = {"Describer": 11, "Guesser": 13}
+
+
+class Counts:
+    """A scripted memory token count: answers by role and keeps what it was asked to count."""
+
+    def __init__(self, by_role: Mapping[str, int] = TOKENS) -> None:
+        self.by_role = dict(by_role)
+        self.received: list[tuple[ModelSettings, str]] = []
+
+    def __call__(self, settings: ModelSettings, text: str) -> int:
+        self.received.append((settings, text))
+        return self.by_role[settings.role]
+
+
 def guesser_turn(*structured: AIMessage) -> list[AIMessage]:
     """One visit of E: the tool-loop reply, then the structured replies of its tries."""
     return [no_tool_calls(), *structured]
@@ -139,13 +169,28 @@ class Models:
 
 
 def run(
-    tmp_path: Path, models: Models, *extra: str, card_id: str = CARD_ID, variant: str = "V2"
+    tmp_path: Path,
+    models: Models,
+    *extra: str,
+    card_id: str = CARD_ID,
+    variant: str = "V2",
+    count_tokens: TokenCounter | None = None,
 ) -> tuple[int, Path]:
     """Run the command on `card_id` with `models` in `variant`; return the exit code and the
-    output path."""
+    output path. `count_tokens` replaces the memory token count (V3); without it a count would
+    reach Ollama, so every V3 run here passes one."""
     output = tmp_path / "game.jsonl"
-    code = main([card_id, str(output), "--variant", variant, *extra], client_for=models)
+    code = main(
+        [card_id, str(output), "--variant", variant, *extra],
+        client_for=models,
+        count_tokens=count_tokens,
+    )
     return code, output
+
+
+def memory_arguments(tmp_path: Path, game: int = 1) -> list[str]:
+    """The V3 parameters for the memory directory under `tmp_path` and game `game`."""
+    return ["--memory-dir", str(tmp_path / "memory"), "--game", str(game)]
 
 
 RECORD_VALIDATOR = Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8")))
@@ -163,15 +208,31 @@ def game_record(output: Path) -> dict[str, Any]:
 
 
 def play_directly(
-    models: Models, variant: Variant = "V2", tracer: TracingClient | None = None
+    models: Models,
+    variant: Variant = "V2",
+    tracer: TracingClient | None = None,
+    memory: GameMemory | None = None,
 ) -> State:
     """The final State of a game on `CARD_ID` run through `graph.play_game` directly, with the
     settings the command builds by default: for the program-only and card fields the record
-    does not hold. Given `tracer`, the caller opens the game span, as `play.main` does."""
+    does not hold. Given `tracer`, the caller opens the game span, as `play.main` does; a V3
+    game needs `memory`."""
     corpus = load_corpus(CORPUS_PATH)
     cards = load_cards(CARDS_PATH, corpus)
     args = play.build_parser().parse_args([CARD_ID, "out.jsonl", "--variant", variant])
-    return play_game(CARD_ID, cards, corpus, role_settings(args), models, tracer, TOGGLES[variant])
+    return play_game(
+        CARD_ID, cards, corpus, role_settings(args), models, tracer, TOGGLES[variant], memory
+    )
+
+
+def game_memory(directory: Path, game: int = 1) -> GameMemory:
+    """What `play_game` needs for game `game` under `directory`, read as the command reads it."""
+    return GameMemory(
+        directory,
+        game,
+        read_memory(directory, "describer", game),
+        read_memory(directory, "guesser", game),
+    )
 
 
 def in_memory_client() -> tuple[TracingClient, InMemorySpanExporter]:
@@ -258,18 +319,24 @@ def test_a_right_guess_in_round_1_wins_and_writes_the_record(
     assert PROGRAM_ONLY <= play_directly(right_guess_in_round_1()).keys()
 
 
-def mixed_game() -> Models:
-    """Round 1: Chinese, sent back; clean, rejected; clean, passed; a valid question. Round 2:
-    the answer, guessed wrong. Round 3: a description, guessed right."""
-    return Models(
-        describer=[text(CHINESE), text(CLEAN), text(CLEAN_2), text(ANSWER), text(CLEAN_3)],
-        challenger=[verdict("fail", FAIL_REASON), verdict("pass"), verdict("pass")],
-        guesser=[
+def mixed_replies() -> tuple[list[AIMessage], list[AIMessage], list[AIMessage]]:
+    """The three roles' replies of the mixed game. Round 1: Chinese, sent back; clean, rejected;
+    clean, passed; a valid question. Round 2: the answer, guessed wrong. Round 3: a description,
+    guessed right."""
+    return (
+        [text(CHINESE), text(CLEAN), text(CLEAN_2), text(ANSWER), text(CLEAN_3)],
+        [verdict("fail", FAIL_REASON), verdict("pass"), verdict("pass")],
+        [
             *guesser_turn(question(VALID)),  # round 1
             *guesser_turn(guess(WRONG)),  # round 2, on the answer
             *guesser_turn(guess(RIGHT)),  # round 3
         ],
     )
+
+
+def mixed_game() -> Models:
+    describer, challenger, guesser = mixed_replies()
+    return Models(describer=describer, challenger=challenger, guesser=guesser)
 
 
 def test_a_game_through_send_back_reject_question_answer_and_wrong_guess(
@@ -601,16 +668,150 @@ def test_a_v1_game_has_no_challenger_but_a_tool_loop_with_the_search_text_in_the
     assert (state["rejects"], state["verdict"], state["d_route"]) == (0, None, None)
 
 
-@pytest.mark.parametrize("argv", [[], ["--variant", "V3"]], ids=["no-variant", "V3"])
-def test_no_variant_or_v3_exits_non_zero_before_any_model_call(
-    tmp_path: Path, argv: list[str], capsys: pytest.CaptureFixture[str]
+# V3: memory (Cross-game memory definition; Full flow of one game, F → H).
+
+
+def v3_game(*guesser_h: AIMessage) -> Models:
+    """The mixed V2 game, then H's replies: the Describer's entry and the Guesser's, or
+    `guesser_h` for the Guesser (its redos under the Check rule)."""
+    describer, challenger, guesser = mixed_replies()
+    return Models(
+        describer=[*describer, h_reply(D_ENTRY)],
+        challenger=challenger,
+        guesser=[*guesser, *(guesser_h or [h_reply(G_ENTRY)])],
+    )
+
+
+def test_a_v3_game_goes_through_h_writes_both_files_and_records_memory(
+    tmp_path: Path, in_memory_tracing: InMemorySpanExporter, capsys: pytest.CaptureFixture[str]
+) -> None:
+    models = v3_game()
+    counts = Counts()
+    code, output = run(
+        tmp_path, models, *memory_arguments(tmp_path), variant="V3", count_tokens=counts
+    )
+    assert code == 0
+    record = game_record(output)
+    assert (record["variant"], record["result"]) == ("V3", "right guess")
+    assert record["counters"] == {"rounds": 3, "questions": 1, "forced_passes": 0}
+    assert capsys.readouterr().out.strip() == (
+        "Guesser wins (right guess): round 3, questions 1, rejects 1, forced passes 0"
+    )
+    # The record's memory: game 1, both entries accepted at the first attempt, no summary yet,
+    # and the scripted counts.
+    assert record["memory"] == {
+        "game": 1,
+        "describer": {"entry": D_ENTRY, "summary": None, "redos": 0, "written": True,
+                      "failed": [], "tokens": 11},
+        "guesser": {"entry": G_ENTRY, "summary": None, "redos": 0, "written": True,
+                    "failed": [], "tokens": 13},
+    }
+    # Both game-1 files, read as game 2 would read them.
+    directory = tmp_path / "memory"
+    assert read_memory(directory, "describer", 2) == {
+        "entries": [{"game": 1, "text": D_ENTRY}], "summary": None
+    }
+    assert read_memory(directory, "guesser", 2) == {
+        "entries": [{"game": 1, "text": G_ENTRY}], "summary": None
+    }
+    # H's two calls after the game's fourteen: node H, the role, the last round, attempt 1,
+    # structured, no tool-loop index; one generation span each, under a chain span named H.
+    calls = record["calls"]
+    assert [models.calls(role) for role in ROLES] == [6, 3, 7]
+    assert [
+        (c["ordinal"], c["node"], c["role"], c["round"], c["attempt"], c["kind"], c["call"])
+        for c in calls[14:]
+    ] == [
+        (15, "H", "Describer", 3, 1, "structured", None),
+        (16, "H", "Guesser", 3, 1, "structured", None),
+    ]
+    assert all(c["node"] != "H" for c in calls[:14])
+    assert_calls_are_the_requests_and_the_spans(calls, models, in_memory_tracing)
+    assert {"G", "B", "C", "D", "E", "F", "H"} <= span_names(in_memory_tracing)
+    # The token count: the block each role read at game start (game 1: the empty memory's
+    # markers), counted with the role's own settings, the Describer's first.
+    assert [(s.role, s.model, s.num_ctx, s.keep_alive, t) for s, t in counts.received] == [
+        ("Describer", "qwen3.8:27b-q4_K_M", 16384, KEEP_ALIVE_RESIDENT, render(empty_memory())),
+        ("Guesser", "gemma4:26b-a4b-it-q4_K_M", 16384, KEEP_ALIVE_RESIDENT,
+         render(empty_memory())),
+    ]
+    assert [s for s, _ in counts.received] == [
+        models.settings["Describer"][0], models.settings["Guesser"][0]
+    ]
+
+
+def test_a_v2_game_has_no_h_call_no_memory_and_counts_nothing(
+    tmp_path: Path, in_memory_tracing: InMemorySpanExporter
+) -> None:
+    models = mixed_game()
+    counts = Counts()
+    code, output = run(tmp_path, models, count_tokens=counts)
+    assert code == 0
+    record = game_record(output)
+    assert (record["variant"], record["memory"]) == ("V2", None)
+    assert all(c["node"] != "H" for c in record["calls"])
+    assert "H" not in span_names(in_memory_tracing)
+    assert counts.received == []
+    assert not (tmp_path / "memory").exists()
+
+
+def test_a_game_2_reads_game_1_s_files_into_the_prompts_and_the_count(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Game 1 then game 2 through the command: game 2's Describer and Guesser prompts hold
+    game 1's entries, and its counts are of game 1's rendered files."""
+    counts = Counts()
+    code, _ = run(
+        tmp_path, v3_game(), *memory_arguments(tmp_path, 1), variant="V3", count_tokens=counts
+    )
+    assert code == 0
+    describer_seen: list[str] = []
+    guesser_seen: list[str] = []
+    real_text, real_structured = call_text, call_structured
+
+    def recording_text(settings: Any, messages: Any, *args: Any, **kwargs: Any) -> Any:
+        describer_seen.append(messages[0].text)
+        return real_text(settings, messages, *args, **kwargs)
+
+    def recording_structured(settings: Any, messages: Any, *args: Any, **kwargs: Any) -> Any:
+        if settings.role == "Guesser":
+            guesser_seen.append(messages[0].text)
+        return real_structured(settings, messages, *args, **kwargs)
+
+    monkeypatch.setattr(describer, "call_text", recording_text)
+    monkeypatch.setattr(guesser, "call_structured", recording_structured)
+    directory = tmp_path / "memory"
+    expected = {
+        "Describer": render(read_memory(directory, "describer", 2)),
+        "Guesser": render(read_memory(directory, "guesser", 2)),
+    }
+    assert f"Game 1: {D_ENTRY}" in expected["Describer"]
+    counts = Counts()
+    code, output = run(
+        tmp_path / "second", v3_game(), *memory_arguments(tmp_path, 2), variant="V3",
+        count_tokens=counts,
+    )
+    assert code == 0
+    assert game_record(output)["memory"]["game"] == 2
+    assert all(expected["Describer"] in p for p in describer_seen) and describer_seen
+    assert all(expected["Guesser"] in p for p in guesser_seen) and guesser_seen
+    assert [(s.role, t) for s, t in counts.received] == [
+        ("Describer", expected["Describer"]), ("Guesser", expected["Guesser"])
+    ]
+    assert read_memory(directory, "describer", 3)["entries"] == [
+        {"game": 1, "text": D_ENTRY}, {"game": 2, "text": D_ENTRY}
+    ]
+
+
+def test_no_variant_exits_non_zero_before_any_model_call(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     models = Models(
         describer=[text(CLEAN)], challenger=[verdict("pass")], guesser=guesser_turn(guess(RIGHT))
     )
     output = tmp_path / "game.jsonl"
     with pytest.raises(SystemExit) as exit_info:
-        main([CARD_ID, str(output), *argv], client_for=models)
+        main([CARD_ID, str(output)], client_for=models)
     assert exit_info.value.code != 0
     assert "--variant" in capsys.readouterr().err
     assert not output.exists()
@@ -618,13 +819,88 @@ def test_no_variant_or_v3_exits_non_zero_before_any_model_call(
     assert models.settings == {role: [] for role in ROLES}
 
 
+@pytest.mark.parametrize(
+    ("variant", "memory"),
+    [("V3", False), ("V3", "dir-only"), ("V3", "game-only"), ("V0", True), ("V2", True)],
+    ids=["V3-without", "V3-dir-only", "V3-game-only", "V0-with", "V2-with"],
+)
+def test_the_memory_parameters_are_required_with_v3_and_refused_otherwise(
+    tmp_path: Path, variant: str, memory: bool | str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    models = v3_game()
+    output = tmp_path / "game.jsonl"
+    arguments = memory_arguments(tmp_path)
+    if memory == "dir-only":
+        arguments = arguments[:2]
+    elif memory == "game-only":
+        arguments = arguments[2:]
+    elif not memory:
+        arguments = []
+    with pytest.raises(SystemExit) as exit_info:
+        main([CARD_ID, str(output), "--variant", variant, *arguments], client_for=models,
+             count_tokens=Counts())
+    assert exit_info.value.code != 0
+    err = capsys.readouterr().err
+    assert "--memory-dir" in err and "--game" in err
+    assert not output.exists()
+    assert not (tmp_path / "memory").exists()
+    assert [models.calls(role) for role in ROLES] == [0, 0, 0]
+    assert models.settings == {role: [] for role in ROLES}
+
+
+def test_game_0_exits_non_zero_before_any_model_call(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    models = v3_game()
+    with pytest.raises(SystemExit) as exit_info:
+        run(tmp_path, models, *memory_arguments(tmp_path, 0), variant="V3",
+            count_tokens=Counts())
+    assert exit_info.value.code != 0
+    assert "--game" in capsys.readouterr().err
+    assert [models.calls(role) for role in ROLES] == [0, 0, 0]
+
+
+def test_game_2_with_no_game_1_file_exits_non_zero_before_any_model_call(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    models = v3_game()
+    counts = Counts()
+    code, output = run(
+        tmp_path, models, *memory_arguments(tmp_path, 2), variant="V3", count_tokens=counts
+    )
+    assert code != 0
+    assert str(memory_path(tmp_path / "memory", "describer", 1)) in capsys.readouterr().err
+    assert not output.exists()
+    assert counts.received == []
+    assert [models.calls(role) for role in ROLES] == [0, 0, 0]
+    assert models.settings == {role: [] for role in ROLES}
+
+
+def test_a_token_count_error_after_the_game_is_a_model_error_with_no_record(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The count runs after H, so the files are written and the rerun rewrites them
+    (`SPEC.md` Recovery, forks, and replay)."""
+
+    def failing(settings: ModelSettings, text: str) -> int:
+        raise LLMError(f"{settings.role}: token count failed: ConnectError: refused")
+
+    code, output = run(
+        tmp_path, v3_game(), *memory_arguments(tmp_path), variant="V3", count_tokens=failing
+    )
+    assert code != 0
+    assert "token count failed" in capsys.readouterr().err
+    assert not output.exists()
+    assert memory_path(tmp_path / "memory", "guesser", 1).exists()
+
+
 # The recursion limit.
 
 
-def worst_case() -> Models:
+def worst_case(memory: bool = False) -> Models:
     """The scripted worst case: in each of ten rounds, three descriptions each sent back twice,
     two rejects then a forced pass, and a wrong guess, preceded in rounds 1–9 by two invalid
-    questions."""
+    questions; with `memory`, H's two replies after the last round."""
     descriptions_per_round = REJECT_LIMIT + 1
     describer = [
         m
@@ -641,6 +917,9 @@ def worst_case() -> Models:
             guess(WRONG),
         )
     ]
+    if memory:
+        describer.append(h_reply(D_ENTRY))
+        guesser.append(h_reply(G_ENTRY))
     return Models(describer=describer, challenger=challenger, guesser=guesser)
 
 
@@ -727,25 +1006,76 @@ def test_the_worst_case_game_reaches_f_without_hitting_the_recursion_limit(
     assert [v["ordinal"] for v in verdicts] == [c["ordinal"] for c in calls if c["node"] == "D"]
 
 
-def test_the_worst_case_arithmetic_is_exact(cards: list[Card], corpus: list[CorpusEntry]) -> None:
-    """The worst-case game makes exactly WORST_CASE_STEPS node visits: LangGraph needs the
-    limit above the visit count, so the limit at the count fails and one above passes."""
+def test_the_worst_case_arithmetic_is_exact(
+    cards: list[Card], corpus: list[CorpusEntry], tmp_path: Path
+) -> None:
+    """The worst-case game makes exactly WORST_CASE_STEPS_WITHOUT_MEMORY node visits in V2 and
+    one more, H's, in V3: LangGraph needs the limit above the visit count, so the limit at the
+    count fails and one above passes."""
     assert RECURSION_LIMIT > WORST_CASE_STEPS
-    assert WORST_CASE_STEPS == 240
+    assert (WORST_CASE_STEPS_WITHOUT_MEMORY, WORST_CASE_STEPS) == (240, 241)
     settings = role_settings(
         play.build_parser().parse_args([CARD_ID, "out.json", "--variant", "V2"])
     )
     (card,) = [c for c in cards if c.card_id == CARD_ID]
+    # V2: no H visit.
     with pytest.raises(GraphRecursionError):
         build_graph(settings, corpus, worst_case()).invoke(
-            node_a(CARD_ID, [card]), RunnableConfig(recursion_limit=WORST_CASE_STEPS)
+            node_a(CARD_ID, [card]),
+            RunnableConfig(recursion_limit=WORST_CASE_STEPS_WITHOUT_MEMORY),
         )
     state = build_graph(settings, corpus, worst_case()).invoke(
-        node_a(CARD_ID, [card]), RunnableConfig(recursion_limit=WORST_CASE_STEPS + 1)
+        node_a(CARD_ID, [card]),
+        RunnableConfig(recursion_limit=WORST_CASE_STEPS_WITHOUT_MEMORY + 1),
     )
     assert_worst_case_outcome(cast(State, state))
+    assert (state["describer_h"], state["guesser_h"]) == (None, None)
     # The final State, its three lists at their longest, is still JSON.
     assert json.loads(json.dumps(state, ensure_ascii=False)) == state
+    # V3: the same game and one more visit, H, after the last F. LangGraph checks the limit
+    # before looking for the next tasks, so at the limit the last visit, H, still runs and
+    # writes the files before the error; the passing run gets a directory of its own.
+    at_the_limit = tmp_path / "at-the-limit"
+    directory = tmp_path / "memory"
+    v3 = TOGGLES["V3"]
+    with pytest.raises(GraphRecursionError):
+        build_graph(settings, corpus, worst_case(memory=True), v3, at_the_limit).invoke(
+            node_a(CARD_ID, [card]), RunnableConfig(recursion_limit=WORST_CASE_STEPS)
+        )
+    assert memory_path(at_the_limit, "guesser", 1).exists()
+    state = build_graph(settings, corpus, worst_case(memory=True), v3, directory).invoke(
+        node_a(CARD_ID, [card]), RunnableConfig(recursion_limit=WORST_CASE_STEPS + 1)
+    )
+    final = cast(State, state)
+    assert_worst_case_outcome(final)
+    assert [c["node"] for c in final["calls"]][-2:] == ["H", "H"]
+    describer_h, guesser_h = final["describer_h"], final["guesser_h"]
+    assert describer_h is not None and guesser_h is not None
+    assert describer_h["written"] and guesser_h["written"]
+    assert memory_path(directory, "describer", 1).exists()
+    assert memory_path(directory, "guesser", 1).exists()
+    assert json.loads(json.dumps(state, ensure_ascii=False)) == state
+
+
+def test_build_graph_and_play_game_refuse_a_memory_directory_that_disagrees_with_the_toggle(
+    cards: list[Card], corpus: list[CorpusEntry], tmp_path: Path
+) -> None:
+    settings = role_settings(
+        play.build_parser().parse_args([CARD_ID, "out.json", "--variant", "V2"])
+    )
+    models = v3_game()
+    with pytest.raises(ValueError, match="no memory directory"):
+        build_graph(settings, corpus, models, TOGGLES["V3"])
+    with pytest.raises(ValueError, match="toggle is off"):
+        build_graph(settings, corpus, models, TOGGLES["V2"], tmp_path)
+    with pytest.raises(ValueError, match="no memory directory"):
+        play_game(CARD_ID, cards, corpus, settings, models, None, TOGGLES["V3"])
+    with pytest.raises(ValueError, match="toggle is off"):
+        play_game(
+            CARD_ID, cards, corpus, settings, models, None, TOGGLES["V2"],
+            GameMemory(tmp_path, 1, empty_memory(), empty_memory()),
+        )
+    assert [models.calls(role) for role in ROLES] == [0, 0, 0]
 
 
 # Errors.
@@ -950,7 +1280,9 @@ def test_help_lists_every_parameter(capsys: pytest.CaptureFixture[str]) -> None:
     for parameter in (
         "card_id",
         "output",
-        "--variant {V0,V1,V2}",
+        "--variant {V0,V1,V2,V3}",
+        "--memory-dir DIR",
+        "--game N",
         "--cards",
         "--corpus",
         "--describer-model",
@@ -965,9 +1297,11 @@ def test_help_lists_every_parameter(capsys: pytest.CaptureFixture[str]) -> None:
         "--temperature",
     ):
         assert parameter in out
-    for absent in ("--memory", "keep-alive", "keep_alive"):
+    for absent in ("keep-alive", "keep_alive", "not built"):
         assert absent not in out
-    assert "the Describer's num_ctx (default 16384)" in " ".join(out.split())
+    joined = " ".join(out.split())
+    assert "the Describer's num_ctx (default 16384)" in joined
+    assert "(V3 only, required with it)" in joined
 
 
 def test_play_game_is_a_console_script() -> None:

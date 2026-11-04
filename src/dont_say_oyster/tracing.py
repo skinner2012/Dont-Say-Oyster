@@ -27,7 +27,7 @@ to its manifest share one session; the one-game command gains no parameter (auth
 
 The spans: node A runs before the graph and gets no span from the callback handler, so
 `node_a_span` makes one named `A`; the graph's nodes get chain spans named by their node names
-(G, B, C, D, E, F; the node table in `SPEC.md` Full flow of one game) from the LangChain
+(G, B, C, D, E, F, H; the node table in `SPEC.md` Full flow of one game) from the LangChain
 callback handler (`callback_handler`) passed in the graph's config, which also makes one
 generation span per model call and one tool span per run of the search tool. The callers put
 run metadata on those spans: every generation span carries `role`, `attempt` [R26], `kind`

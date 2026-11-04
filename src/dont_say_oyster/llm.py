@@ -31,7 +31,16 @@ context window (Ollama's `done_reason` `length`, which langchain-ollama puts in 
 `response_metadata`), or a structured reply that is not JSON valid against its schema raises
 LLMError after the one request. The cut-off check is on every kind of call, before the reply is
 read; a reply with no `done_reason` is not cut off. It is the check on prompt and output
-together; the 90% warning counts prompt tokens only."""
+together; the 90% warning counts prompt tokens only.
+
+One measurement is not a call: `ollama_token_count` counts the tokens of a text by a role's own
+model (`SPEC.md` Metrics, Per game: the token count of the memory part) with one `/api/generate`
+request through the same `ollama.Client` langchain-ollama uses, the text as a raw prompt (no
+template), `num_predict` 1, and the role's num_ctx and keep_alive, so the server keeps the
+resident model as it is; the count is Ollama's `prompt_eval_count`. `num_predict` 0 is not a
+limit on this server (it generates without end), and `/api/tokenize` does not exist, so this is
+the way to an exact count. The request is no entry in a game's calls and gets no span; a failure
+is an LLMError like a call's."""
 
 import json
 import logging
@@ -104,18 +113,51 @@ ClientFor = Callable[[ModelSettings], BaseChatModel]
 """Builds the chat client for one call's settings."""
 
 
-def ollama_client(settings: ModelSettings) -> ChatOllama:
-    """ChatOllama with the settings as given; the endpoint is OLLAMA_BASE_URL, read from `.env`
-    when it is not already in the environment, or the local default."""
+def _base_url() -> str:
+    """The Ollama endpoint: OLLAMA_BASE_URL, read from `.env` when it is not already in the
+    environment, or the local default."""
     load_dotenv()
+    return os.environ.get("OLLAMA_BASE_URL") or DEFAULT_BASE_URL
+
+
+def ollama_client(settings: ModelSettings) -> ChatOllama:
+    """ChatOllama with the settings as given, at the endpoint `_base_url` gives."""
     return ChatOllama(
         model=settings.model,
-        base_url=os.environ.get("OLLAMA_BASE_URL") or DEFAULT_BASE_URL,
+        base_url=_base_url(),
         num_ctx=settings.num_ctx,
         temperature=settings.temperature,
         reasoning=settings.thinking,
         keep_alive=settings.keep_alive,
     )
+
+
+TokenCounter = Callable[[ModelSettings, str], int]
+"""Counts the tokens of a text by the model of the settings."""
+
+
+def ollama_token_count(settings: ModelSettings, text: str) -> int:
+    """The number of tokens `text` is to `settings`' model: Ollama's `prompt_eval_count` for one
+    `/api/generate` request with `text` as a raw prompt, `num_predict` 1, and the role's num_ctx
+    and keep_alive (the module docstring says why). Raises LLMError when the request fails or
+    Ollama reports no count."""
+    try:
+        response = ollama.Client(host=_base_url()).generate(
+            model=settings.model,
+            prompt=text,
+            raw=True,
+            options={"num_ctx": settings.num_ctx, "num_predict": 1},
+            keep_alive=settings.keep_alive,
+        )
+    except (ConnectionError, httpx.HTTPError, ollama.ResponseError) as e:
+        detail = " ".join(str(e).split())
+        raise LLMError(
+            f"{settings.role}: token count failed: {type(e).__name__}: {detail}"
+        ) from e
+    count = response.prompt_eval_count if isinstance(response, ollama.GenerateResponse) else None
+    if count is None:
+        raise LLMError(f"{settings.role}: token count failed: Ollama reported no prompt tokens")
+    return count
 
 
 def _request(

@@ -8,9 +8,22 @@ The record, top level: the card id, the card's official name (so `matched_name` 
 official name or an alias without the cards file), the variant, the F outcome, `matched_name`
 (the card name a right guess equals, `SPEC.md` Metrics, Per game; null otherwise), `counters`
 (the round, question, and forced pass counters as F left them), `rounds`, `calls` (State's list
-as it is: every model call with the per-call values of `SPEC.md` Metrics, Per model call), and
-`settings` (each role's model tag, num_ctx, thinking value, and keep_alive, and the temperature,
-as the command resolved them, since a game run by hand has no batch manifest to say so).
+as it is: every model call with the per-call values of `SPEC.md` Metrics, Per model call, H's
+two included), `settings` (each role's model tag, num_ctx, thinking value, and keep_alive, and
+the temperature, as the command resolved them, since a game run by hand has no batch manifest to
+say so), and `memory`.
+
+`memory` is null when the variant's memory toggle is off, so the schema keeps one shape; with it
+on, an object with the game number and one object per role (`describer`, `guesser`) built from
+the role's program-only H row (Cross-game memory definition, Check rule): `entry` (the accepted
+entry, null when the game was not written for the role), `summary` (the accepted rolling
+summary, null before game six and when not written), `redos` (0 to 2), `written`, `failed`
+(every output the Check rule failed, the refused third included, each with its attempt, the
+ordinal of the call that produced it, both texts, and its reasons; those with attempt at most
+`redos` were sent back), and `tokens`, the memory token count the command measured after the
+game (`SPEC.md` Metrics, Per game; `llm.ollama_token_count`): the block the role read at game
+start, which the caller passes in, since the count is a measurement outside the graph and not a
+State row.
 
 `rounds` has one entry per round begun: G increments the round counter before B, so
 `counters.rounds` counts rounds begun, and a Describer violation in a round's first description
@@ -32,12 +45,14 @@ where it does not apply:
   round's entry can hold either."""
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from dont_say_oyster.graph import RoleSettings, Variant
+from dont_say_oyster.graph import TOGGLES, RoleSettings, Variant
 from dont_say_oyster.llm import ModelSettings
-from dont_say_oyster.state import State, describer_output
+from dont_say_oyster.memory import Role
+from dont_say_oyster.state import HResult, State, describer_output
 
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "data" / "records" / "schema.json"
 
@@ -114,12 +129,46 @@ def _rounds(state: State) -> list[dict[str, Any]]:
     return entries
 
 
-def build_record(state: State, variant: Variant, settings: RoleSettings) -> dict[str, Any]:
+def _memory_role(result: HResult | None, role: Role, tokens: int) -> dict[str, Any]:
+    """One role's `memory` object from its H row and its memory token count. Raises ValueError
+    when H has not run for the role."""
+    if result is None:
+        raise ValueError(f"the {role}'s memory row is empty: H has not run")
+    return {
+        "entry": result["entry"],
+        "summary": result["summary"],
+        "redos": result["redos"],
+        "written": result["written"],
+        "failed": result["failed"],
+        "tokens": tokens,
+    }
+
+
+def _memory(state: State, memory_tokens: Mapping[Role, int]) -> dict[str, Any]:
+    return {
+        "game": state["game"],
+        "describer": _memory_role(state["describer_h"], "describer", memory_tokens["describer"]),
+        "guesser": _memory_role(state["guesser_h"], "guesser", memory_tokens["guesser"]),
+    }
+
+
+def build_record(
+    state: State,
+    variant: Variant,
+    settings: RoleSettings,
+    memory_tokens: Mapping[Role, int] | None = None,
+) -> dict[str, Any]:
     """The record of the game whose final State is `state`, played in `variant` with
-    `settings`. Raises ValueError when the game has no result or the roles' temperatures
-    differ."""
+    `settings`; `memory_tokens`, each role's memory token count, is given exactly when the
+    variant's memory toggle is on. Raises ValueError when the game has no result, the roles'
+    temperatures differ, `memory_tokens` disagrees with the toggle, or memory is on and H has
+    not run."""
     if state["result"] is None:
         raise ValueError("the game ended with no result")
+    if TOGGLES[variant].memory and memory_tokens is None:
+        raise ValueError(f"{variant} plays with memory but no memory token counts were given")
+    if not TOGGLES[variant].memory and memory_tokens is not None:
+        raise ValueError(f"{variant} plays without memory but memory token counts were given")
     return {
         "card_id": state["card_id"],
         "official_name": state["names"][0],
@@ -134,6 +183,7 @@ def build_record(state: State, variant: Variant, settings: RoleSettings) -> dict
         "rounds": _rounds(state),
         "calls": state["calls"],
         "settings": _settings(settings),
+        "memory": None if memory_tokens is None else _memory(state, memory_tokens),
     }
 
 

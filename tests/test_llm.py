@@ -1,6 +1,7 @@
 """The model-call wrapper with a scripted chat model: what each call returns, the run metadata
 each request carries for the trace, the num_ctx warning, the client's settings, and the
-errors [R26]."""
+errors [R26]; and the memory token count, a measurement through the ollama client, with its
+`generate` replaced."""
 
 import json
 import logging
@@ -9,6 +10,7 @@ from collections.abc import Iterator, Sequence
 from typing import Any
 
 import httpx
+import ollama
 import pytest
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.exceptions import OutputParserException
@@ -466,3 +468,69 @@ def test_a_cut_off_reply_without_token_counts_names_them_unknown() -> None:
         "guesser: reply cut off by the context window: input tokens unknown, "
         "output tokens unknown, num_ctx 16384"
     )
+
+
+# The memory token count (`SPEC.md` Metrics, Per game), through the ollama client's generate.
+
+
+def generating(
+    monkeypatch: pytest.MonkeyPatch, prompt_eval_count: int | None, error: Exception | None = None
+) -> list[dict[str, Any]]:
+    """Replace `ollama.Client.generate` with one that keeps its keyword arguments and the client's
+    host and answers with `prompt_eval_count`, or raises `error`."""
+    requests: list[dict[str, Any]] = []
+
+    def generate(self: ollama.Client, **kwargs: Any) -> ollama.GenerateResponse:
+        requests.append({"host": str(self._client.base_url), **kwargs})
+        if error is not None:
+            raise error
+        return ollama.GenerateResponse(
+            model=kwargs["model"], done=True, done_reason="length", response="A",
+            prompt_eval_count=prompt_eval_count, eval_count=1,
+        )
+
+    monkeypatch.setattr(ollama.Client, "generate", generate)
+    return requests
+
+
+def test_the_token_count_is_prompt_eval_count_of_one_raw_request_with_the_roles_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OLLAMA_BASE_URL", "http://ollama.test:11434")
+    requests = generating(monkeypatch, 38)
+    block = "Latest entries:\n(none)\nSummary of older games:\n(none)"
+    assert llm.ollama_token_count(SETTINGS, block) == 38
+    assert requests == [{
+        "host": "http://ollama.test:11434",
+        "model": SETTINGS.model,
+        "prompt": block,
+        "raw": True,
+        "options": {"num_ctx": SETTINGS.num_ctx, "num_predict": 1},
+        "keep_alive": SETTINGS.keep_alive,
+    }]
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        httpx.ConnectError("[Errno 61] Connection refused"),
+        ollama.ResponseError("model 'x' not found", 404),
+    ],
+    ids=["connection", "response"],
+)
+def test_a_token_count_request_that_fails_raises_llm_error(
+    monkeypatch: pytest.MonkeyPatch, error: Exception
+) -> None:
+    requests = generating(monkeypatch, 38, error)
+    with pytest.raises(LLMError, match="guesser: token count failed") as raised:
+        llm.ollama_token_count(SETTINGS, "x")
+    assert raised.value.__cause__ is error
+    assert len(requests) == 1
+
+
+def test_a_token_count_without_prompt_eval_count_raises_llm_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    generating(monkeypatch, None)
+    with pytest.raises(LLMError, match="guesser: token count failed: Ollama reported no"):
+        llm.ollama_token_count(SETTINGS, "x")

@@ -235,6 +235,40 @@ def test_f_without_a_guess_or_violation_raises(start: State) -> None:
         node_f({**start, "round": 1})
 
 
+# F's route and the memory toggle (Full flow of one game, Transitions that differ between
+# variants).
+
+
+def _ended(start: State, result: str) -> State:
+    if result == "right guess":
+        return node_f(_guess(start, "烤蚵仔", 2))
+    if result == "wrong guess in round 10":
+        return node_f(_guess(start, "蚵仔煎", 10))
+    violation = "Guesser" if result == "Guesser violation" else "Describer"
+    return node_f({**start, "round": 2, "violation": violation})  # type: ignore[typeddict-item]
+
+
+@pytest.mark.parametrize(
+    "result",
+    ["right guess", "wrong guess in round 10", "Guesser violation", "Describer violation"],
+)
+def test_f_routes_an_outcome_to_h_with_memory_on_and_to_the_end_with_it_off(
+    start: State, result: str
+) -> None:
+    after = _ended(start, result)
+    assert after["result"] == result
+    assert route_after_f(after, memory=True) == "H"
+    assert route_after_f(after, memory=False) == "end"
+    assert route_after_f(after) == "end"  # the default is V2's, memory off
+
+
+def test_f_routes_no_outcome_to_g_whatever_the_memory_toggle(start: State) -> None:
+    after = node_f(_guess(start, "蚵仔煎", 3))
+    assert after["result"] is None
+    assert route_after_f(after, memory=True) == "G"
+    assert route_after_f(after, memory=False) == "G"
+
+
 # A with cross-game memory (Cross-game memory definition, Storage)
 
 
