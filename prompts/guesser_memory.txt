@@ -1,0 +1,39 @@
+=== prompt ===
+You are the Guesser in a Taboo-like guessing game about Taiwanese snacks, and a game has just ended. You play a series of games, one snack each, and at the start of every game you are shown the memory you wrote after the earlier ones. Now write your memory entry for this game: what you will want to remember to guess better in the next game, whatever the snack is.
+
+Who won and who lost: {winner}
+
+The game lasted {rounds} of ten rounds. You asked {questions} of your three questions.
+
+The Describer's descriptions and answers (oldest first):
+{descriptions_and_answers}
+
+Your guesses and questions (oldest first):
+{guesses_and_questions}
+
+Your catalogue searches (oldest first), each with what you searched for and how many results it returned:
+{lookups}
+
+Your memory from earlier games, as you read it at the start of this game:
+{memory}
+
+{task}
+
+=== task: entry ===
+Write one memory entry about this game, two to five sentences, holding only strategies for guessing better: how to read a description, which searches narrowed the catalogue and which did not, when a question paid off, and when to guess.
+
+Do not write the name of this game's snack or of any snack you guessed, in Chinese or in English, and no accepted alias or English name of a snack; describe the strategy instead. Write in English only, with no Chinese character anywhere.
+
+Reply with a JSON object whose entry field holds the entry.
+
+=== task: entry and summary ===
+Write one memory entry about this game, two to five sentences, holding only strategies for guessing better: how to read a description, which searches narrowed the catalogue and which did not, when a question paid off, and when to guess.
+
+Your memory keeps only the latest five entries in full, and one summary of the older games. Once this game's entry is added, this entry leaves the latest five: {fold}. Also write the summary: the summary of older games shown in your memory above, updated so that it also covers the entry that leaves, in at most eight sentences. Keep the strategies that recur and drop the details that do not. If no entry leaves, (none), keep the summary to the games older than your latest five entries; if there are no such games yet, write that there are none.
+
+In neither the entry nor the summary write the name of any snack, in Chinese or in English, and no accepted alias or English name of a snack; describe the strategy instead. Write in English only, with no Chinese character anywhere.
+
+Reply with a JSON object whose entry field holds the entry and whose summary field holds the summary.
+
+=== conventions ===
+The memory-writing call H makes for the Guesser at game end (Full flow of one game, the H row). Only the prompt section, with {task} replaced by the task section matching the schema, goes to the model; this section never does. Slots of the prompt section: {winner} who won and who lost, as the program's winner line says it ("Guesser wins" or "Guesser loses"), never the game result (Disclosure rule); {rounds} the round counter at game end; {questions} the question counter at game end; {descriptions_and_answers} every description and answer the Guesser received, one per line, as it saw them; {guesses_and_questions} its guesses with their confidence and its valid questions, one per line, as it saw them; {lookups} each corpus lookup of the game, one per line, with its round, the tool name and arguments, and the number of results it returned (and whether more matched) or the message it got, never the returned entries; {memory} the Guesser's memory as read at game start, in the block every prompt shows it; {task} the task section. The prompt never holds the card's names, aliases, English names, forbidden words, or distractors, or the game result: of the snack names, only the Guesser's own guesses can appear. The task: entry section is used for games 1 to 5 and asks for the entry alone; the task: entry and summary section is used from game six on and asks for both, and its one slot, {fold}, holds the game of the oldest entry ("Game 1"), the one that leaves the latest five, or (none) when the memory holds fewer than five entries. An empty slot is printed as (none). Every call is made once; the output is accepted as returned.

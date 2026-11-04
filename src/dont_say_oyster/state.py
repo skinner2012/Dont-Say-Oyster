@@ -129,7 +129,7 @@ class Lookup(TypedDict):
     attempt: int
 
 
-CallNode = Literal["B", "D", "E"]
+CallNode = Literal["B", "D", "E", "H"]
 
 
 class Call(TypedDict):
@@ -184,6 +184,14 @@ class VerdictEntry(TypedDict):
     ordinal: int
 
 
+class Accepted(TypedDict):
+    """What H accepted from one role's memory-writing call (Cross-game memory definition): the
+    entry for this game and, from game six on, the rolling summary (None before game six)."""
+
+    entry: str
+    summary: str | None
+
+
 class State(TypedDict):
     # The card [R9]
     card_id: str
@@ -229,11 +237,14 @@ class State(TypedDict):
     calls: list[Call]  # every model call of the game, in order
     sent_back: list[SentBack]  # every output the program sent back, in order
     verdicts: list[VerdictEntry]  # every verdict of the game, in order
+    describer_accepted: Accepted | None  # what H accepted from the Describer; None before H
+    guesser_accepted: Accepted | None  # what H accepted from the Guesser; None before H
 
 
 PROGRAM_ONLY = frozenset({
     "game", "violation", "matched_name", "describer_send_backs", "invalid_questions",
     "reason_reasks", "owes", "guess_only", "d_route", "calls", "sent_back", "verdicts",
+    "describer_accepted", "guesser_accepted",
 })
 
 
@@ -341,4 +352,6 @@ def initial_state(
         "calls": [],
         "sent_back": [],
         "verdicts": [],
+        "describer_accepted": None,
+        "guesser_accepted": None,
     }
