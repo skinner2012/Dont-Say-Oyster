@@ -413,7 +413,7 @@ def test_a_game_6_state_sends_the_entry_and_summary_schema_naming_game_1_to_fold
     for prompt, texts in ((describer, D_SECTIONS), (guesser, G_SECTIONS)):
         task = texts["task: entry and summary"].format_map({"fold": "Game 1"})
         assert prompt.rstrip().endswith(task)
-        assert "this entry leaves the latest five: Game 1." in prompt
+        assert "pushes the oldest entry out of the latest five: Game 1." in prompt
 
 
 def test_from_game_6_with_fewer_than_five_entries_the_entry_to_fold_is_none(
@@ -429,8 +429,8 @@ def test_from_game_6_with_fewer_than_five_entries_the_entry_to_fold_is_none(
     _, model, _ = run(state, tmp_path, *WITH_SUMMARIES)
     assert model.requests == [{"format": ENTRY_AND_SUMMARY_SCHEMA}] * 2
     describer, guesser = prompts(model)
-    assert "this entry leaves the latest five: (none)." in describer
-    assert "this entry leaves the latest five: Game 1." in guesser
+    assert "pushes the oldest entry out of the latest five: (none)." in describer
+    assert "pushes the oldest entry out of the latest five: Game 1." in guesser
 
 
 def test_both_schemas_refuse_an_empty_entry_or_summary() -> None:
