@@ -795,6 +795,11 @@ def test_a_game_2_reads_game_1_s_files_into_the_prompts_and_the_count(
     assert game_record(output)["memory"]["game"] == 2
     assert all(expected["Describer"] in p for p in describer_seen) and describer_seen
     assert all(expected["Guesser"] in p for p in guesser_seen) and guesser_seen
+    # The other half of Information isolation: neither role's prompt holds the other role's
+    # entry from game 1.
+    assert G_ENTRY not in expected["Describer"] and D_ENTRY not in expected["Guesser"]
+    assert not any(G_ENTRY in p for p in describer_seen)
+    assert not any(D_ENTRY in p for p in guesser_seen)
     assert [(s.role, t) for s, t in counts.received] == [
         ("Describer", expected["Describer"]), ("Guesser", expected["Guesser"])
     ]
