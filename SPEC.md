@@ -464,7 +464,7 @@ No LangGraph checkpoints are used; recovery works from files.
 ### M8 Analyze and write the report
 
 - For each variant, write the report the Definition of Done asks for: variant type, differences, and two full transcripts.
-- Compare each neighboring pair (V0→V1, V1→V2, V2→V3) with the method in Evaluation: who wins, its credibility, and the reading against the second V2 run if there is one. For V3, also paste memory entries from a few games into its report.
+- Compare each neighboring pair (V0→V1, V1→V2, V2→V3) with the method in Evaluation: who wins, its credibility, and the reading against the second V2 run if there is one. For V3, also paste memory entries from a few games into its report. Read docs/tasks/M6-cross-game-memory-observations.md first: it records, game by game, where the seven T6 games' memory entries agree with their records and where they do not.
 - Done when each variant has a report with its type, differences, and two full transcripts, the three pair comparisons are written, and the V3 report includes memory entries from a few games.
 
 ## Glossary
