@@ -55,9 +55,9 @@ def memory_path(directory: Path, role: Role, game: int) -> Path:
 def read_memory(directory: Path, role: Role, game: int) -> Memory:
     """The memory `role` starts game `game` with: the empty memory for game 1, with no file read;
     otherwise game `game` - 1's file. Raises MemoryFileError naming the path when that file is
-    missing, not valid JSON, not valid against the schema, or does not belong to its name (another
-    role or game, entries out of order or after the file's game), so a game never starts from
-    empty memory by accident."""
+    missing, not valid UTF-8 or JSON, not valid against the schema, or does not belong to its
+    name (another role or game, entries out of order or after the file's game), so a game never
+    starts from empty memory by accident."""
     if game < 1:
         raise ValueError(f"game numbers start at 1, not {game}")
     if game == 1:
@@ -68,6 +68,8 @@ def read_memory(directory: Path, role: Role, game: int) -> Memory:
         data = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as e:
         raise MemoryFileError(path, "missing") from e
+    except UnicodeDecodeError as e:
+        raise MemoryFileError(path, f"not valid UTF-8: {e}") from e
     except json.JSONDecodeError as e:
         raise MemoryFileError(path, f"not valid JSON: {e}") from e
     _check(path, data, role, previous)

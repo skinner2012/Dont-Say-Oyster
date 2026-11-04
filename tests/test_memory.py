@@ -118,6 +118,12 @@ def test_a_file_that_is_not_json_raises(tmp_path: Path) -> None:
         read_memory(tmp_path, "describer", 4)
 
 
+def test_a_file_that_is_not_utf8_raises(tmp_path: Path) -> None:
+    (tmp_path / "describer-01.json").write_bytes(b"\xff\xfe")
+    with pytest.raises(MemoryFileError, match="describer-01.json"):
+        read_memory(tmp_path, "describer", 2)
+
+
 def test_write_refuses_six_entries_and_writes_nothing(tmp_path: Path) -> None:
     six: Memory = {"entries": [{"game": g, "text": "E"} for g in range(1, 7)], "summary": None}
     with pytest.raises(MemoryFileError, match="describer-06.json"):
