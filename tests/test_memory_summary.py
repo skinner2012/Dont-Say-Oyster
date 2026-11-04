@@ -206,7 +206,7 @@ def prompts(model: Recording) -> tuple[str, str]:
         (D_SECTIONS, "prompt", [
             "official_name", "aliases", "english_names", "forbidden_words", "result", "rounds",
             "descriptions_and_answers", "guesses_and_questions", "rejected_descriptions",
-            "memory", "task",
+            "violating_reply", "memory", "task",
         ]),
         (D_SECTIONS, "task: entry", []),
         (D_SECTIONS, "task: entry and summary", ["fold"]),
@@ -277,11 +277,13 @@ DESCRIBER_SHOWN = (
     "S-D-memory-summary",
 )
 DESCRIBER_HIDDEN = (
-    "S-card-id", "S-attribute", "S-distractor", "S-description-row", "S-answer-row",
-    "S-verdict-reason", "S-keyword", "S-filter", "S-lookup-message", "S-hit", "S-G-memory",
-    "S-matched-name", "S-call-role", "S-sent-back", "S-send-back-reason", "S-verdicts-reason",
+    "S-card-id", "S-attribute", "S-distractor", "S-verdict-reason", "S-keyword", "S-filter",
+    "S-lookup-message", "S-hit", "S-G-memory", "S-matched-name", "S-call-role", "S-sent-back",
+    "S-send-back-reason", "S-verdicts-reason",
     "0.37", "0.91", "41", "42", "44",
 )
+# The two Describer rows; the one `owes` names is shown only after a Describer violation.
+VIOLATING = {"description": "S-description-row", "answer": "S-answer-row"}
 
 
 @pytest.mark.parametrize("result", OUTCOMES)
@@ -294,10 +296,24 @@ def test_the_describer_s_prompt_holds_its_items_and_the_game_result(
     assert describer == describer_prompt(state, D_SECTIONS)
     assert [s for s in DESCRIBER_SHOWN if s not in describer] == []
     assert [s for s in DESCRIBER_HIDDEN if s in describer] == []
+    heading = "Your reply that ended the game as a Describer violation"
+    if result == "Describer violation":
+        assert f"{heading} (it was not delivered to the Guesser):\nS-description-row\n" in describer
+        assert "S-answer-row" not in describer
+    else:
+        assert f"{heading} (it was not delivered to the Guesser):\n(none)\n" in describer
+        assert [s for s in VIOLATING.values() if s in describer] == []
     assert f"How this game ended: {result}\n" in describer
     assert describer.count("S-last-guess") == 1  # the last guess is listed once
     assert describer.rstrip().endswith(D_SECTIONS["task: entry"])
     assert set(PROGRAM_ONLY) <= set(state)  # the fixture is a whole State
+
+
+def test_a_violating_answer_is_shown_as_the_reply_owes_names() -> None:
+    state: State = {**finished(2, "Describer violation"), "owes": "answer"}
+    prompt = describer_prompt(state, D_SECTIONS)
+    assert "(it was not delivered to the Guesser):\nS-answer-row\n" in prompt
+    assert "S-description-row" not in prompt
 
 
 def test_an_empty_memory_and_no_rejects_print_none_in_the_describer_s_prompt() -> None:

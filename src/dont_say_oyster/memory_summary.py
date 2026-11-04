@@ -13,8 +13,10 @@ What each prompt holds (Information isolation, Disclosure rule):
 - The Describer's: the card's official name, aliases, English names, and forbidden words [R27];
   the game as the Describer saw it, rendered by `describer.py`'s helpers (every description and
   answer that reached the Guesser, every guess and valid question with the last one, every
-  rejected description with its reason, the round counter); the game result, the F outcome's
-  name; the Describer's memory as read at game start (`memory.render`).
+  rejected description with its reason, the round counter); in a game that ended by Describer
+  violation, the violating description or answer, which never reached the Guesser ([R11],
+  [R21]); the game result, the F outcome's name; the Describer's memory as read at game start
+  (`memory.render`).
 - The Guesser's: the game as the Guesser saw it, rendered by `guesser.py`'s helpers (every
   description and answer it received, its guesses with their confidence and its valid
   questions, the round and question counters); each corpus lookup by its arguments and the
@@ -45,7 +47,7 @@ from dont_say_oyster.describer import _earlier, _lines, _list, _rejected
 from dont_say_oyster.guesser import _earlier_guesses, _earlier_texts
 from dont_say_oyster.llm import ClientFor, ModelSettings, Reply, call_structured, ollama_client
 from dont_say_oyster.memory import LATEST, Memory, Role, advance, render, write_memory
-from dont_say_oyster.state import Accepted, Lookup, State, winner, with_call
+from dont_say_oyster.state import Accepted, Lookup, State, describer_output, winner, with_call
 
 DESCRIBER_PROMPT_PATH = REPO_ROOT / "prompts" / "describer_memory.txt"
 GUESSER_PROMPT_PATH = REPO_ROOT / "prompts" / "guesser_memory.txt"
@@ -107,6 +109,9 @@ def describer_prompt(state: State, sections: dict[str, str]) -> str:
         "descriptions_and_answers": _lines([_earlier(item) for item in state["earlier_texts"]]),
         "guesses_and_questions": _lines([_earlier(item) for item in state["earlier_guesses"]]),
         "rejected_descriptions": _lines([_rejected(item) for item in state["rejected"]]),
+        "violating_reply": (
+            describer_output(state) if result == "Describer violation" else NONE
+        ),
         "memory": render(state["describer_memory"]),
         "task": _task(state, sections, state["describer_memory"]),
     })
