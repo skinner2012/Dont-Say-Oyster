@@ -73,6 +73,7 @@ memory-writing prompt in `memory_summary.py` (Full flow of one game, the H row),
 them changes both prompts."""
 
 import json
+import re
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Literal
@@ -176,10 +177,10 @@ def build_prompt(state: State, lookup: bool = True, memory: bool = False) -> str
         ),
         "{task}": task,
     }
-    prompt = texts["prompt"]
-    for slot, value in slots.items():
-        prompt = prompt.replace(slot, value)
-    return prompt
+    # One pass over the prompt section, so text filled into a slot (a description, a memory
+    # entry) is never scanned again for slot names.
+    pattern = "|".join(re.escape(slot) for slot in slots)
+    return re.sub(pattern, lambda match: slots[match.group(0)], texts["prompt"])
 
 
 def _tool_loop(

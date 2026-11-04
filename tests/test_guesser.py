@@ -458,6 +458,35 @@ def test_with_memory_off_the_prompt_holds_no_memory_text_and_no_slot(start: Stat
             assert "{" not in off and "}" not in off
 
 
+def test_a_slot_name_inside_the_memory_is_left_as_written(start: State) -> None:
+    """The slots are filled in one pass, so a slot name the Guesser wrote into its memory is not
+    filled again."""
+    state: State = {
+        **game_7(start), "guesser_memory": {"entries": [{"game": 6, "text": "avoid {task}"}],
+                                            "summary": None},
+    }
+    prompt = build_prompt(state, memory=True)
+    assert "Game 6: avoid {task}\n" in prompt
+    assert prompt.count(SECTIONS["task: question or guess"]) == 1
+
+
+def test_a_slot_name_inside_an_earlier_description_is_left_as_written(start: State) -> None:
+    """An earlier description holding `{memory}` is printed as written, with the flag on (the
+    memory block is in its own slot once) and off."""
+    state = with_input(
+        {**game_7(start), "round": 2,
+         "earlier_texts": [{"round": 1, "kind": "description", "text": "{memory}"}]},
+        DESCRIPTION,
+    )
+    block = render(state["guesser_memory"])
+    on = build_prompt(state, memory=True)
+    assert "Round 1 (description): {memory}\n" in on
+    assert on.count(block) == 1
+    off = build_prompt(state)
+    assert "Round 1 (description): {memory}\n" in off
+    assert block not in off
+
+
 def test_with_memory_on_the_block_is_in_the_first_message_of_every_call_and_no_tool_result(
     start: State, corpus: list[CorpusEntry], spy: Spy
 ) -> None:
