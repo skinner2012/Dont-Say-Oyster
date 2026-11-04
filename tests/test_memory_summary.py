@@ -233,11 +233,14 @@ def with_card(state: State, names: list[str], english_names: list[str]) -> State
     return {**state, "names": names, "english_names": english_names}
 
 
-def send_back(messages: list[BaseMessage], previous: dict[str, str], fixed: str) -> None:
-    """`messages` is a redo's request: the prompt, the previous reply as the model's message,
-    and the fixed message."""
+def send_back(
+    messages: list[BaseMessage], first: list[BaseMessage], previous: dict[str, str], fixed: str
+) -> None:
+    """`messages` is a redo's request: the prompt of the role's first request `first`, unchanged,
+    the previous reply as the model's message, and the fixed message."""
     prompt, reply, message = messages
-    assert isinstance(prompt, HumanMessage)
+    (original,) = first
+    assert isinstance(prompt, HumanMessage) and prompt.text == original.text
     assert isinstance(reply, AIMessage)
     assert json.loads(reply.text) == previous
     assert isinstance(message, HumanMessage) and message.text == fixed
@@ -600,7 +603,7 @@ def test_a_guesser_entry_naming_the_official_name_is_sent_back_twice_then_copied
     assert len(model.received) == 4
     assert len(model.received[1]) == 1  # the Guesser's first call: the prompt alone
     for messages in model.received[2:]:
-        send_back(messages, NAMED, G_SECTIONS[FIXED_MESSAGE])
+        send_back(messages, model.received[1], NAMED, G_SECTIONS[FIXED_MESSAGE])
     new = after["calls"][1:]
     assert [(c["ordinal"], c["node"], c["role"], c["round"], c["attempt"]) for c in new] == [
         (2, "H", "Describer", LAST_ROUND, 1),
@@ -640,7 +643,7 @@ def test_a_simplified_alias_or_a_plural_english_name_is_caught_by_r22_matching(
     assert len(model.received) == 4
     assert len(model.received[1]) == 1
     for messages in model.received[2:]:
-        send_back(messages, bad, G_SECTIONS[FIXED_MESSAGE])
+        send_back(messages, model.received[1], bad, G_SECTIONS[FIXED_MESSAGE])
     guesser_calls = [c for c in after["calls"] if c["node"] == "H" and c["role"] == "Guesser"]
     assert [(c["ordinal"], c["attempt"]) for c in guesser_calls] == [(3, 1), (4, 2), (5, 3)]
     result = after["guesser_h"]
@@ -673,7 +676,7 @@ def test_a_describer_entry_with_chinese_is_sent_back_once_and_its_clean_redo_is_
     first = {"entry": "蚵仔 fooled it"}
     after, model, _ = run(finished(2), tmp_path, first, {"entry": "D-entry-2"}, ENTRIES[1])
     assert len(model.received) == 3
-    send_back(model.received[1], first, D_SECTIONS[FIXED_MESSAGE])
+    send_back(model.received[1], model.received[0], first, D_SECTIONS[FIXED_MESSAGE])
     assert len(model.received[2]) == 1
     assert [(c["ordinal"], c["role"], c["attempt"]) for c in after["calls"][1:]] == [
         (2, "Describer", 1), (3, "Describer", 2), (4, "Guesser", 1),
