@@ -24,7 +24,11 @@ Readings settled with the author on 2026-10-21:
 - The attempt number is the [R11] count + 1 [R26]; G and D zero the count when they ask for a
   new output, so B only reads it.
 - The call passes the round in its run metadata, so its span says which round it belongs to
-  without reading its neighbours in the trace (`SPEC.md` Goals, Evaluation and observability)."""
+  without reading its neighbours in the trace (`SPEC.md` Goals, Evaluation and observability).
+
+The helpers `_list`, `_lines`, `_earlier`, and `_rejected` also render the game for the
+Describer's memory-writing prompt in `memory_summary.py` (Full flow of one game, the H row), so
+a change to them changes both prompts."""
 
 from collections.abc import Sequence
 

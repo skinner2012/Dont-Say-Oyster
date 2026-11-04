@@ -59,7 +59,11 @@ same two and `lookup`, the round's lookup counter after it [R43], so a tool span
 its call's generation span under E's span, is joined to that span by `(round, call)` and to its
 `Lookup` entry by the round and the counter. A call naming an unknown tool or a blocked call
 never runs the tool and has no tool span; a call the schema rejects runs it, and its span's
-output is the validation message."""
+output is the validation message.
+
+The helpers `_earlier_texts` and `_earlier_guesses` also render the game for the Guesser's
+memory-writing prompt in `memory_summary.py` (Full flow of one game, the H row), so a change to
+them changes both prompts."""
 
 import json
 from collections.abc import Sequence
