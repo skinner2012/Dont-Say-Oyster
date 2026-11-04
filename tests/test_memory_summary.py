@@ -344,7 +344,7 @@ GUESSER_HIDDEN = (
     "S-official-name", "S-alias", "S-english-name", "S-forbidden", "S-distractor",
     "S-card-id", "S-attribute", "S-description-row", "S-answer-row", "S-verdict-reason",
     "S-rejected", "S-hit", "S-D-memory", "S-matched-name", "S-call-role", "S-sent-back",
-    "S-send-back-reason", "S-verdicts-reason", *OUTCOMES,
+    "S-send-back-reason", "S-verdicts-reason", "41", "42", "44", *OUTCOMES,
 )
 
 
