@@ -636,10 +636,18 @@ def test_a_simplified_alias_or_a_plural_english_name_is_caught_by_r22_matching(
 ) -> None:
     state = with_card(finished(3), ["烤蚵仔", "烤生蠔"], ["S-english-name-1"])
     bad = {"entry": entry}
-    after, _, _ = run(state, tmp_path, ENTRIES[0], bad, bad, bad)
+    after, model, _ = run(state, tmp_path, ENTRIES[0], bad, bad, bad)
+    assert len(model.received) == 4
+    assert len(model.received[1]) == 1
+    for messages in model.received[2:]:
+        send_back(messages, bad, G_SECTIONS[FIXED_MESSAGE])
+    guesser_calls = [c for c in after["calls"] if c["node"] == "H" and c["role"] == "Guesser"]
+    assert [(c["ordinal"], c["attempt"]) for c in guesser_calls] == [(3, 1), (4, 2), (5, 3)]
     result = after["guesser_h"]
     assert result is not None and not result["written"] and result["redos"] == 2
-    assert [f["reasons"] for f in result["failed"]] == [reasons] * 3
+    assert [(f["attempt"], f["ordinal"], f["entry"], f["reasons"]) for f in result["failed"]] == [
+        (1, 3, entry, reasons), (2, 4, entry, reasons), (3, 5, entry, reasons),
+    ]
     assert read_memory(tmp_path, "guesser", 4) == state["guesser_memory"]
 
 
