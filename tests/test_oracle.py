@@ -6,7 +6,13 @@ import pytest
 
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, Card, card_id, load_cards
 from dont_say_oyster.corpus import CorpusEntry, load_corpus
-from dont_say_oyster.oracle import check_describer, check_guess, check_question
+from dont_say_oyster.oracle import (
+    MemoryCheck,
+    check_describer,
+    check_guess,
+    check_memory,
+    check_question,
+)
 
 CORPUS_PATH = REPO_ROOT / "data" / "corpus" / "corpus.json"
 
@@ -189,3 +195,58 @@ def test_question_distractor_missing_from_corpus(card: Card, corpus: list[Corpus
     others = [e for e in corpus if e.official_name != "蚵仔煎"]
     with pytest.raises(ValueError, match="蚵仔煎"):
         check_question("Is it sold at night markets?", card, others)
+
+
+# Memory (Cross-game memory definition, Check rule), [R6]
+
+
+def test_memory_describer_reports_chinese_characters_only(card: Card) -> None:
+    result = check_memory("The Guesser confused it with 蚵仔煎", card, "describer")
+    assert result == MemoryCheck(has_chinese=True, names=(), english_names=())
+    assert result.failed
+
+
+def test_memory_describer_naming_the_snack_in_english_passes(card: Card) -> None:
+    # The Write rule allows the Describer's entry card information: English names and forbidden
+    # words are not in its check.
+    result = check_memory("Grilled oysters confused the Guesser; charcoal was the hint", card,
+                          "describer")
+    assert result == MemoryCheck(has_chinese=False, names=(), english_names=())
+    assert not result.failed
+
+
+def test_memory_describer_official_name_reports_chinese_only(card: Card) -> None:
+    result = check_memory("烤蚵仔", card, "describer")
+    assert result == MemoryCheck(has_chinese=True, names=(), english_names=())
+
+
+def test_memory_guesser_reports_the_official_name(card: Card) -> None:
+    result = check_memory("I should have guessed 烤蚵仔 earlier", card, "guesser")
+    assert result.names == ("烤蚵仔",)
+    assert result.has_chinese
+    assert result.failed
+
+
+def test_memory_guesser_reports_a_simplified_alias(card: Card) -> None:
+    result = check_memory("烤生蚝", card, "guesser")
+    assert result.names == ("烤生蠔",)
+
+
+def test_memory_guesser_reports_an_english_name_in_plural(card: Card) -> None:
+    result = check_memory("Searching for grilled oysters narrowed it", card, "guesser")
+    assert result == MemoryCheck(has_chinese=False, names=(), english_names=("Grilled oyster",))
+    assert result.failed
+
+
+def test_memory_guesser_clean_english_entry_passes(card: Card) -> None:
+    # Forbidden words are not in the Guesser's set: it never sees them.
+    result = check_memory("Filter by cooking method first; charcoal is a common hint", card,
+                          "guesser")
+    assert result == MemoryCheck(has_chinese=False, names=(), english_names=())
+    assert not result.failed
+
+
+def test_memory_guesser_reports_every_reason_that_applies(card: Card) -> None:
+    result = check_memory("烤蚵仔, the grilled oysters", card, "guesser")
+    assert result == MemoryCheck(has_chinese=True, names=("烤蚵仔",),
+                                 english_names=("Grilled oyster",))

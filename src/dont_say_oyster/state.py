@@ -153,6 +153,10 @@ class Call(TypedDict):
 
 CHINESE_CHARACTERS = "Chinese characters"  # why an output is sent back [R11], [R17], [R40]
 EMPTY = "empty"  # why a fail reason is re-asked (an empty reason is re-asked like Chinese [R40])
+# Why a Guesser memory output fails the Check rule besides Chinese characters (Cross-game memory
+# definition): the card's official name or an alias, or one of the card's English names [R22].
+CARD_NAMES = "the card's names"
+CARD_ENGLISH_NAMES = "the card's English names"
 
 
 class SentBack(TypedDict):
@@ -184,12 +188,33 @@ class VerdictEntry(TypedDict):
     ordinal: int
 
 
-class Accepted(TypedDict):
-    """What H accepted from one role's memory-writing call (Cross-game memory definition): the
-    entry for this game and, from game six on, the rolling summary (None before game six)."""
+class HFailed(TypedDict):
+    """One memory output of H the Check rule failed (Cross-game memory definition): the attempt
+    that produced it [R26], the ordinal of its `calls` entry, both texts as the model wrote them
+    (`summary` None with the entry-only schema), and why, each reason once in a fixed order
+    (Chinese characters, the card's names, the card's English names). The first two of a role's
+    failed outputs were sent back with the fixed message; a third was refused and is kept
+    because the record shows what validation caught."""
 
+    attempt: int
+    ordinal: int
     entry: str
     summary: str | None
+    reasons: list[str]
+
+
+class HResult(TypedDict):
+    """What H did for one role (Cross-game memory definition, Check rule): whether this game's
+    memory was written, the redo count (0, 1, or 2), the accepted entry and, from game six on,
+    the accepted summary (both None when the game was not written and the previous memory was
+    copied forward), and every output the check failed, in order. `redos` is `len(failed)` when
+    written and the redo limit when not; it is kept explicit because the record names it."""
+
+    written: bool
+    redos: int
+    entry: str | None
+    summary: str | None
+    failed: list[HFailed]
 
 
 class State(TypedDict):
@@ -237,14 +262,14 @@ class State(TypedDict):
     calls: list[Call]  # every model call of the game, in order
     sent_back: list[SentBack]  # every output the program sent back, in order
     verdicts: list[VerdictEntry]  # every verdict of the game, in order
-    describer_accepted: Accepted | None  # what H accepted from the Describer; None before H
-    guesser_accepted: Accepted | None  # what H accepted from the Guesser; None before H
+    describer_h: HResult | None  # what H did for the Describer; None until H has run
+    guesser_h: HResult | None  # what H did for the Guesser; None until H has run
 
 
 PROGRAM_ONLY = frozenset({
     "game", "violation", "matched_name", "describer_send_backs", "invalid_questions",
     "reason_reasks", "owes", "guess_only", "d_route", "calls", "sent_back", "verdicts",
-    "describer_accepted", "guesser_accepted",
+    "describer_h", "guesser_h",
 })
 
 
@@ -352,6 +377,6 @@ def initial_state(
         "calls": [],
         "sent_back": [],
         "verdicts": [],
-        "describer_accepted": None,
-        "guesser_accepted": None,
+        "describer_h": None,
+        "guesser_h": None,
     }

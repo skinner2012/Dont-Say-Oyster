@@ -28,31 +28,58 @@ What each prompt holds (Information isolation, Disclosure rule):
   when the memory holds fewer than five entries; the summary is asked for by game number
   whatever the entry count.
 
-Each call is attempt 1 [R26] and its output is accepted as returned: the checks on the entry
-and the summary ([R6], the Check rule) are not made here. Both calls are made and both
-memories advanced before either file is written, and each call passes the game's last round
-in its run metadata, the round its `calls` entry carries (`SPEC.md` Metrics, Per model call).
-The two memory rows keep the memories as read at game start; what H accepted goes into the
-program-only `describer_accepted` and `guesser_accepted`. H ends the game; there is no route."""
+The Check rule (Cross-game memory definition): after each call the entry and, from game six on,
+the summary are checked separately with `oracle.check_memory`, the Describer's for Chinese
+characters [R6] and the Guesser's also for the card's official name, aliases, and English names
+[R22]; a failure in either text sends the whole output back. A send-back is a new request made
+of the prompt, the model's previous reply as its own message, and the file's `fixed message`
+section, with the attempt number one higher [R26], at most `REDO_LIMIT` times, so a role makes
+one, two, or three calls; when the third output still fails, that role's game is not written and
+its file for this game holds the previous game's memory, copied forward with this game's number.
+The fixed message never says which check failed or quotes what was found (Disclosure rule); the
+reasons are kept in State for the record only. A blank entry or summary (whitespace only, which
+the schema's `minLength` lets through) is a model error like the empty string the schema
+refuses: LLMError, the game stops, no file (`SPEC.md` Recovery, forks, and replay).
+
+Both roles' loops finish before either memory is advanced or written, and each call passes the
+game's last round in its run metadata, the round its `calls` entry carries (`SPEC.md` Metrics,
+Per model call), so a model error in any call leaves neither file. The two memory rows keep the
+memories as read at game start; what H did goes into the program-only `describer_h` and
+`guesser_h`. H ends the game; there is no route."""
 
 import json
 from pathlib import Path
 from typing import Any
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from dont_say_oyster import prompt_sections
-from dont_say_oyster.cards import REPO_ROOT
+from dont_say_oyster.cards import REPO_ROOT, Card
 from dont_say_oyster.describer import _earlier, _lines, _list, _rejected
 from dont_say_oyster.guesser import _earlier_guesses, _earlier_texts
-from dont_say_oyster.llm import ClientFor, ModelSettings, Reply, call_structured, ollama_client
+from dont_say_oyster.llm import ClientFor, LLMError, ModelSettings, call_structured, ollama_client
 from dont_say_oyster.memory import LATEST, Memory, Role, advance, render, write_memory
-from dont_say_oyster.state import Accepted, Lookup, State, describer_output, winner, with_call
+from dont_say_oyster.oracle import check_memory
+from dont_say_oyster.state import (
+    CARD_ENGLISH_NAMES,
+    CARD_NAMES,
+    CHINESE_CHARACTERS,
+    Call,
+    HFailed,
+    HResult,
+    Lookup,
+    State,
+    card_from_state,
+    describer_output,
+    winner,
+    with_call,
+)
 
 DESCRIBER_PROMPT_PATH = REPO_ROOT / "prompts" / "describer_memory.txt"
 GUESSER_PROMPT_PATH = REPO_ROOT / "prompts" / "guesser_memory.txt"
 SUMMARY_FROM = 6  # the rolling summary is written from game six on (Cross-game memory definition)
-ATTEMPT = 1  # [R26]; the Check rule's redos are not made here
+REDO_LIMIT = 2  # redos per role under the Check rule (Cross-game memory definition)
+FIXED_MESSAGE = "fixed message"  # the section sent after a failed check
 NONE = "(none)"
 
 _TEXT: dict[str, Any] = {"type": "string", "minLength": 1}
@@ -152,28 +179,87 @@ def guesser_prompt(state: State, sections: dict[str, str]) -> str:
     })
 
 
-def _call(
-    state: State, settings: ModelSettings, prompt: str, client_for: ClientFor
-) -> Reply[dict[str, Any]]:
-    return call_structured(
-        settings,
-        [HumanMessage(prompt)],
-        schema(state),
-        ATTEMPT,
-        client_for,
-        metadata={"round": state["round"]},
-    )
+def _reasons(entry: str, summary: str | None, card: Card, role: Role) -> list[str]:
+    """Why an output fails the Check rule: the union over the entry and the summary, each checked
+    on its own so nothing matches across their join [R22], each reason once in a fixed order;
+    empty when the output passes."""
+    checks = [check_memory(entry, card, role)]
+    if summary is not None:
+        checks.append(check_memory(summary, card, role))
+    reasons = []
+    if any(c.has_chinese for c in checks):
+        reasons.append(CHINESE_CHARACTERS)
+    if any(c.names for c in checks):
+        reasons.append(CARD_NAMES)
+    if any(c.english_names for c in checks):
+        reasons.append(CARD_ENGLISH_NAMES)
+    return reasons
 
 
-def _accepted(state: State, reply: Reply[dict[str, Any]]) -> Accepted:
-    return {
-        "entry": reply.output["entry"],
-        "summary": reply.output["summary"] if _with_summary(state) else None,
+def _loop(
+    state: State,
+    role: Role,
+    settings: ModelSettings,
+    prompt: str,
+    sections: dict[str, str],
+    calls: list[Call],
+    client_for: ClientFor,
+) -> tuple[list[Call], HResult]:
+    """One role's calls under the Check rule: the first with the prompt alone, each redo with the
+    prompt, the previous reply, and the fixed message, attempts 1, 2, 3 [R26], every call
+    appended to `calls`; returns the calls and what H did for the role. Raises LLMError on a
+    blank entry or summary, as the wrapper does on an empty one."""
+    card = card_from_state(state)
+    messages: list[BaseMessage] = [HumanMessage(prompt)]
+    failed: list[HFailed] = []
+    for attempt in range(1, REDO_LIMIT + 2):
+        reply = call_structured(
+            settings,
+            messages,
+            schema(state),
+            attempt,
+            client_for,
+            metadata={"round": state["round"]},
+        )
+        calls = with_call(calls, "H", settings, state["round"], reply)
+        entry: str = reply.output["entry"]
+        summary: str | None = reply.output["summary"] if _with_summary(state) else None
+        for field, text in (("entry", entry), ("summary", summary)):
+            if text is not None and not text.strip():
+                raise LLMError(f"{settings.role}: memory {field} is blank")
+        reasons = _reasons(entry, summary, card, role)
+        if not reasons:
+            return calls, {
+                "written": True,
+                "redos": attempt - 1,
+                "entry": entry,
+                "summary": summary,
+                "failed": failed,
+            }
+        failed.append({
+            "attempt": attempt,
+            "ordinal": calls[-1]["ordinal"],
+            "entry": entry,
+            "summary": summary,
+            "reasons": reasons,
+        })
+        messages = [
+            HumanMessage(prompt),
+            AIMessage(json.dumps(reply.output, ensure_ascii=False)),
+            HumanMessage(sections[FIXED_MESSAGE]),
+        ]
+    return calls, {
+        "written": False, "redos": REDO_LIMIT, "entry": None, "summary": None, "failed": failed,
     }
 
 
-def _advanced(state: State, memory: Memory, accepted: Accepted) -> Memory:
-    return advance(memory, state["game"], accepted["entry"], accepted["summary"])
+def _after(state: State, memory: Memory, result: HResult) -> Memory:
+    """The memory to write for this game: advanced with the accepted entry and summary, or, when
+    the game was not written for the role, the memory as read at game start (the copy-forward of
+    the Check rule; `write_memory` stamps this game's number on it)."""
+    if not result["written"] or result["entry"] is None:
+        return memory
+    return advance(memory, state["game"], result["entry"], result["summary"])
 
 
 def node_h(
@@ -185,32 +271,28 @@ def node_h(
     describer_sections: dict[str, str] | None = None,
     guesser_sections: dict[str, str] | None = None,
 ) -> State:
-    """H: the Describer's call, then the Guesser's, each with its own settings; then both roles'
-    memories advanced with what each returned, and only then each written as the role's file
-    for this game under `directory` (Storage), so an error before the writes leaves neither
-    file. Appends both calls to `calls` and writes what was accepted into the
-    two program-only rows; the memory rows are left as read at game start."""
+    """H: the Describer's calls under the Check rule, then the Guesser's, each role with its own
+    settings; then each role's memory advanced with what was accepted, or kept as read at game
+    start when the role's game was not written, and only then each written as the role's file
+    for this game under `directory` (Storage), so an error before the writes leaves neither file.
+    Appends every call to `calls` and writes what H did into the two program-only rows; the
+    memory rows are left as read at game start."""
     if describer_sections is None:
         describer_sections = prompt_sections.sections(DESCRIBER_PROMPT_PATH)
     if guesser_sections is None:
         guesser_sections = prompt_sections.sections(GUESSER_PROMPT_PATH)
-    describer = _call(
-        state, describer_settings, describer_prompt(state, describer_sections), client_for
+    calls, describer_h = _loop(
+        state, "describer", describer_settings, describer_prompt(state, describer_sections),
+        describer_sections, state["calls"], client_for,
     )
-    guesser = _call(state, guesser_settings, guesser_prompt(state, guesser_sections), client_for)
-    calls = with_call(state["calls"], "H", describer_settings, state["round"], describer)
-    calls = with_call(calls, "H", guesser_settings, state["round"], guesser)
-    describer_accepted = _accepted(state, describer)
-    guesser_accepted = _accepted(state, guesser)
-    advanced: tuple[tuple[Role, Memory], ...] = (
-        ("describer", _advanced(state, state["describer_memory"], describer_accepted)),
-        ("guesser", _advanced(state, state["guesser_memory"], guesser_accepted)),
+    calls, guesser_h = _loop(
+        state, "guesser", guesser_settings, guesser_prompt(state, guesser_sections),
+        guesser_sections, calls, client_for,
     )
-    for role, memory in advanced:
+    to_write: tuple[tuple[Role, Memory], ...] = (
+        ("describer", _after(state, state["describer_memory"], describer_h)),
+        ("guesser", _after(state, state["guesser_memory"], guesser_h)),
+    )
+    for role, memory in to_write:
         write_memory(directory, role, state["game"], memory)
-    return {
-        **state,
-        "calls": calls,
-        "describer_accepted": describer_accepted,
-        "guesser_accepted": guesser_accepted,
-    }
+    return {**state, "calls": calls, "describer_h": describer_h, "guesser_h": guesser_h}

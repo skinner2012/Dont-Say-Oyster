@@ -1,5 +1,6 @@
 """The Oracle's name checks on one card: the guess check [R20], [R5], the Describer check [R21],
-and the question check [R17], on the matching helpers [R22]. Pure functions that only report;
+the question check [R17], and the memory check (Cross-game memory definition, Check rule), on
+the matching helpers [R22]. Pure functions that only report;
 send-backs, violations, rounds, and counters are the nodes'. Matched names are given as written
 on the card or in the corpus, in list order.
 
@@ -18,6 +19,7 @@ from dont_say_oyster.matching import (
     english_contains,
     has_chinese_characters,
 )
+from dont_say_oyster.memory import Role
 
 
 @dataclass(frozen=True)
@@ -64,6 +66,23 @@ class QuestionCheck:
         return self.has_chinese or bool(self.english_names or self.distractor_names)
 
 
+@dataclass(frozen=True)
+class MemoryCheck:
+    """What one memory text contains (Cross-game memory definition, Check rule): `has_chinese`
+    [R6]; for the Guesser only, `names`, the card's official name and aliases it contains by the
+    Chinese rule, and `english_names`, the card's English names it contains by the English rule,
+    plurals included [R22]. Both are empty for the Describer, whose check is Chinese characters
+    alone, since the Write rule allows its entry card information."""
+
+    has_chinese: bool
+    names: tuple[str, ...]
+    english_names: tuple[str, ...]
+
+    @property
+    def failed(self) -> bool:
+        return self.has_chinese or bool(self.names or self.english_names)
+
+
 def check_guess(guess: str, card: Card) -> GuessCheck:
     """The guess against the card's official name and aliases, by equals [R20], [R22]."""
     matched = chinese_equals(guess, (card.official_name, *card.aliases))
@@ -99,4 +118,18 @@ def check_question(question: str, card: Card, corpus: Sequence[CorpusEntry]) -> 
             for name in card.distractors
             for english in english_contains(question, by_name[name].english_names)
         ),
+    )
+
+
+def check_memory(text: str, card: Card, role: Role) -> MemoryCheck:
+    """One memory text (an entry or a rolling summary) of `role` against Chinese characters
+    [R6] and, for the Guesser, the card's official name, aliases, and English names (Cross-game
+    memory definition, Check rule) [R22]. Nothing else is in the set: not the forbidden words,
+    which the Guesser never sees, and not the distractors."""
+    if role == "describer":
+        return MemoryCheck(has_chinese=has_chinese_characters(text), names=(), english_names=())
+    return MemoryCheck(
+        has_chinese=has_chinese_characters(text),
+        names=tuple(chinese_contains(text, (card.official_name, *card.aliases))),
+        english_names=tuple(english_contains(text, card.english_names)),
     )

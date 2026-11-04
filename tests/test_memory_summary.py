@@ -1,20 +1,24 @@
 """Node H (the memory summary) on scripted structured replies and a State built as a finished
 game: what each prompt holds and never holds (Information isolation, Disclosure rule), the two
-schemas, the files written for the game (Storage), and the two calls in `calls`."""
+schemas, the Check rule's redos with the fixed message and the copy-forward on a third failure
+(Cross-game memory definition), the files written for the game (Storage), and the calls in
+`calls`."""
 
 import json
 import re
+from dataclasses import fields
 from pathlib import Path
 from typing import Any, get_args
 
 import pytest
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatResult
 
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, load_cards
-from dont_say_oyster.corpus import load_corpus
+from dont_say_oyster.corpus import Attributes, load_corpus
 from dont_say_oyster.llm import LLMError, ModelSettings
+from dont_say_oyster.matching import has_chinese_characters
 from dont_say_oyster.memory import (
     Memory,
     Role,
@@ -27,13 +31,27 @@ from dont_say_oyster.memory_summary import (
     DESCRIBER_PROMPT_PATH,
     ENTRY_AND_SUMMARY_SCHEMA,
     ENTRY_SCHEMA,
+    FIXED_MESSAGE,
     GUESSER_PROMPT_PATH,
+    REDO_LIMIT,
     describer_prompt,
     guesser_prompt,
     node_h,
 )
+from dont_say_oyster.oracle import check_memory
 from dont_say_oyster.prompt_sections import sections
-from dont_say_oyster.state import PROGRAM_ONLY, Outcome, State, initial_state, winner
+from dont_say_oyster.state import (
+    CARD_ENGLISH_NAMES,
+    CARD_NAMES,
+    CHINESE_CHARACTERS,
+    PROGRAM_ONLY,
+    HFailed,
+    HResult,
+    Outcome,
+    State,
+    initial_state,
+    winner,
+)
 from tests.test_llm import Clients, Scripted, reply
 
 DESCRIBER = ModelSettings("Describer", "qwen3.8:27b-q4_K_M", 16384, 0.7, "medium", -1)
@@ -93,7 +111,8 @@ def finished(
         "names": ["S-official-name", "S-alias-1", "S-alias-2"],
         "english_names": ["S-english-name-1", "S-english-name-2"],
         "forbidden_words": ["S-forbidden-1", "S-forbidden-2"],
-        "attributes": {"dish_type": ["S-attribute"]},
+        # Every field, so `card_from_state` can build the card the Check rule reads.
+        "attributes": {field.name: ["S-attribute"] for field in fields(Attributes)},
         "distractors": ["S-distractor-1", "S-distractor-2"],
         "guesser_input": {
             "kind": "description", "text": "S-description-3", "latency": 1.0,
@@ -204,6 +223,26 @@ def prompts(model: Recording) -> tuple[str, str]:
     return describer, guesser
 
 
+def written(entry: str, summary: str | None = None, redos: int = 0,
+            failed: list[HFailed] | None = None) -> HResult:
+    return {"written": True, "redos": redos, "entry": entry, "summary": summary,
+            "failed": failed or []}
+
+
+def with_card(state: State, names: list[str], english_names: list[str]) -> State:
+    return {**state, "names": names, "english_names": english_names}
+
+
+def send_back(messages: list[BaseMessage], previous: dict[str, str], fixed: str) -> None:
+    """`messages` is a redo's request: the prompt, the previous reply as the model's message,
+    and the fixed message."""
+    prompt, reply, message = messages
+    assert isinstance(prompt, HumanMessage)
+    assert isinstance(reply, AIMessage)
+    assert json.loads(reply.text) == previous
+    assert isinstance(message, HumanMessage) and message.text == fixed
+
+
 # The prompt files
 
 
@@ -236,7 +275,9 @@ def test_each_section_s_braces_are_exactly_its_slots_each_once(
 
 def test_each_file_has_the_prompt_two_task_sections_and_conventions_naming_every_slot() -> None:
     for texts in (D_SECTIONS, G_SECTIONS):
-        assert set(texts) == {"prompt", "task: entry", "task: entry and summary", "conventions"}
+        assert set(texts) == {
+            "prompt", "task: entry", "task: entry and summary", FIXED_MESSAGE, "conventions",
+        }
         slots = re.findall(r"\{[^}]*\}", texts["prompt"] + texts["task: entry and summary"])
         assert [s for s in slots if s not in texts["conventions"]] == []
 
@@ -259,6 +300,8 @@ def test_the_conventions_never_reach_the_model(tmp_path: Path) -> None:
         describer, guesser = prompts(model)
         assert D_SECTIONS["conventions"] not in describer
         assert G_SECTIONS["conventions"] not in guesser
+        assert D_SECTIONS[FIXED_MESSAGE] not in describer  # only after a failed check
+        assert G_SECTIONS[FIXED_MESSAGE] not in guesser
         for prompt in (describer, guesser):
             assert "=== " not in prompt
             assert re.search(r"\{[a-z_ ]+\}", prompt) is None  # no slot left unfilled
@@ -467,8 +510,8 @@ def test_after_game_1_both_files_hold_one_entry_and_no_summary(tmp_path: Path) -
     assert read_memory(tmp_path, "guesser", 2) == {
         "entries": [{"game": 1, "text": "G-entry"}], "summary": None,
     }
-    assert after["describer_accepted"] == {"entry": "D-entry", "summary": None}
-    assert after["guesser_accepted"] == {"entry": "G-entry", "summary": None}
+    assert after["describer_h"] == written("D-entry")
+    assert after["guesser_h"] == written("G-entry")
 
 
 def test_after_game_6_both_files_hold_games_2_to_6_and_the_new_summary(tmp_path: Path) -> None:
@@ -480,13 +523,13 @@ def test_after_game_6_both_files_hold_games_2_to_6_and_the_new_summary(tmp_path:
     after, _, _ = run(state, tmp_path, *WITH_SUMMARIES)
     roles: tuple[tuple[Role, str], ...] = (("describer", "D"), ("guesser", "G"))
     for role, tag in roles:
-        written = read_memory(tmp_path, role, 7)
-        assert [e["game"] for e in written["entries"]] == [2, 3, 4, 5, 6]
-        assert written["entries"][:4] == memory(2, 3, 4, 5, role=tag)["entries"]
-        assert written["entries"][4] == {"game": 6, "text": f"{tag}-entry"}
-        assert written["summary"] == f"{tag}-summary"
-    assert after["describer_accepted"] == {"entry": "D-entry", "summary": "D-summary"}
-    assert after["guesser_accepted"] == {"entry": "G-entry", "summary": "G-summary"}
+        file = read_memory(tmp_path, role, 7)
+        assert [e["game"] for e in file["entries"]] == [2, 3, 4, 5, 6]
+        assert file["entries"][:4] == memory(2, 3, 4, 5, role=tag)["entries"]
+        assert file["entries"][4] == {"game": 6, "text": f"{tag}-entry"}
+        assert file["summary"] == f"{tag}-summary"
+    assert after["describer_h"] == written("D-entry", "D-summary")
+    assert after["guesser_h"] == written("G-entry", "G-summary")
 
 
 def test_the_memory_rows_are_left_as_read_at_game_start(tmp_path: Path) -> None:
@@ -495,10 +538,8 @@ def test_the_memory_rows_are_left_as_read_at_game_start(tmp_path: Path) -> None:
     after, _, _ = run(state, tmp_path, *WITH_SUMMARIES)
     assert after["describer_memory"] == state["describer_memory"]
     assert after["guesser_memory"] == state["guesser_memory"]
-    assert (state["describer_accepted"], state["guesser_accepted"]) == (None, None)
-    restored: State = {
-        **after, "calls": state["calls"], "describer_accepted": None, "guesser_accepted": None,
-    }
+    assert (state["describer_h"], state["guesser_h"]) == (None, None)
+    restored: State = {**after, "calls": state["calls"], "describer_h": None, "guesser_h": None}
     assert restored == state  # H changes nothing else
 
 
@@ -542,4 +583,168 @@ def test_a_failed_guesser_advance_writes_neither_file(
     with pytest.raises(ValueError, match="S-advance-error"):
         run(finished(1), tmp_path, *ENTRIES)
     assert len(calls) == 2
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+# The Check rule: redos with the fixed message and the copy-forward on a third failure
+
+
+NAMED = {"entry": "I guessed S-official-name"}
+
+
+def test_a_guesser_entry_naming_the_official_name_is_sent_back_twice_then_copied_forward(
+    tmp_path: Path,
+) -> None:
+    state = finished(3)
+    after, model, _ = run(state, tmp_path, ENTRIES[0], NAMED, NAMED, NAMED)
+    assert len(model.received) == 4
+    assert len(model.received[1]) == 1  # the Guesser's first call: the prompt alone
+    for messages in model.received[2:]:
+        send_back(messages, NAMED, G_SECTIONS[FIXED_MESSAGE])
+    new = after["calls"][1:]
+    assert [(c["ordinal"], c["node"], c["role"], c["round"], c["attempt"]) for c in new] == [
+        (2, "H", "Describer", LAST_ROUND, 1),
+        (3, "H", "Guesser", LAST_ROUND, 1),
+        (4, "H", "Guesser", LAST_ROUND, 2),
+        (5, "H", "Guesser", LAST_ROUND, 3),
+    ]
+    assert REDO_LIMIT == 2
+    assert after["guesser_h"] == {
+        "written": False, "redos": 2, "entry": None, "summary": None,
+        "failed": [
+            {"attempt": a, "ordinal": o, "entry": NAMED["entry"], "summary": None,
+             "reasons": [CARD_NAMES]}
+            for a, o in ((1, 3), (2, 4), (3, 5))
+        ],
+    }
+    copied = json.loads(memory_path(tmp_path, "guesser", 3).read_text(encoding="utf-8"))
+    assert copied == {"role": "guesser", "game": 3, **state["guesser_memory"]}
+    assert read_memory(tmp_path, "describer", 4)["entries"][-1] == {"game": 3, "text": "D-entry"}
+    assert after["describer_h"] == written("D-entry")
+
+
+@pytest.mark.parametrize(
+    ("entry", "reasons"),
+    [
+        ("try 烤生蚝 first", [CHINESE_CHARACTERS, CARD_NAMES]),
+        ("S-english-name-1s narrowed it", [CARD_ENGLISH_NAMES]),
+    ],
+    ids=["simplified alias", "english name in the plural"],
+)
+def test_a_simplified_alias_or_a_plural_english_name_is_caught_by_r22_matching(
+    tmp_path: Path, entry: str, reasons: list[str]
+) -> None:
+    state = with_card(finished(3), ["烤蚵仔", "烤生蠔"], ["S-english-name-1"])
+    bad = {"entry": entry}
+    after, _, _ = run(state, tmp_path, ENTRIES[0], bad, bad, bad)
+    result = after["guesser_h"]
+    assert result is not None and not result["written"] and result["redos"] == 2
+    assert [f["reasons"] for f in result["failed"]] == [reasons] * 3
+    assert read_memory(tmp_path, "guesser", 4) == state["guesser_memory"]
+
+
+def test_a_game_6_summary_naming_the_answer_is_caught_when_the_entry_is_clean(
+    tmp_path: Path,
+) -> None:
+    state = finished(6, guesser_memory=memory(1, 2, 3, 4, 5, role="G", summary="G-old"))
+    bad = {"entry": "clean", "summary": "always start from S-official-name"}
+    after, _, _ = run(state, tmp_path, WITH_SUMMARIES[0], bad, bad, bad)
+    result = after["guesser_h"]
+    assert result is not None and not result["written"]
+    assert [(f["entry"], f["summary"], f["reasons"]) for f in result["failed"]] == [
+        ("clean", "always start from S-official-name", [CARD_NAMES])
+    ] * 3
+    copied = read_memory(tmp_path, "guesser", 7)
+    assert [e["game"] for e in copied["entries"]] == [1, 2, 3, 4, 5]
+    assert copied["summary"] == "G-old"
+
+
+def test_a_describer_entry_with_chinese_is_sent_back_once_and_its_clean_redo_is_written(
+    tmp_path: Path,
+) -> None:
+    first = {"entry": "蚵仔 fooled it"}
+    after, model, _ = run(finished(2), tmp_path, first, {"entry": "D-entry-2"}, ENTRIES[1])
+    assert len(model.received) == 3
+    send_back(model.received[1], first, D_SECTIONS[FIXED_MESSAGE])
+    assert len(model.received[2]) == 1
+    assert [(c["ordinal"], c["role"], c["attempt"]) for c in after["calls"][1:]] == [
+        (2, "Describer", 1), (3, "Describer", 2), (4, "Guesser", 1),
+    ]
+    assert after["describer_h"] == written("D-entry-2", redos=1, failed=[
+        {"attempt": 1, "ordinal": 2, "entry": "蚵仔 fooled it", "summary": None,
+         "reasons": [CHINESE_CHARACTERS]},
+    ])
+    assert read_memory(tmp_path, "describer", 3)["entries"][-1] == {
+        "game": 2, "text": "D-entry-2",
+    }
+    assert after["guesser_h"] == written("G-entry")
+
+
+def test_a_describer_entry_naming_the_snack_in_english_is_not_sent_back(tmp_path: Path) -> None:
+    # The Write rule allows the Describer's entry card information.
+    allowed = {"entry": "S-english-name-1 and S-official-name, S-forbidden-1"}
+    after, model, _ = run(finished(1), tmp_path, allowed, ENTRIES[1])
+    assert len(model.received) == 2
+    assert after["describer_h"] == written(allowed["entry"])
+
+
+def test_the_fixed_messages_name_no_card_and_hold_no_chinese() -> None:
+    # The Guesser's fixed message is sent after a failed check, so under the Disclosure rule it
+    # must pass the Guesser's own check against every card in the deck.
+    corpus = load_corpus(REPO_ROOT / "data" / "corpus" / "corpus.json")
+    cards = load_cards(CARDS_PATH, corpus)
+    assert len(cards) == 40
+    for card in cards:
+        assert not check_memory(G_SECTIONS[FIXED_MESSAGE], card, "guesser").failed
+    assert not has_chinese_characters(D_SECTIONS[FIXED_MESSAGE])
+    assert not has_chinese_characters(G_SECTIONS[FIXED_MESSAGE])
+
+
+def test_game_1_failing_three_times_writes_the_empty_memory_as_game_1_s_file(
+    tmp_path: Path,
+) -> None:
+    state = finished(1, describer_memory=empty_memory(), guesser_memory=empty_memory())
+    run(state, tmp_path, ENTRIES[0], NAMED, NAMED, NAMED)
+    written_file = json.loads(memory_path(tmp_path, "guesser", 1).read_text(encoding="utf-8"))
+    assert written_file == {"role": "guesser", "game": 1, "entries": [], "summary": None}
+    assert read_memory(tmp_path, "guesser", 2) == empty_memory()
+
+
+@pytest.mark.parametrize("failing", ["describer", "guesser"])
+def test_one_role_s_failure_does_not_affect_the_other_s_file(
+    tmp_path: Path, failing: Role
+) -> None:
+    state = finished(2)
+    bad = {"entry": "中文"}
+    outputs = (bad, bad, bad, ENTRIES[1]) if failing == "describer" else (ENTRIES[0], bad, bad, bad)
+    after, _, _ = run(state, tmp_path, *outputs)
+    other: Role = "guesser" if failing == "describer" else "describer"
+    assert read_memory(tmp_path, failing, 3) == state[f"{failing}_memory"]  # type: ignore[literal-required]
+    advanced = read_memory(tmp_path, other, 3)
+    assert advanced["entries"][-1]["game"] == 2
+    failing_h = after[f"{failing}_h"]  # type: ignore[literal-required]
+    other_h = after[f"{other}_h"]  # type: ignore[literal-required]
+    assert failing_h is not None and not failing_h["written"] and failing_h["redos"] == 2
+    assert other_h is not None and other_h["written"] and other_h["redos"] == 0
+
+
+def test_a_model_error_in_a_redo_writes_neither_file(tmp_path: Path) -> None:
+    with pytest.raises(LLMError):
+        run(finished(1), tmp_path, {"entry": "中文"}, {"text": "not an entry"})
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("blank", [{"entry": "   "}, {"entry": "\n\t"}])
+def test_a_blank_entry_is_a_model_error_and_writes_no_file(
+    tmp_path: Path, blank: dict[str, str]
+) -> None:
+    with pytest.raises(LLMError, match="Describer: memory entry is blank"):
+        run(finished(1), tmp_path, blank, ENTRIES[1])
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+def test_a_blank_summary_is_a_model_error_and_writes_no_file(tmp_path: Path) -> None:
+    state = finished(6, guesser_memory=memory(1, 2, 3, 4, 5, role="G"))
+    with pytest.raises(LLMError, match="Guesser: memory summary is blank"):
+        run(state, tmp_path, WITH_SUMMARIES[0], {"entry": "clean", "summary": " "})
     assert not tmp_path.exists() or list(tmp_path.iterdir()) == []

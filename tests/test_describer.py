@@ -229,8 +229,8 @@ def _every_item() -> State:
                        "ordinal": 1, "reason": "S-send-back-reason", "replaced": False}],
         "verdicts": [{"round": 1, "verdict": "fail", "reason": "S-verdicts-reason",
                       "ordinal": 2}],
-        "describer_accepted": None,
-        "guesser_accepted": None,
+        "describer_h": None,
+        "guesser_h": None,
     }
 
 
