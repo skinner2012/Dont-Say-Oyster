@@ -25,10 +25,10 @@ Progress lives in the repo: each ticket carries a `Status` line (`todo`, `done <
 
 ## Delegation
 
-- Fable at high effort: deep design reviews, fresh-eyes audits, and the cases named below.
+- Fable at high effort, sparingly (it was half the token spend of M6): the design pass of a hard ticket (design first, the author approves, then a cheaper model implements), the `SPEC.md` change review below, and the root-cause escalation below. Not for implementing, not for routine audits.
 - Opus: translation, restructuring, generating tickets and other long-form drafts.
-- Sonnet: mechanical extraction and verification (rule inventories, diff checks, dependency checks).
-- Implementing a ticket: Opus by default; Fable at high effort for the hard ones (LangGraph wiring, the tool loop, the memory check rule).
+- Sonnet: mechanical extraction and verification (rule inventories, diff checks, dependency checks) and ticket audits by default; a finding that needs a design judgement goes to Fable at high effort as a question, not the whole audit.
+- Implementing a ticket: Opus, always. A hard ticket (LangGraph wiring, the tool loop, the memory check rule, the record and schema) gets a design pass by Fable at high effort first, which the author reviews; Opus then implements the approved design.
 - Problems during implementation or testing: the implementing session debugs first and finds the root cause before changing anything. Escalate to Fable at high effort when the root cause is unclear after one honest attempt, or when the problem looks like a `SPEC.md` gap rather than a code bug. A ticket blocked on a `SPEC.md` gap stops; record the question in the ticket file under `## Open questions for the author` and move to a ticket that does not depend on it.
 - Changing `SPEC.md`: the author edits; Fable at high effort reviews the change for consistency with the rest of the spec and judges pass or fail; Sonnet re-checks cross-references (rule numbers, milestones, State table) and the affected `docs/tasks/BACKLOG.md` items and any open ticket file. Rule ids are append-only (`R51`, …); never renumber. The reviewing session then adds the `docs/DECISIONS.md` entry in the next commit, citing the `SPEC.md` commit's hash.
 - Every generated artifact gets an independent verification pass by a different session or subagent before the author reviews it.
