@@ -234,6 +234,18 @@ def test_each_file_has_the_prompt_two_task_sections_and_conventions_naming_every
         assert [s for s in slots if s not in texts["conventions"]] == []
 
 
+@pytest.mark.parametrize("texts", [D_SECTIONS, G_SECTIONS], ids=["describer", "guesser"])
+def test_the_entry_instructions_are_the_same_in_both_task_sections(texts: dict[str, str]) -> None:
+    """Only one task section is sent per call, so the paragraph instructing the entry exists
+    twice in each file; editing one copy and not the other fails here."""
+    entry_only, with_summary = (
+        re.split(r"\n\s*\n", texts[name])[0].strip()
+        for name in ("task: entry", "task: entry and summary")
+    )
+    assert entry_only
+    assert entry_only == with_summary
+
+
 def test_the_conventions_never_reach_the_model(tmp_path: Path) -> None:
     for state, outputs in ((finished(1), ENTRIES), (finished(6), WITH_SUMMARIES)):
         _, model, _ = run(state, tmp_path / str(state["game"]), *outputs)
