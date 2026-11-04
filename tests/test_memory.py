@@ -87,10 +87,6 @@ VALID = {"role": "describer", "game": 3, "entries": [{"game": 3, "text": "E"}], 
         pytest.param({k: v for k, v in VALID.items() if k != "entries"}, id="missing entries"),
         pytest.param({**VALID, "entries": [{"game": 3}]}, id="entry missing text"),
         pytest.param({**VALID, "extra": 1}, id="unknown field"),
-        pytest.param(
-            {**VALID, "entries": [{"game": g, "text": "E"} for g in range(1, 7)], "game": 6},
-            id="six entries",
-        ),
         pytest.param({**VALID, "role": "guesser"}, id="another role"),
         pytest.param({**VALID, "game": 2}, id="another game"),
         pytest.param(
@@ -105,6 +101,15 @@ def test_an_invalid_previous_file_raises_naming_the_path(
     _raw(tmp_path, "describer-03.json", data)
     with pytest.raises(MemoryFileError, match="describer-03.json"):
         read_memory(tmp_path, "describer", 4)
+
+
+def test_a_previous_file_with_six_entries_raises_naming_the_path(tmp_path: Path) -> None:
+    """The file is game 6's and read by game 7, so only the entry count is wrong."""
+    six = {"role": "describer", "game": 6,
+           "entries": [{"game": g, "text": "E"} for g in range(1, 7)], "summary": None}
+    _raw(tmp_path, "describer-06.json", six)
+    with pytest.raises(MemoryFileError, match="describer-06.json"):
+        read_memory(tmp_path, "describer", 7)
 
 
 def test_a_file_that_is_not_json_raises(tmp_path: Path) -> None:
