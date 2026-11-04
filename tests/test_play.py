@@ -1078,6 +1078,34 @@ def test_build_graph_and_play_game_refuse_a_memory_directory_that_disagrees_with
     assert [models.calls(role) for role in ROLES] == [0, 0, 0]
 
 
+@pytest.mark.parametrize("variant", ["V0", "V1", "V2", "V3"])
+def test_each_variant_s_graph_has_exactly_the_nodes_its_toggles_turn_on(
+    variant: Variant, corpus: list[CorpusEntry], tmp_path: Path
+) -> None:
+    """The compiled graph's nodes and the memory edges (`SPEC.md` Full flow of one game,
+    Transitions that differ between variants): D only with the Challenger, H only with memory,
+    and F → H and H → end only where H is."""
+    toggles = TOGGLES[variant]
+    settings = role_settings(
+        play.build_parser().parse_args([CARD_ID, "out.json", "--variant", variant])
+    )
+    drawn = build_graph(
+        settings, corpus, v3_game(), toggles, tmp_path if toggles.memory else None
+    ).get_graph()
+    expected = {"__start__", "G", "B", "C", "E", "F", "__end__"}
+    if toggles.challenger:
+        expected.add("D")
+    if toggles.memory:
+        expected.add("H")
+    assert set(drawn.nodes) == expected
+    edges = {(edge.source, edge.target) for edge in drawn.edges}
+    assert ("F", "__end__") in edges
+    assert (("F", "H") in edges) is toggles.memory
+    assert (("H", "__end__") in edges) is toggles.memory
+    assert not any(target == "H" for _, target in edges - {("F", "H")})
+    assert ("D" in {source for source, _ in edges}) is toggles.challenger
+
+
 # Errors.
 
 
