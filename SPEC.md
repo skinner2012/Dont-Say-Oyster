@@ -225,7 +225,7 @@ The main build will be the V3 variant, but with three toggles added to turn off 
 | Question counter | Integer (this game only) | Program. | Program. Guesser. |
 | Forced pass | Integer (this game only) | Program. | Program. |
 | Card id | String | Program. | Program. |
-| Game result | One of the four F outcomes | Program (F). | Program (H). |
+| Game result | One of the four F outcomes | Program (F). | Program (H), Describer (in H's prompt). |
 | Lookup counter | Integer (this round) | Program. | Program. |
 
 The program can read every row. The row "Description based on the card, or answer to the Guesser's question" is filled by the program after C passes and, in V2–V3, after D passes or a forced pass.
@@ -239,6 +239,7 @@ The program can read every row. The row "Description based on the card, or answe
     - The Challenger's latest verdict with its reason, and every rejected description of this game with its reason (the Earlier rejected descriptions row).
     - Cross-game memory.
     - Round counter.
+    - The game result (one of the four F outcomes), at game end, in H's prompt only.
 - Challenger:
     - The official name and accepted aliases and distractors on the card.
     - The description based on the card.
@@ -249,11 +250,12 @@ The program can read every row. The row "Description based on the card, or answe
     - Earlier guesses and questions.
     - Cross-game memory.
     - Round counter, question counter.
+    - Who won and who lost, at game end, in H's prompt only.
 
 ### Cross-game memory definition
 
 - After each game ends, the Describer and the Guesser each write a memory entry based on that game's experience, and the program checks whether it has Chinese characters. It builds up game by game, and what built up from earlier games is added to the Prompt of the new game. Size limit: the latest five entries in full, plus one rolling summary of the older entries.
-- Disclosure rule: the program only tells the Guesser and the Describer who won and who lost. No matter who wins or loses, the program does not tell the Guesser the correct answer or accepted aliases.
+- Disclosure rule: at game end the program tells the Describer the game result (one of the four F outcomes) and tells the Guesser only who won and who lost. No matter who wins or loses, the program does not tell the Guesser the correct answer or accepted aliases.
 - Write rule: the Describer's summary can include card information. The Guesser's summary only has strategies for guessing better, and does not include the correct answer, accepted aliases, or English names.
 - Check rule: after the H node returns, the program checks each role's new entry and, from game six on, its rolling summary for Chinese characters; the Guesser's entry and rolling summary are also checked for the game's correct answer, accepted aliases, and English names. If any is found, a fixed message is attached to ask that role to redo, at most two times; if it still contains them, that game is not written to memory for that role, and that role's memory file is written out the same as the previous game's.
 - Storage: each role has its own JSON memory file, saved by game number. The program reads it into State at game start, and after the H node summarizes at game end, the program writes it back. Except for the first game, each game's command only reads the previous game's file.
@@ -272,7 +274,7 @@ One game. "Program" nodes are Oracle code; "model" nodes are LLM calls.
 | D — Challenge | Model | Challenger verdict pass/fail; Chinese reason retried once then fixed message [R40] | Pass → E. Fail → B (with reason). 3rd fail → E (forced pass [R13]) | V2–V3 only |
 | E — Guess | Model | Guesser asks or guesses. V0: no corpus, no memory. V1–V3: tool loop (≤5 lookups [R43]) then structured output [R47]. V3: with cross-game memory | Question passes name/Chinese check → G (new round). Invalid question → E structured call again, max 2; 3rd → violation → F [R17]. Guess → F | V0–V3; tool loop V1–V3; memory V3 |
 | F — Resolve | Program | Determines the outcome | Guess right → Guesser wins. Wrong guess in round 10 → Guesser loses. Guesser violation → Guesser loses. Describer violation → Guesser wins. These four: end (V0–V2) / → H (V3). Everything else → G (new round) | V0–V3; →H branch V3 only |
-| H — Memory summary | Model | Describer (full transcript + result) and Guesser (its own transcript + result) each make one call that returns its new memory entry and, from game six on, the updated rolling summary of the older entries. The program checks both (see check rule) and writes the memory files. End | → end | V3 only |
+| H — Memory summary | Model | Describer (full transcript + the game result) and Guesser (its own transcript + who won and who lost) each make one call that returns its new memory entry and, from game six on, the updated rolling summary of the older entries. The program checks both (see check rule) and writes the memory files. End | → end | V3 only |
 
 The same flow as a diagram. Dashed arrows and dashed nodes exist only in the variants written on them; arrows leaving a dashed node exist only where that node does. Solid arrows exist in every variant. "max 2" means two retries are allowed and the third failure takes the other path. Who wins on each outcome is in the F row of the table.
 
