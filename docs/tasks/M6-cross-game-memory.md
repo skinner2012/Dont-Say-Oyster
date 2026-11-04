@@ -16,7 +16,7 @@ T1 → T2 → T3 → T4 → T5 → T6, one implementer at a time in the main che
 ## Tickets
 
 ### T1 — Memory files and the two cross-game memory rows in State
-- **Status:** todo
+- **Status:** done bf6fb33
 - **Produces:** `src/dont_say_oyster/memory.py`: the `Memory` type, a TypedDict so State stays JSON (the latest entries in game order, each with its game number and text, at most five; the rolling summary or None), the empty memory, `read_memory(directory, role, game)` (game 1 returns the empty memory and reads nothing; game n > 1 reads game n − 1's file), `write_memory(directory, role, game, memory)`, `advance(memory, game, entry, summary)` (appends the new entry, keeps the latest five, replaces the summary when one is given), and `render(memory) -> str` (the text block the prompts show and the token count measures); `data/memory/schema.json`, the memory file's JSON Schema; the two State rows `describer_memory` and `guesser_memory` and the program-only `game` number, filled by `node_a`.
 - **Consumes:** `state.py`, `program_nodes.node_a`, the `jsonschema` validator the corpus loader (`corpus.py`) and `cards.py` use.
 - **Detail:**
@@ -122,3 +122,11 @@ Decisions made by the orchestrator in cutting these tickets, for the author's re
 
 ## Audit findings
 
+- T1 F1: the "six entries" read case failed on the file-name/game mismatch, not on the count (it passed with `maxItems` removed). Fixed 435d8cc.
+- T1 F2: a non-UTF-8 previous file raised a bare `UnicodeDecodeError`, not a `MemoryFileError` naming the path. Fixed 35b44a7.
+- T1 F3 (note, carried to T2): a summary of `""` renders as a blank line, not `(none)`; T2's H schema requires `minLength` 1. No change in T1.
+- T1 F4 (note): `advance` shares the entry dicts with its input; the list is new, nothing is counted twice, the input is not changed. No change.
+- T1 F5 (note, carried to T4): `_every_item` in `tests/test_describer.py` holds the empty memory, so the Describer isolation test cannot see a memory leak until T4 marks the values. No change in T1.
+- T1 F6 (note): a second repo-root computation and a third `(none)` constant, in the existing convention. No change.
+- T1 additions beyond the Detail, judged harmless by the auditor: `read_memory` also requires the file's role and game to match its name and no entry after the file's game; `advance` refuses an out-of-order game; `write_memory` validates before writing; `memory_path` and `empty_memory()`; the `render` headings. Kept (the author, 2026-11-03).
+- T1 Acceptance re-derived by the auditor: targeted tests 46 (48 after the fixes), full suite 529 (530), ruff and mypy 0, files for games 1–8 written and validated, five entries kept from game 5 on.
