@@ -15,7 +15,14 @@ from langchain_core.outputs import ChatResult
 from dont_say_oyster.cards import CARDS_PATH, REPO_ROOT, load_cards
 from dont_say_oyster.corpus import load_corpus
 from dont_say_oyster.llm import LLMError, ModelSettings
-from dont_say_oyster.memory import Memory, Role, empty_memory, memory_path, read_memory
+from dont_say_oyster.memory import (
+    Memory,
+    Role,
+    advance,
+    empty_memory,
+    memory_path,
+    read_memory,
+)
 from dont_say_oyster.memory_summary import (
     DESCRIBER_PROMPT_PATH,
     ENTRY_AND_SUMMARY_SCHEMA,
@@ -515,4 +522,24 @@ def test_the_two_calls_are_appended_with_node_h_the_role_the_last_round_and_atte
 def test_a_failed_guesser_call_writes_neither_file(tmp_path: Path) -> None:
     with pytest.raises(LLMError):
         run(finished(1), tmp_path, ENTRIES[0], {"text": "not an entry"})
+    assert not tmp_path.exists() or list(tmp_path.iterdir()) == []
+
+
+def test_a_failed_guesser_advance_writes_neither_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[int] = []
+
+    def failing_second(
+        memory: Memory, game: int, entry: str, summary: str | None
+    ) -> Memory:
+        calls.append(game)
+        if len(calls) == 2:
+            raise ValueError("S-advance-error")
+        return advance(memory, game, entry, summary)
+
+    monkeypatch.setattr("dont_say_oyster.memory_summary.advance", failing_second)
+    with pytest.raises(ValueError, match="S-advance-error"):
+        run(finished(1), tmp_path, *ENTRIES)
+    assert len(calls) == 2
     assert not tmp_path.exists() or list(tmp_path.iterdir()) == []

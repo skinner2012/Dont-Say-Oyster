@@ -29,11 +29,11 @@ What each prompt holds (Information isolation, Disclosure rule):
   whatever the entry count.
 
 Each call is attempt 1 [R26] and its output is accepted as returned: the checks on the entry
-and the summary ([R6], the Check rule) are not made here. Both calls are made before either
-file is written, and each passes the game's last round in its run metadata, the round its
-`calls` entry carries (`SPEC.md` Metrics, Per model call). The two memory rows keep the
-memories as read at game start; what H accepted goes into the program-only `describer_accepted`
-and `guesser_accepted`. H ends the game; there is no route."""
+and the summary ([R6], the Check rule) are not made here. Both calls are made and both
+memories advanced before either file is written, and each call passes the game's last round
+in its run metadata, the round its `calls` entry carries (`SPEC.md` Metrics, Per model call).
+The two memory rows keep the memories as read at game start; what H accepted goes into the
+program-only `describer_accepted` and `guesser_accepted`. H ends the game; there is no route."""
 
 import json
 from pathlib import Path
@@ -172,9 +172,8 @@ def _accepted(state: State, reply: Reply[dict[str, Any]]) -> Accepted:
     }
 
 
-def _write(directory: Path, role: Role, state: State, memory: Memory, accepted: Accepted) -> None:
-    advanced = advance(memory, state["game"], accepted["entry"], accepted["summary"])
-    write_memory(directory, role, state["game"], advanced)
+def _advanced(state: State, memory: Memory, accepted: Accepted) -> Memory:
+    return advance(memory, state["game"], accepted["entry"], accepted["summary"])
 
 
 def node_h(
@@ -186,9 +185,10 @@ def node_h(
     describer_sections: dict[str, str] | None = None,
     guesser_sections: dict[str, str] | None = None,
 ) -> State:
-    """H: the Describer's call, then the Guesser's, each with its own settings; then each role's
-    memory advanced with what it returned and written as its file for this game under
-    `directory` (Storage). Appends both calls to `calls` and writes what was accepted into the
+    """H: the Describer's call, then the Guesser's, each with its own settings; then both roles'
+    memories advanced with what each returned, and only then each written as the role's file
+    for this game under `directory` (Storage), so an error before the writes leaves neither
+    file. Appends both calls to `calls` and writes what was accepted into the
     two program-only rows; the memory rows are left as read at game start."""
     if describer_sections is None:
         describer_sections = prompt_sections.sections(DESCRIBER_PROMPT_PATH)
@@ -202,8 +202,12 @@ def node_h(
     calls = with_call(calls, "H", guesser_settings, state["round"], guesser)
     describer_accepted = _accepted(state, describer)
     guesser_accepted = _accepted(state, guesser)
-    _write(directory, "describer", state, state["describer_memory"], describer_accepted)
-    _write(directory, "guesser", state, state["guesser_memory"], guesser_accepted)
+    advanced: tuple[tuple[Role, Memory], ...] = (
+        ("describer", _advanced(state, state["describer_memory"], describer_accepted)),
+        ("guesser", _advanced(state, state["guesser_memory"], guesser_accepted)),
+    )
+    for role, memory in advanced:
+        write_memory(directory, role, state["game"], memory)
     return {
         **state,
         "calls": calls,
