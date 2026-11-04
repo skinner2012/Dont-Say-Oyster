@@ -18,10 +18,9 @@ Readings settled with the author on 2026-10-21:
   English names, and forbidden words; the round counter; earlier descriptions and answers;
   earlier guesses and questions, without the latest when it is the last entry; the latest guess
   or question; the latest verdict, only while this round's reject counter is above zero, so a
-  verdict left from an earlier round is not shown; the rejected descriptions with their
-  reasons; and, with the memory flag on, the Describer's cross-game memory, never the
-  Guesser's. A guess is shown without its confidence. With the Challenger off there is no
-  verdict and no rejected description, so neither is shown.
+  verdict left from an earlier round is not shown; and the rejected descriptions with their
+  reasons. A guess is shown without its confidence. With the Challenger off there is no verdict
+  and no rejected description, so neither is shown.
 - On a send-back [R11] the request is the prompt, then the Describer's previous reply as the
   model's message, then the fixed message, so the model sees what it wrote; only the last reply
   is shown, not every reply sent back for this output.
@@ -29,6 +28,9 @@ Readings settled with the author on 2026-10-21:
   new output, so B only reads it.
 - The call passes the round in its run metadata, so its span says which round it belongs to
   without reading its neighbours in the trace (`SPEC.md` Goals, Evaluation and observability).
+
+Cross-game memory is also one of the Describer's items of Information isolation: with the memory
+flag on, the prompt holds the Describer's cross-game memory, never the Guesser's.
 
 The helpers `_list`, `_lines`, `_earlier`, and `_rejected` also render the game for the
 Describer's memory-writing prompt in `memory_summary.py` (Full flow of one game, the H row), so

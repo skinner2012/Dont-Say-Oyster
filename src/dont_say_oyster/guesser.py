@@ -19,12 +19,9 @@ Readings settled on 2026-10-21:
   section with `{task}` replaced by the task section matching the schema. The slots are the
   Guesser's items in Information isolation: the round and question counters, the earlier
   descriptions and answers (without this round's item, which C and D append before E runs),
-  the earlier guesses and valid questions, this round's description or answer, and, with the
-  memory flag on, the Guesser's cross-game memory, never the Describer's. An empty slot prints
-  (none). The memory is in the prompt, the first message of the tool loop, never a tool result,
-  so the structured call sees it on the same history. Lookup results have no slot: this
-  round's results reach the model as tool results in the message history, and earlier rounds'
-  results are not shown.
+  the earlier guesses and valid questions, and this round's description or answer. An empty
+  slot prints (none). Lookup results have no slot: this round's results reach the model as tool
+  results in the message history, and earlier rounds' results are not shown.
 - The tool loop: the history starts as the prompt; each reply's tool calls are handled in
   order: while fewer than five lookups have been made this round, the call is run (its tool
   result is the result JSON, or the validation message for a call the schema rejects, counted
@@ -53,6 +50,11 @@ Readings settled on 2026-10-21:
   latency, token counts, and attempt number repeat across the lookups of one reply, which
   `call` tells apart from several calls. A tool-loop reply without a tool call leaves no
   `Lookup` entry; its latency and tokens are in its `calls` entry, as every call's are.
+
+Cross-game memory is also one of the Guesser's items of Information isolation: with the memory
+flag on, the prompt holds the Guesser's cross-game memory, never the Describer's. The memory is
+in the prompt, the first message of the tool loop, never a tool result, so the structured call
+sees it on the same history.
 
 Every call, tool-loop and structured, is appended to `calls`, a tool-loop call with its call
 index; each invalid question that is sent back is appended to `sent_back` as the model wrote it,
